@@ -26,98 +26,138 @@ export const useContacts = () => {
   const fetchContacts = async () => {
     if (!user) return;
 
-    const { data, error } = await supabase
-      .from('contacts')
-      .select(`
-        id,
-        user_id,
-        contact_user_id,
-        status,
-        created_at,
-        profiles!contacts_contact_user_id_fkey (
-          username,
-          display_name,
-          avatar_url
-        )
-      `)
-      .eq('user_id', user.id)
-      .eq('status', 'accepted');
+    try {
+      // First get contacts
+      const { data: contactsData, error: contactsError } = await supabase
+        .from('contacts')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'accepted');
 
-    if (error) {
-      console.error('Error fetching contacts:', error);
-      return;
+      if (contactsError) {
+        console.error('Error fetching contacts:', contactsError);
+        return;
+      }
+
+      if (!contactsData || contactsData.length === 0) {
+        setContacts([]);
+        setLoading(false);
+        return;
+      }
+
+      // Then get profiles for those contacts
+      const contactUserIds = contactsData.map(contact => contact.contact_user_id);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, display_name, avatar_url')
+        .in('id', contactUserIds);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        return;
+      }
+
+      // Combine contacts with profiles
+      const formattedContacts = contactsData.map(contact => {
+        const profile = profilesData?.find(p => p.id === contact.contact_user_id);
+        return {
+          ...contact,
+          status: contact.status as 'pending' | 'accepted' | 'blocked',
+          profile: profile ? {
+            username: profile.username,
+            display_name: profile.display_name || profile.username,
+            avatar_url: profile.avatar_url
+          } : {
+            username: 'Unknown',
+            display_name: 'Unknown User'
+          }
+        };
+      });
+
+      setContacts(formattedContacts);
+    } catch (error) {
+      console.error('Error in fetchContacts:', error);
+    } finally {
+      setLoading(false);
     }
-
-    const formattedContacts = data.map(contact => ({
-      ...contact,
-      profile: contact.profiles
-    }));
-
-    setContacts(formattedContacts);
-    setLoading(false);
   };
 
   const searchUsers = async (query: string) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, username, display_name, avatar_url')
-      .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
-      .limit(10);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, username, display_name, avatar_url')
+        .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
+        .limit(10);
 
-    if (error) {
-      console.error('Error searching users:', error);
+      if (error) {
+        console.error('Error searching users:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error in searchUsers:', error);
       return [];
     }
-
-    return data || [];
   };
 
   const addContact = async (contactUserId: string) => {
     if (!user) return;
 
-    const { error } = await supabase
-      .from('contacts')
-      .insert({
-        user_id: user.id,
-        contact_user_id: contactUserId,
-        status: 'pending'
-      });
+    try {
+      const { error } = await supabase
+        .from('contacts')
+        .insert({
+          user_id: user.id,
+          contact_user_id: contactUserId,
+          status: 'pending'
+        });
 
-    if (error) {
+      if (error) {
+        toast({
+          title: 'Błąd dodawania kontaktu',
+          description: error.message,
+          variant: 'destructive'
+        });
+        throw error;
+      }
+
       toast({
-        title: 'Błąd dodawania kontaktu',
-        description: error.message,
-        variant: 'destructive'
+        title: 'Zaproszenie wysłane',
+        description: 'Zaproszenie do kontaktów zostało wysłane'
       });
+    } catch (error) {
+      console.error('Error in addContact:', error);
       throw error;
     }
-
-    toast({
-      title: 'Zaproszenie wysłane',
-      description: 'Zaproszenie do kontaktów zostało wysłane'
-    });
   };
 
   const acceptContact = async (contactId: string) => {
-    const { error } = await supabase
-      .from('contacts')
-      .update({ status: 'accepted' })
-      .eq('id', contactId);
+    try {
+      const { error } = await supabase
+        .from('contacts')
+        .update({ status: 'accepted' })
+        .eq('id', contactId);
 
-    if (error) {
+      if (error) {
+        toast({
+          title: 'Błąd akceptacji kontaktu',
+          description: error.message,
+          variant: 'destructive'
+        });
+        throw error;
+      }
+
+      await fetchContacts();
       toast({
-        title: 'Błąd akceptacji kontaktu',
-        description: error.message,
-        variant: 'destructive'
+        title: 'Kontakt zaakceptowany',
+        description: 'Kontakt został dodany do Twojej listy'
       });
+    } catch (error) {
+      console.error('Error in acceptContact:', error);
       throw error;
     }
-
-    await fetchContacts();
-    toast({
-      title: 'Kontakt zaakceptowany',
-      description: 'Kontakt został dodany do Twojej listy'
-    });
   };
 
   useEffect(() => {
