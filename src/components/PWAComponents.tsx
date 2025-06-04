@@ -2,6 +2,13 @@
 import React, { useEffect } from 'react';
 import InstallPrompt from './InstallPrompt';
 
+// Extend Navigator interface for PWA support
+declare global {
+  interface Navigator {
+    standalone?: boolean;
+  }
+}
+
 const PWAComponents: React.FC = () => {
   useEffect(() => {
     // Rejestracja Service Workera

@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
 
@@ -22,22 +21,12 @@ export const useWallet = () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
-        .from('wallets')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching wallet:', error);
-        return;
-      }
-
-      if (!data) {
-        // Utwórz portfel jeśli nie istnieje
-        await createWallet();
+      // Use localStorage temporarily until database is ready
+      const walletData = localStorage.getItem(`wallet_${user.id}`);
+      if (walletData) {
+        setWallet(JSON.parse(walletData));
       } else {
-        setWallet(data);
+        await createWallet();
       }
     } catch (error) {
       console.error('Error in fetchWallet:', error);
@@ -50,18 +39,16 @@ export const useWallet = () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
-        .from('wallets')
-        .insert({
-          user_id: user.id,
-          balance: 0
-        })
-        .select()
-        .single();
+      const newWallet = {
+        id: crypto.randomUUID(),
+        user_id: user.id,
+        balance: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
 
-      if (error) throw error;
-
-      setWallet(data);
+      localStorage.setItem(`wallet_${user.id}`, JSON.stringify(newWallet));
+      setWallet(newWallet);
     } catch (error) {
       console.error('Error creating wallet:', error);
       toast({
@@ -76,19 +63,15 @@ export const useWallet = () => {
     if (!user || !wallet) return;
 
     try {
-      const { data, error } = await supabase
-        .from('wallets')
-        .update({ 
-          balance: wallet.balance + amount,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', user.id)
-        .select()
-        .single();
+      const updatedWallet = {
+        ...wallet,
+        balance: wallet.balance + amount,
+        updated_at: new Date().toISOString()
+      };
 
-      if (error) throw error;
-
-      setWallet(data);
+      localStorage.setItem(`wallet_${user.id}`, JSON.stringify(updatedWallet));
+      setWallet(updatedWallet);
+      
       toast({
         title: 'Środki dodane',
         description: `Dodano ${amount} PLN do portfela`

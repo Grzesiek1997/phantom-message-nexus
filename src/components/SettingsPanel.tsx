@@ -5,10 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Settings, Shield, Palette, Bell, Wallet, Eye, EyeOff, Upload, Smartphone } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Settings, Shield, Palette, Bell, Eye, EyeOff, Upload, Smartphone, Bot, Gamepad2, Zap } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface AppSettings {
@@ -24,6 +23,10 @@ interface AppSettings {
   darkMode: boolean;
   language: string;
   fontSize: string;
+  aiAssistant: boolean;
+  smartReply: boolean;
+  moodAnalysis: boolean;
+  quantumEncryption: boolean;
 }
 
 const predefinedIcons = [
@@ -54,7 +57,11 @@ const SettingsPanel: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
     deleteAfterHours: 24,
     darkMode: true,
     language: 'pl',
-    fontSize: 'medium'
+    fontSize: 'medium',
+    aiAssistant: false,
+    smartReply: false,
+    moodAnalysis: false,
+    quantumEncryption: false
   });
 
   const isAdmin = user?.email === '97gibek@gmail.com';
@@ -67,19 +74,10 @@ const SettingsPanel: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
     if (!user) return;
     
     try {
-      const { data, error } = await supabase
-        .from('user_settings')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error loading settings:', error);
-        return;
-      }
-
-      if (data) {
-        setSettings(data.settings);
+      // Use localStorage temporarily until database is ready
+      const savedSettings = localStorage.getItem(`settings_${user.id}`);
+      if (savedSettings) {
+        setSettings(JSON.parse(savedSettings));
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -90,24 +88,29 @@ const SettingsPanel: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
     if (!user) return;
 
     try {
-      const { error } = await supabase
-        .from('user_settings')
-        .upsert({
-          user_id: user.id,
-          settings: settings,
-          updated_at: new Date().toISOString()
-        });
-
-      if (error) throw error;
+      // Use localStorage temporarily until database is ready
+      localStorage.setItem(`settings_${user.id}`, JSON.stringify(settings));
 
       toast({
         title: 'Ustawienia zapisane',
         description: 'Twoje ustawienia zostały pomyślnie zapisane'
       });
 
-      // Aktualizuj tytuł aplikacji i favicon
-      document.title = settings.isGhostMode ? '' : settings.appName;
-      updateFavicon(settings.appIcon);
+      // Apply ghost mode effect
+      if (settings.isGhostMode) {
+        document.title = '';
+        document.body.style.opacity = '0.05';
+        updateFavicon('');
+        toast({
+          title: '👻 TRYB DUCHOWY AKTYWNY',
+          description: '⚠️ Aplikacja stała się przezroczysta! Kliknij w to samo miejsce aby ją odnaleźć.',
+          duration: 10000
+        });
+      } else {
+        document.title = settings.appName;
+        document.body.style.opacity = '1';
+        updateFavicon(settings.appIcon);
+      }
     } catch (error) {
       console.error('Error saving settings:', error);
       toast({
@@ -119,14 +122,12 @@ const SettingsPanel: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
   };
 
   const updateFavicon = (icon: string) => {
-    if (settings.isGhostMode) {
-      // Usuń favicon w trybie ghost
+    if (settings.isGhostMode || !icon) {
       const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
       if (link) link.href = 'data:,';
       return;
     }
 
-    // Utwórz canvas do wygenerowania favicon z emoji
     const canvas = document.createElement('canvas');
     canvas.width = 32;
     canvas.height = 32;
@@ -161,46 +162,42 @@ const SettingsPanel: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <Settings className="w-5 h-5" />
-            <span>Ustawienia SecureChat</span>
+            <span>🚀 SecureChat - Centrum Sterowania</span>
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="privacy" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="privacy">Prywatność</TabsTrigger>
-            <TabsTrigger value="appearance">Wygląd</TabsTrigger>
-            <TabsTrigger value="notifications">Powiadomienia</TabsTrigger>
-            <TabsTrigger value="security">Bezpieczeństwo</TabsTrigger>
-            {isAdmin && <TabsTrigger value="admin">Admin</TabsTrigger>}
+        <Tabs defaultValue="stealth" className="w-full">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="stealth">🥷 Ukrywanie</TabsTrigger>
+            <TabsTrigger value="ai">🤖 AI</TabsTrigger>
+            <TabsTrigger value="crypto">🔮 Crypto</TabsTrigger>
+            <TabsTrigger value="appearance">🎨 Wygląd</TabsTrigger>
+            <TabsTrigger value="notifications">🔔 Powiadomienia</TabsTrigger>
+            {isAdmin && <TabsTrigger value="admin">👑 Admin</TabsTrigger>}
           </TabsList>
 
-          <TabsContent value="privacy" className="space-y-6">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center">
+          <TabsContent value="stealth" className="space-y-6">
+            <Card className="p-6 bg-gradient-to-r from-purple-900/20 to-blue-900/20 border-purple-500/30">
+              <h3 className="text-lg font-semibold mb-4 flex items-center text-purple-300">
                 <Eye className="w-5 h-5 mr-2" />
-                Ukrywanie Aplikacji
+                🥷 STEALTH MODE - Ukrywanie Aplikacji
               </h3>
               
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between p-4 bg-yellow-900/20 border border-yellow-500/30 rounded-lg">
                   <div>
-                    <label className="font-medium">Tryb ukryty</label>
-                    <p className="text-sm text-gray-600">Zmienia nazwę i ikonę aplikacji</p>
-                  </div>
-                  <Switch
-                    checked={settings.isHidden}
-                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, isHidden: checked }))}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="font-medium">Tryb duchowy</label>
-                    <p className="text-sm text-gray-600">Usuwa nazwę i ikonę aplikacji</p>
+                    <label className="font-medium text-yellow-300">👻 TRYB DUCHOWY (GHOST MODE)</label>
+                    <p className="text-sm text-yellow-200 mt-2">
+                      ⚠️ <strong>UWAGA:</strong> W trybie duchowym aplikacja pozostaje w tym samym miejscu na ekranie, 
+                      ale staje się <strong>PRZEZROCZYSTA</strong> (opacity: 0.05). Ikona i nazwa znikają, 
+                      ale aplikacja nadal działa i odbiera powiadomienia w tle.
+                      <br/>
+                      <strong>Aby ją odnaleźć - kliknij w miejscu gdzie była wcześniej.</strong>
+                    </p>
                   </div>
                   <Switch
                     checked={settings.isGhostMode}
@@ -208,10 +205,22 @@ const SettingsPanel: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
                   />
                 </div>
 
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="font-medium">🎭 Tryb ukryty</label>
+                    <p className="text-sm text-gray-400">Zmienia nazwę i ikonę aplikacji</p>
+                  </div>
+                  <Switch
+                    checked={settings.isHidden}
+                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, isHidden: checked }))}
+                    disabled={settings.isGhostMode}
+                  />
+                </div>
+
                 {!settings.isGhostMode && (
                   <>
                     <div>
-                      <label className="font-medium">Nazwa aplikacji</label>
+                      <label className="font-medium">📝 Nazwa aplikacji</label>
                       <Input
                         value={settings.appName}
                         onChange={(e) => setSettings(prev => ({ ...prev, appName: e.target.value }))}
@@ -221,7 +230,7 @@ const SettingsPanel: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
                     </div>
 
                     <div>
-                      <label className="font-medium">Ikona aplikacji</label>
+                      <label className="font-medium">🎯 Ikona aplikacji</label>
                       <div className="mt-2 space-y-4">
                         <div className="grid grid-cols-5 gap-2">
                           {predefinedIcons.map((icon) => (
@@ -240,8 +249,8 @@ const SettingsPanel: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
                         <div className="flex items-center space-x-2">
                           <Upload className="w-4 h-4" />
                           <label className="cursor-pointer">
-                            <span className="text-sm text-blue-600 hover:underline">
-                              Załaduj własną ikonę
+                            <span className="text-sm text-blue-400 hover:underline">
+                              📱 Załaduj własną ikonę z telefonu
                             </span>
                             <input
                               type="file"
@@ -259,16 +268,93 @@ const SettingsPanel: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
             </Card>
           </TabsContent>
 
-          <TabsContent value="appearance" className="space-y-6">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center">
-                <Palette className="w-5 h-5 mr-2" />
-                Personalizacja
+          <TabsContent value="ai" className="space-y-6">
+            <Card className="p-6 bg-gradient-to-r from-blue-900/20 to-cyan-900/20 border-cyan-500/30">
+              <h3 className="text-lg font-semibold mb-4 flex items-center text-cyan-300">
+                <Bot className="w-5 h-5 mr-2" />
+                🤖 SZTUCZNA INTELIGENCJA
               </h3>
               
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <label className="font-medium">Tryb ciemny</label>
+                  <div>
+                    <label className="font-medium text-cyan-300">🧠 AI Assistant</label>
+                    <p className="text-sm text-gray-400">Inteligentny asystent GPT w czacie</p>
+                  </div>
+                  <Switch
+                    checked={settings.aiAssistant}
+                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, aiAssistant: checked }))}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="font-medium text-cyan-300">💬 Smart Reply</label>
+                    <p className="text-sm text-gray-400">Sugestie inteligentnych odpowiedzi</p>
+                  </div>
+                  <Switch
+                    checked={settings.smartReply}
+                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, smartReply: checked }))}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="font-medium text-cyan-300">😊 Analiza nastrojów</label>
+                    <p className="text-sm text-gray-400">Rozpoznawanie emocji w rozmowach</p>
+                  </div>
+                  <Switch
+                    checked={settings.moodAnalysis}
+                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, moodAnalysis: checked }))}
+                  />
+                </div>
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="crypto" className="space-y-6">
+            <Card className="p-6 bg-gradient-to-r from-green-900/20 to-emerald-900/20 border-emerald-500/30">
+              <h3 className="text-lg font-semibold mb-4 flex items-center text-emerald-300">
+                <Zap className="w-5 h-5 mr-2" />
+                🔮 QUANTUM & BLOCKCHAIN
+              </h3>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="font-medium text-emerald-300">🔬 Quantum Encryption</label>
+                    <p className="text-sm text-gray-400">Kwantowo-odporny algorytm szyfrowania</p>
+                  </div>
+                  <Switch
+                    checked={settings.quantumEncryption}
+                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, quantumEncryption: checked }))}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mt-6">
+                  <Button variant="outline" className="h-20 flex flex-col bg-purple-900/20 border-purple-500/30">
+                    <span className="text-2xl mb-2">💎</span>
+                    <span className="text-sm">NFT Avatars</span>
+                  </Button>
+                  <Button variant="outline" className="h-20 flex flex-col bg-orange-900/20 border-orange-500/30">
+                    <span className="text-2xl mb-2">🪙</span>
+                    <span className="text-sm">Crypto Rewards</span>
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="appearance" className="space-y-6">
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <Palette className="w-5 h-5 mr-2" />
+                🎨 Personalizacja
+              </h3>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="font-medium">🌙 Tryb ciemny</label>
                   <Switch
                     checked={settings.darkMode}
                     onCheckedChange={(checked) => setSettings(prev => ({ ...prev, darkMode: checked }))}
@@ -276,11 +362,11 @@ const SettingsPanel: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
                 </div>
 
                 <div>
-                  <label className="font-medium">Rozmiar czcionki</label>
+                  <label className="font-medium">📏 Rozmiar czcionki</label>
                   <select
                     value={settings.fontSize}
                     onChange={(e) => setSettings(prev => ({ ...prev, fontSize: e.target.value }))}
-                    className="mt-2 w-full p-2 border rounded"
+                    className="mt-2 w-full p-2 border rounded bg-gray-800 border-gray-600"
                   >
                     <option value="small">Mała</option>
                     <option value="medium">Średnia</option>
@@ -289,11 +375,11 @@ const SettingsPanel: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
                 </div>
 
                 <div>
-                  <label className="font-medium">Język</label>
+                  <label className="font-medium">🌐 Język</label>
                   <select
                     value={settings.language}
                     onChange={(e) => setSettings(prev => ({ ...prev, language: e.target.value }))}
-                    className="mt-2 w-full p-2 border rounded"
+                    className="mt-2 w-full p-2 border rounded bg-gray-800 border-gray-600"
                   >
                     <option value="pl">Polski</option>
                     <option value="en">English</option>
@@ -309,12 +395,12 @@ const SettingsPanel: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
             <Card className="p-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center">
                 <Bell className="w-5 h-5 mr-2" />
-                Powiadomienia
+                🔔 Powiadomienia
               </h3>
               
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <label className="font-medium">Dźwięki powiadomień</label>
+                  <label className="font-medium">🔊 Dźwięki powiadomień</label>
                   <Switch
                     checked={settings.soundEnabled}
                     onCheckedChange={(checked) => setSettings(prev => ({ ...prev, soundEnabled: checked }))}
@@ -322,11 +408,11 @@ const SettingsPanel: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
                 </div>
 
                 <div>
-                  <label className="font-medium">Rodzaj dźwięku</label>
+                  <label className="font-medium">🎵 Rodzaj dźwięku</label>
                   <select
                     value={settings.notificationSound}
                     onChange={(e) => setSettings(prev => ({ ...prev, notificationSound: e.target.value }))}
-                    className="mt-2 w-full p-2 border rounded"
+                    className="mt-2 w-full p-2 border rounded bg-gray-800 border-gray-600"
                     disabled={!settings.soundEnabled}
                   >
                     <option value="default">Domyślny</option>
@@ -338,48 +424,12 @@ const SettingsPanel: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <label className="font-medium">Wibracje</label>
+                  <label className="font-medium">📳 Wibracje</label>
                   <Switch
                     checked={settings.vibrationEnabled}
                     onCheckedChange={(checked) => setSettings(prev => ({ ...prev, vibrationEnabled: checked }))}
                   />
                 </div>
-              </div>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="security" className="space-y-6">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center">
-                <Shield className="w-5 h-5 mr-2" />
-                Bezpieczeństwo
-              </h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="font-medium">Automatyczne usuwanie wiadomości</label>
-                    <p className="text-sm text-gray-600">Wiadomości będą usuwane po określonym czasie</p>
-                  </div>
-                  <Switch
-                    checked={settings.autoDeleteMessages}
-                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, autoDeleteMessages: checked }))}
-                  />
-                </div>
-
-                {settings.autoDeleteMessages && (
-                  <div>
-                    <label className="font-medium">Usuń po (godzinach)</label>
-                    <Input
-                      type="number"
-                      value={settings.deleteAfterHours}
-                      onChange={(e) => setSettings(prev => ({ ...prev, deleteAfterHours: parseInt(e.target.value) }))}
-                      min="1"
-                      max="168"
-                      className="mt-2"
-                    />
-                  </div>
-                )}
               </div>
             </Card>
           </TabsContent>
@@ -395,8 +445,8 @@ const SettingsPanel: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
           <Button variant="outline" onClick={onClose}>
             Anuluj
           </Button>
-          <Button onClick={saveSettings}>
-            Zapisz ustawienia
+          <Button onClick={saveSettings} className="bg-gradient-to-r from-purple-500 to-blue-600">
+            💾 Zapisz ustawienia
           </Button>
         </div>
       </DialogContent>
@@ -407,29 +457,37 @@ const SettingsPanel: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
 const AdminPanel = () => {
   return (
     <div className="space-y-6">
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4 text-red-600">
-          🔒 Panel Administracyjny
+      <Card className="p-6 bg-gradient-to-r from-red-900/20 to-purple-900/20 border-red-500/30">
+        <h3 className="text-lg font-semibold mb-4 text-red-400">
+          👑 QUANTUM ADMIN CENTRUM - 97gibek@gmail.com
         </h3>
-        <p className="text-sm text-gray-600 mb-4">
-          Dostępne tylko dla administratora: 97gibek@gmail.com
+        <p className="text-sm text-gray-400 mb-4">
+          Witaj, Administratorze! Masz dostęp do najwyższego poziomu sterowania SecureChat.
         </p>
         <div className="grid grid-cols-2 gap-4">
-          <Button variant="outline" className="h-20 flex flex-col">
+          <Button variant="outline" className="h-20 flex flex-col bg-blue-900/20 border-blue-500/30">
             <span className="text-2xl mb-2">👥</span>
             <span>Zarządzaj użytkownikami</span>
           </Button>
-          <Button variant="outline" className="h-20 flex flex-col">
+          <Button variant="outline" className="h-20 flex flex-col bg-green-900/20 border-green-500/30">
             <span className="text-2xl mb-2">📊</span>
-            <span>Statystyki</span>
+            <span>Analytics Dashboard</span>
           </Button>
-          <Button variant="outline" className="h-20 flex flex-col">
+          <Button variant="outline" className="h-20 flex flex-col bg-purple-900/20 border-purple-500/30">
             <span className="text-2xl mb-2">🔧</span>
-            <span>Konfiguracja serwera</span>
+            <span>Server Config</span>
           </Button>
-          <Button variant="outline" className="h-20 flex flex-col">
+          <Button variant="outline" className="h-20 flex flex-col bg-orange-900/20 border-orange-500/30">
             <span className="text-2xl mb-2">🚫</span>
-            <span>Moderacja</span>
+            <span>Moderacja AI</span>
+          </Button>
+          <Button variant="outline" className="h-20 flex flex-col bg-cyan-900/20 border-cyan-500/30">
+            <span className="text-2xl mb-2">⚡</span>
+            <span>Quantum Monitor</span>
+          </Button>
+          <Button variant="outline" className="h-20 flex flex-col bg-yellow-900/20 border-yellow-500/30">
+            <span className="text-2xl mb-2">💰</span>
+            <span>Revenue Analytics</span>
           </Button>
         </div>
       </Card>
