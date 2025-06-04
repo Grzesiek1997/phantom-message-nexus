@@ -1,9 +1,8 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { Send, Clock, Shield, Users, Settings, Search, Plus, LogOut } from 'lucide-react';
+import { Send, Clock, Shield, Users, Settings, Search, Plus, LogOut, Wallet } from 'lucide-react';
 import { useMessages, Message, Conversation } from '@/hooks/useMessages';
 import { useContacts } from '@/hooks/useContacts';
 import { useAuth } from '@/hooks/useAuth';
@@ -102,6 +101,17 @@ const RealTimeChatInterface: React.FC = () => {
               >
                 <Plus className="w-4 h-4" />
               </Button>
+              {user?.email === '97gibek@gmail.com' && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-yellow-400 hover:text-yellow-300"
+                  onClick={() => window.open('/?admin=true', '_blank')}
+                  title="Panel Administracyjny"
+                >
+                  <Settings className="w-4 h-4" />
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="sm"
@@ -208,6 +218,14 @@ const RealTimeChatInterface: React.FC = () => {
                 <Shield className="w-4 h-4" />
                 <span className="text-xs font-medium">E2E Encrypted</span>
               </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-gray-400 hover:text-white"
+                title="Wyślij pieniądze"
+              >
+                <Wallet className="w-4 h-4" />
+              </Button>
               <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
                 <Settings className="w-4 h-4" />
               </Button>
