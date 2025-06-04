@@ -1,44 +1,35 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import Layout from '@/components/Layout';
-import AuthForm from '@/components/AuthForm';
-import ChatInterface from '@/components/ChatInterface';
-import { useToast } from '@/hooks/use-toast';
+import SecureAuthForm from '@/components/SecureAuthForm';
+import RealTimeChatInterface from '@/components/RealTimeChatInterface';
+import { useAuth } from '@/hooks/useAuth';
+import { useState } from 'react';
 
 const Index = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { user, loading } = useAuth();
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const { toast } = useToast();
 
-  const handleAuthSubmit = (formData: any) => {
-    console.log('Auth submission:', formData);
-    
-    // Simulate authentication success
-    toast({
-      title: authMode === 'login' ? 'Login Successful' : 'Account Created',
-      description: authMode === 'login' 
-        ? 'Welcome back to SecureChat' 
-        : 'Your secure account has been created',
-    });
-    
-    setIsAuthenticated(true);
-  };
-
-  if (!isAuthenticated) {
+  if (loading) {
     return (
-      <Layout>
-        <AuthForm 
-          mode={authMode}
-          onModeChange={setAuthMode}
-          onSubmit={handleAuthSubmit}
-        />
-      </Layout>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
+        <div className="text-white text-xl">Ładowanie SecureChat...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <SecureAuthForm 
+        mode={authMode}
+        onModeChange={setAuthMode}
+      />
     );
   }
 
   return (
     <Layout>
-      <ChatInterface />
+      <RealTimeChatInterface />
     </Layout>
   );
 };
