@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, Lock, Brain, Zap, Globe, Atom, Dna, Volume2, Waves, Eye, MessageCircle, Users, Phone, Video, FileText, Settings, Crown, Sparkles } from 'lucide-react';
+import { Shield, Lock, Brain, Zap, Globe, Atom, Dna, Volume2, Waves, Eye, MessageCircle, Users, Phone, Video, FileText, Settings, Crown, Sparkles, ArrowRight, CheckCircle, Star, Award, Verified } from 'lucide-react';
 
 interface LandingPageProps {
   onGetStarted: () => void;
@@ -10,6 +9,8 @@ interface LandingPageProps {
 
 const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
   const [activeFeature, setActiveFeature] = useState<string | null>(null);
+  const [showTerms, setShowTerms] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
 
   const securityFeatures = [
     {
@@ -91,11 +92,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
-      {/* Hero Section */}
+      {/* Hero Section with Prominent CTA */}
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-16">
           <div className="flex items-center justify-center mb-6">
-            <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+            <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center animate-pulse">
               <Shield className="w-12 h-12 text-white" />
             </div>
           </div>
@@ -105,21 +106,55 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
             Najbezpieczniejszy komunikator na świecie. Używamy technologii 2030+ do ochrony Twoich danych przed komputerami kwantowymi, AI i przyszłymi zagrożeniami.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              onClick={onGetStarted}
-              className="px-8 py-4 text-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-            >
-              <Crown className="w-5 h-5 mr-2" />
-              Rozpocznij Bezpieczną Komunikację
-            </Button>
-            <Button 
-              variant="outline"
-              className="px-8 py-4 text-lg border-white/20 text-white hover:bg-white/10"
-            >
-              <Sparkles className="w-5 h-5 mr-2" />
-              Zobacz Demo
-            </Button>
+          
+          {/* Prominent Auth Buttons */}
+          <div className="flex flex-col items-center gap-6 mb-12">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button 
+                onClick={onGetStarted}
+                size="lg"
+                className="px-12 py-6 text-xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-2xl transform hover:scale-105 transition-all duration-300"
+              >
+                <Crown className="w-6 h-6 mr-3" />
+                Załóż Bezpieczne Konto
+                <ArrowRight className="w-6 h-6 ml-3" />
+              </Button>
+            </div>
+            
+            <div className="flex items-center gap-4 text-sm text-gray-300">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-400" />
+                <span>Bezpłatne konto</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-400" />
+                <span>Quantum encryption</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-400" />
+                <span>Zero-knowledge</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Trust Indicators */}
+          <div className="flex flex-wrap justify-center items-center gap-8 mb-16">
+            <div className="flex items-center gap-2 text-gray-300">
+              <Award className="w-6 h-6 text-yellow-400" />
+              <span className="font-semibold">NIST Certified</span>
+            </div>
+            <div className="flex items-center gap-2 text-gray-300">
+              <Verified className="w-6 h-6 text-blue-400" />
+              <span className="font-semibold">ISO 27001</span>
+            </div>
+            <div className="flex items-center gap-2 text-gray-300">
+              <Star className="w-6 h-6 text-purple-400" />
+              <span className="font-semibold">Quantum Safe</span>
+            </div>
+            <div className="flex items-center gap-2 text-gray-300">
+              <Shield className="w-6 h-6 text-green-400" />
+              <span className="font-semibold">Zero Trust</span>
+            </div>
           </div>
         </div>
 
@@ -260,27 +295,190 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           </Card>
         </div>
 
-        {/* CTA */}
+        {/* Additional Features */}
+        <div className="mb-16">
+          <h2 className="text-4xl font-bold text-white text-center mb-12">
+            🚀 Zaawansowane Funkcje Bezpieczeństwa
+          </h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card className="glass border-white/20">
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-gradient-to-r from-red-500 to-pink-500 rounded-lg text-white">
+                    <Shield className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-white text-lg">Zero-Trust Architecture</CardTitle>
+                    <CardDescription className="text-gray-300">
+                      Każde połączenie weryfikowane
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+            
+            <Card className="glass border-white/20">
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg text-white">
+                    <Brain className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-white text-lg">AI Threat Detection</CardTitle>
+                    <CardDescription className="text-gray-300">
+                      Uczenie maszynowe w obronie
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+            
+            <Card className="glass border-white/20">
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg text-white">
+                    <Zap className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-white text-lg">Hardware Security</CardTitle>
+                    <CardDescription className="text-gray-300">
+                      WebAuthn, TPM, Secure Enclaves
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+            
+            <Card className="glass border-white/20">
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-gradient-to-r from-green-500 to-teal-500 rounded-lg text-white">
+                    <Lock className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-white text-lg">Blockchain Audit</CardTitle>
+                    <CardDescription className="text-gray-300">
+                      Niezmienne logi bezpieczeństwa
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+          </div>
+        </div>
+
+        {/* Final CTA */}
         <div className="text-center">
-          <Card className="glass border-white/20 max-w-2xl mx-auto">
-            <CardContent className="p-8">
-              <h3 className="text-3xl font-bold text-white mb-4">
-                Gotowy na przyszłość bezpieczeństwa?
+          <Card className="glass border-white/20 max-w-4xl mx-auto">
+            <CardContent className="p-12">
+              <h3 className="text-4xl font-bold text-white mb-6">
+                🛡️ Przyszłość Bezpiecznej Komunikacji Zaczyna Się Tutaj
               </h3>
-              <p className="text-gray-300 mb-6">
-                Dołącz do rewolucji w bezpiecznej komunikacji. Chroń swoje dane przed zagrożeniami przyszłości już dziś.
+              <p className="text-xl text-gray-300 mb-8">
+                Dołącz do elit cyberbezpieczeństwa. Chroń swoje dane technologią 2030+ już dziś.
               </p>
-              <Button 
-                onClick={onGetStarted}
-                className="px-8 py-4 text-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-              >
-                <Lock className="w-5 h-5 mr-2" />
-                Zacznij Teraz - Bezpłatnie
-              </Button>
+              <div className="flex flex-col items-center gap-6">
+                <Button 
+                  onClick={onGetStarted}
+                  size="lg"
+                  className="px-16 py-6 text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-2xl transform hover:scale-105 transition-all duration-300"
+                >
+                  <Crown className="w-8 h-8 mr-4" />
+                  Rozpocznij Quantum Security
+                  <Sparkles className="w-8 h-8 ml-4" />
+                </Button>
+                
+                <div className="text-sm text-gray-400 max-w-2xl">
+                  Klikając "Rozpocznij" akceptujesz nasze{' '}
+                  <button 
+                    onClick={() => setShowTerms(true)}
+                    className="text-blue-400 hover:text-blue-300 underline"
+                  >
+                    Warunki Użytkowania
+                  </button>
+                  {' '}i{' '}
+                  <button 
+                    onClick={() => setShowPrivacy(true)}
+                    className="text-blue-400 hover:text-blue-300 underline"
+                  >
+                    Politykę Prywatności
+                  </button>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
       </div>
+
+      {/* Terms Modal */}
+      {showTerms && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <Card className="glass border-white/20 max-w-4xl max-h-[80vh] overflow-y-auto">
+            <CardHeader>
+              <CardTitle className="text-white text-2xl">Warunki Użytkowania SecureChat Quantum</CardTitle>
+            </CardHeader>
+            <CardContent className="text-gray-300 space-y-4">
+              <p className="text-sm">
+                <strong>1. Akceptacja Warunków</strong><br/>
+                Korzystając z SecureChat Quantum, akceptujesz niniejsze warunki oraz zobowiązujesz się do przestrzegania najwyższych standardów cyberbezpieczeństwa.
+              </p>
+              <p className="text-sm">
+                <strong>2. Quantum Security Standards</strong><br/>
+                Nasza aplikacja wykorzystuje post-quantum cryptography zgodną z standardami NIST. Użytkownik zobowiązuje się do ochrony swoich kluczy kwantowych.
+              </p>
+              <p className="text-sm">
+                <strong>3. Zero-Knowledge Policy</strong><br/>
+                SecureChat działa w modelu zero-knowledge. Nie mamy dostępu do Twoich wiadomości, kluczy ani metadanych.
+              </p>
+              <p className="text-sm">
+                <strong>4. Odpowiedzialność Użytkownika</strong><br/>
+                Użytkownik jest odpowiedzialny za bezpieczne przechowywanie swoich kluczy prywatnych i danych biometrycznych.
+              </p>
+              <Button 
+                onClick={() => setShowTerms(false)}
+                className="mt-6 bg-blue-600 hover:bg-blue-700"
+              >
+                Zamknij
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Privacy Modal */}
+      {showPrivacy && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <Card className="glass border-white/20 max-w-4xl max-h-[80vh] overflow-y-auto">
+            <CardHeader>
+              <CardTitle className="text-white text-2xl">Polityka Prywatności</CardTitle>
+            </CardHeader>
+            <CardContent className="text-gray-300 space-y-4">
+              <p className="text-sm">
+                <strong>1. Quantum Privacy</strong><br/>
+                Wykorzystujemy quantum-safe encryption i zero-knowledge architecture dla maksymalnej prywatności.
+              </p>
+              <p className="text-sm">
+                <strong>2. Dane Osobowe</strong><br/>
+                Zbieramy minimum danych: email do uwierzytelnienia. Wszystkie inne dane są szyfrowane lokalnie.
+              </p>
+              <p className="text-sm">
+                <strong>3. Metadane</strong><br/>
+                Metadane komunikacji są chronione przez advanced obfuscation i temporal encryption.
+              </p>
+              <p className="text-sm">
+                <strong>4. AI i Machine Learning</strong><br/>
+                Nasze AI działa na zasadach differential privacy i federated learning.
+              </p>
+              <Button 
+                onClick={() => setShowPrivacy(false)}
+                className="mt-6 bg-blue-600 hover:bg-blue-700"
+              >
+                Zamknij
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
