@@ -1119,10 +1119,70 @@ export const useSwarmSecurity = (): SwarmSecuritySystem & { swarmIntelligence: S
     };
   };
 
+  const deployAntColonyThreatDetection = async (network: NetworkTopology): Promise<AntColonyIntelligence> => {
+    console.log('🐜 Deploying ant colony threat detection across network topology');
+    
+    const antColony = new AntColonyOptimizer();
+    
+    // Simulate threat detection across network
+    const threats = network.nodes.map(node => `threat-vector-${node.id}`);
+    const scoutReports = await antColony.deployScouts(threats);
+    
+    // Calculate ant colony intelligence metrics
+    const pathOptimization = scoutReports.reduce((acc, report) => acc + report.confidence, 0) / scoutReports.length;
+    const pheromoneStrength = Math.random() * 0.3 + 0.7; // 70-100%
+    const convergenceTime = Math.random() * 200 + 100; // 100-300ms
+    const scoutEfficiency = scoutReports.filter(r => r.threatLevel > 0.5).length / scoutReports.length;
+    
+    return {
+      pathOptimization,
+      pheromoneStrength,
+      convergenceTime,
+      scoutEfficiency
+    };
+  };
+
+  const optimizeSecurityWithBeeAlgorithm = async (securityParams: SecurityParameters): Promise<BeeOptimizedSecurity> => {
+    console.log('🐝 Optimizing security parameters with bee algorithm');
+    
+    const beeHive = new BeeAlgorithmHive();
+    
+    // Create scout reports for bee algorithm
+    const mockScoutReports: ScoutReport[] = [
+      {
+        antId: 'scout-1',
+        attackVector: 'encryption-strength',
+        threatLevel: 1 - (securityParams.encryptionStrength / 100),
+        vulnerabilities: securityParams.encryptionStrength < 80 ? ['weak-encryption'] : [],
+        investigationTime: Math.random() * 1000,
+        confidence: 0.9
+      }
+    ];
+    
+    const defenseStrategy = await beeHive.optimizeDefense(mockScoutReports);
+    
+    // Optimize security parameters
+    const optimizedParams: SecurityParameters = {
+      encryptionStrength: Math.min(100, securityParams.encryptionStrength * 1.2),
+      authenticationLayers: Math.min(5, securityParams.authenticationLayers + 1),
+      threatDetectionSensitivity: Math.min(100, securityParams.threatDetectionSensitivity * 1.1),
+      responseTime: Math.max(1, securityParams.responseTime * 0.8)
+    };
+    
+    return {
+      optimizedParams,
+      nectarQuality: defenseStrategy.effectiveness,
+      forageEfficiency: 0.9 + Math.random() * 0.1,
+      hiveConsensus: defenseStrategy.beeConsensus
+    };
+  };
+
   return {
     optimizeCryptographyWithPSO,
     achieveSecurityConsensusWithFishSchooling,
     deployFlockingDefense,
+    deployAntColonyThreatDetection,
+    optimizeSecurityWithBeeAlgorithm,
     swarmIntelligence
   };
 };
