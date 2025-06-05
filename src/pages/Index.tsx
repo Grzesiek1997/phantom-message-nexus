@@ -5,6 +5,7 @@ import SecureAuthForm from '@/components/SecureAuthForm';
 import RealTimeChatInterface from '@/components/RealTimeChatInterface';
 import AdminDashboard from '@/components/AdminDashboard';
 import QuantumSecurityDashboard from '@/components/QuantumSecurityDashboard';
+import SwarmSecurityDashboard from '@/components/SwarmSecurityDashboard';
 import QuantumVault from '@/components/QuantumVault';
 import PWAComponents from '@/components/PWAComponents';
 import { useAuth } from '@/hooks/useAuth';
@@ -48,9 +49,10 @@ const Index = () => {
       <Layout>
         <div className="container mx-auto p-4">
           <Tabs defaultValue="chat" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 bg-gray-800 mb-6">
+            <TabsList className="grid w-full grid-cols-5 bg-gray-800 mb-6">
               <TabsTrigger value="chat">💬 Chat</TabsTrigger>
               <TabsTrigger value="security">🛡️ Security</TabsTrigger>
+              <TabsTrigger value="swarm">🐜 Swarm AI</TabsTrigger>
               <TabsTrigger value="vault">🔐 Vault</TabsTrigger>
               {isAdmin && <TabsTrigger value="admin">👑 Admin</TabsTrigger>}
             </TabsList>
@@ -61,6 +63,10 @@ const Index = () => {
 
             <TabsContent value="security">
               <QuantumSecurityDashboard />
+            </TabsContent>
+
+            <TabsContent value="swarm">
+              <SwarmSecurityDashboard />
             </TabsContent>
 
             <TabsContent value="vault">
