@@ -193,7 +193,7 @@ const WalletInterface: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ i
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <Wallet className="w-5 h-5" />
-            <span>💰 SecureWallet - Wirtualny Portfel</span>
+            <span>💰 Quantum Wallet - Wirtualny Portfel</span>
           </DialogTitle>
         </DialogHeader>
 

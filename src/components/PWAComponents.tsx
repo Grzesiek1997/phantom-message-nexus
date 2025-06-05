@@ -2,16 +2,14 @@
 import React, { useEffect } from 'react';
 import InstallPrompt from './InstallPrompt';
 
-// Extend Navigator interface for PWA support
-declare global {
-  interface Navigator {
-    standalone?: boolean;
-  }
+// Extend Navigator interface for PWA support with TypeScript fix
+interface ExtendedNavigator extends Navigator {
+  standalone?: boolean;
 }
 
 const PWAComponents: React.FC = () => {
   useEffect(() => {
-    // Rejestracja Service Workera
+    // Service Worker registration
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
@@ -24,21 +22,21 @@ const PWAComponents: React.FC = () => {
       });
     }
 
-    // Sprawdź czy aplikacja została zainstalowana
+    // Check if app is installed
     let displayMode = 'browser';
-    if (navigator.standalone) {
+    const extendedNavigator = navigator as ExtendedNavigator;
+    if (extendedNavigator.standalone) {
       displayMode = 'standalone-ios';
     }
     if (window.matchMedia('(display-mode: standalone)').matches) {
       displayMode = 'standalone';
     }
     
-    // Dodaj klasę CSS dla trybu standalone
+    // Add CSS class for standalone mode
     document.body.classList.add(`display-${displayMode}`);
 
-    // Obsługa orientacji urządzenia
+    // Handle orientation change
     const handleOrientationChange = () => {
-      // Dodatkowa logika dla zmiany orientacji
       setTimeout(() => {
         window.scrollTo(0, 1);
       }, 500);
