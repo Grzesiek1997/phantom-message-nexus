@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Eye, EyeOff, Smartphone, Mail, Lock, Shield, Fingerprint } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Shield, Fingerprint } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
@@ -19,7 +19,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose }) => {
   const [loginData, setLoginData] = useState({
     email: '',
     password: '',
-    phone: '',
     rememberMe: false
   });
   const [registerData, setRegisterData] = useState({
@@ -27,11 +26,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose }) => {
     password: '',
     confirmPassword: '',
     username: '',
-    phone: '',
     agreeTerms: false,
     agreePrivacy: false
   });
-  const [authMode, setAuthMode] = useState<'email' | 'phone' | 'anonymous'>('email');
+  const [authMode, setAuthMode] = useState<'email' | 'without-email'>('email');
   const [loading, setLoading] = useState(false);
   
   const { signIn, signUp } = useAuth();
@@ -84,24 +82,43 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose }) => {
     }
   };
 
-  const handleAnonymousRegister = async () => {
+  const handleWithoutEmailRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (registerData.password !== registerData.confirmPassword) {
+      toast({
+        title: 'Błąd',
+        description: 'Hasła nie są identyczne',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!registerData.agreeTerms || !registerData.agreePrivacy) {
+      toast({
+        title: 'Błąd',
+        description: 'Musisz zaakceptować regulamin i politykę prywatności',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setLoading(true);
     
     try {
-      // Generate anonymous credentials
-      const anonymousId = `anon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const tempPassword = Math.random().toString(36).substr(2, 12);
+      // Generate a temporary email for registration without email
+      const tempEmail = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}@securechat.temp`;
       
-      await signUp(`${anonymousId}@anonymous.temp`, tempPassword, anonymousId);
+      await signUp(tempEmail, registerData.password, registerData.username);
       
       toast({
-        title: '🎭 Konto anonimowe utworzone',
-        description: 'Jesteś teraz w pełni anonimowy. Zapisz swoje dane logowania!'
+        title: '🛡️ Konto bez emaila utworzone',
+        description: 'Możesz dodać email później w ustawieniach konta'
       });
       
       onClose();
     } catch (error) {
-      console.error('Anonymous register error:', error);
+      console.error('Without email register error:', error);
     } finally {
       setLoading(false);
     }
@@ -131,10 +148,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose }) => {
             <TabsContent value="login">
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label className="text-white">Email</Label>
+                  <Label className="text-white">Email lub Login</Label>
                   <Input
                     type="email"
-                    placeholder="twoj@email.com"
+                    placeholder="twoj@email.com lub login"
                     value={loginData.email}
                     onChange={(e) => setLoginData({...loginData, email: e.target.value})}
                     className="bg-gray-800 border-gray-600 text-white"
@@ -199,7 +216,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose }) => {
             <TabsContent value="register">
               <div className="space-y-4">
                 {/* Registration Method Selector */}
-                <div className="grid grid-cols-3 gap-2 mb-4">
+                <div className="grid grid-cols-2 gap-2 mb-4">
                   <Button
                     type="button"
                     variant={authMode === 'email' ? 'default' : 'outline'}
@@ -208,51 +225,103 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose }) => {
                     className="text-xs"
                   >
                     <Mail className="w-3 h-3 mr-1" />
-                    Email
+                    Z Emailem
                   </Button>
                   <Button
                     type="button"
-                    variant={authMode === 'phone' ? 'default' : 'outline'}
+                    variant={authMode === 'without-email' ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => setAuthMode('phone')}
+                    onClick={() => setAuthMode('without-email')}
                     className="text-xs"
                   >
-                    <Smartphone className="w-3 h-3 mr-1" />
-                    Telefon
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={authMode === 'anonymous' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setAuthMode('anonymous')}
-                    className="text-xs"
-                  >
-                    🎭 Anonimowo
+                    🛡️ Bez Emaila
                   </Button>
                 </div>
 
-                {authMode === 'anonymous' ? (
+                {authMode === 'without-email' ? (
                   <div className="text-center space-y-4">
                     <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4">
-                      <h3 className="text-purple-300 font-semibold mb-2">🎭 Rejestracja Anonimowa</h3>
+                      <h3 className="text-purple-300 font-semibold mb-2">🛡️ Rejestracja Bez Emaila</h3>
                       <p className="text-sm text-gray-300 mb-4">
-                        Żadnych danych osobowych. Pełna anonimowość.
+                        Tylko login i hasło. Email można dodać później w ustawieniach.
                       </p>
                       <ul className="text-xs text-gray-400 space-y-1 mb-4">
-                        <li>✅ Bez emaila i telefonu</li>
-                        <li>✅ Automatyczne szyfrowanie</li>
+                        <li>✅ Tylko login i hasło</li>
+                        <li>✅ Maksymalna prywatność</li>
+                        <li>✅ Email opcjonalny</li>
                         <li>✅ Zero-knowledge architektura</li>
-                        <li>⚠️ Zapisz dane logowania!</li>
                       </ul>
                     </div>
                     
-                    <Button
-                      onClick={handleAnonymousRegister}
-                      className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
-                      disabled={loading}
-                    >
-                      {loading ? 'Tworzenie...' : '🎭 Utwórz Anonimowe Konto'}
-                    </Button>
+                    <form onSubmit={handleWithoutEmailRegister} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label className="text-white">Login</Label>
+                        <Input
+                          type="text"
+                          placeholder="twoja_nazwa"
+                          value={registerData.username}
+                          onChange={(e) => setRegisterData({...registerData, username: e.target.value})}
+                          className="bg-gray-800 border-gray-600 text-white"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-white">Hasło</Label>
+                        <Input
+                          type="password"
+                          placeholder="Silne hasło"
+                          value={registerData.password}
+                          onChange={(e) => setRegisterData({...registerData, password: e.target.value})}
+                          className="bg-gray-800 border-gray-600 text-white"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-white">Potwierdź hasło</Label>
+                        <Input
+                          type="password"
+                          placeholder="Powtórz hasło"
+                          value={registerData.confirmPassword}
+                          onChange={(e) => setRegisterData({...registerData, confirmPassword: e.target.value})}
+                          className="bg-gray-800 border-gray-600 text-white"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="terms"
+                            checked={registerData.agreeTerms}
+                            onCheckedChange={(checked) => setRegisterData({...registerData, agreeTerms: checked as boolean})}
+                          />
+                          <Label htmlFor="terms" className="text-sm text-gray-300">
+                            Akceptuję <span className="text-blue-400">Regulamin</span>
+                          </Label>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="privacy"
+                            checked={registerData.agreePrivacy}
+                            onCheckedChange={(checked) => setRegisterData({...registerData, agreePrivacy: checked as boolean})}
+                          />
+                          <Label htmlFor="privacy" className="text-sm text-gray-300">
+                            Akceptuję <span className="text-blue-400">Politykę Prywatności</span>
+                          </Label>
+                        </div>
+                      </div>
+
+                      <Button
+                        type="submit"
+                        className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
+                        disabled={loading}
+                      >
+                        {loading ? 'Tworzenie...' : '🛡️ Utwórz Konto Bez Emaila'}
+                      </Button>
+                    </form>
                   </div>
                 ) : (
                   <form onSubmit={handleRegister} className="space-y-4">
@@ -268,33 +337,17 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose }) => {
                       />
                     </div>
 
-                    {authMode === 'email' && (
-                      <div className="space-y-2">
-                        <Label className="text-white">Email</Label>
-                        <Input
-                          type="email"
-                          placeholder="twoj@email.com"
-                          value={registerData.email}
-                          onChange={(e) => setRegisterData({...registerData, email: e.target.value})}
-                          className="bg-gray-800 border-gray-600 text-white"
-                          required
-                        />
-                      </div>
-                    )}
-
-                    {authMode === 'phone' && (
-                      <div className="space-y-2">
-                        <Label className="text-white">Numer telefonu</Label>
-                        <Input
-                          type="tel"
-                          placeholder="+48 123 456 789"
-                          value={registerData.phone}
-                          onChange={(e) => setRegisterData({...registerData, phone: e.target.value})}
-                          className="bg-gray-800 border-gray-600 text-white"
-                          required
-                        />
-                      </div>
-                    )}
+                    <div className="space-y-2">
+                      <Label className="text-white">Email</Label>
+                      <Input
+                        type="email"
+                        placeholder="twoj@email.com"
+                        value={registerData.email}
+                        onChange={(e) => setRegisterData({...registerData, email: e.target.value})}
+                        className="bg-gray-800 border-gray-600 text-white"
+                        required
+                      />
+                    </div>
 
                     <div className="space-y-2">
                       <Label className="text-white">Hasło</Label>
