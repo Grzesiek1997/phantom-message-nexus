@@ -1,15 +1,15 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Settings, Wallet, HelpCircle } from 'lucide-react';
+import { Settings, HelpCircle, LogOut } from 'lucide-react';
 import SettingsPanel from './SettingsPanel';
-import WalletInterface from './WalletInterface';
 import NavigationHelp from './NavigationHelp';
+import { useAuth } from '@/hooks/useAuth';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [showSettings, setShowSettings] = useState(false);
-  const [showWallet, setShowWallet] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const { signOut, user } = useAuth();
 
   // Add keyboard shortcut for help
   React.useEffect(() => {
@@ -24,6 +24,14 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return () => window.removeEventListener('keydown', handleKeyboard);
   }, []);
 
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
       {/* Header */}
@@ -34,6 +42,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <span className="text-white font-bold text-lg">🛡️</span>
             </div>
             <h1 className="text-xl font-bold text-white">SecureChat Quantum</h1>
+            {user && (
+              <div className="text-sm text-gray-300">
+                Zalogowany jako: <span className="text-blue-400">{user.email}</span>
+              </div>
+            )}
           </div>
           
           <div className="flex items-center space-x-2">
@@ -49,20 +62,20 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setShowWallet(true)}
-              className="text-white hover:bg-white/10"
-              title="Portfel"
-            >
-              <Wallet className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
               onClick={() => setShowSettings(true)}
               className="text-white hover:bg-white/10"
               title="Ustawienia"
             >
               <Settings className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSignOut}
+              className="text-white hover:bg-white/10"
+              title="Wyloguj"
+            >
+              <LogOut className="w-4 h-4" />
             </Button>
           </div>
         </div>
@@ -75,7 +88,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
       {/* Modals */}
       <SettingsPanel isOpen={showSettings} onClose={() => setShowSettings(false)} />
-      <WalletInterface isOpen={showWallet} onClose={() => setShowWallet(false)} />
       <NavigationHelp isOpen={showHelp} onClose={() => setShowHelp(false)} />
     </div>
   );
