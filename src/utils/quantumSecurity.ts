@@ -1,4 +1,3 @@
-
 // Quantum-enhanced CSP Configuration
 export const quantumContentSecurityPolicy = {
   'default-src': ["'self'"],
@@ -60,7 +59,7 @@ interface ZKValidationResult {
 
 interface QuantumInputValidator {
   // Layer 1: Quantum-safe schema validation
-  validateQuantumSchema(data: any, schema: any): QuantumValidationResult;
+  validateQuantumSchema(data: any, schema: any): Promise<QuantumValidationResult>;
   
   // Layer 2: AI-powered security validation
   detectAISecurityThreats(input: string): Promise<AIThreatAnalysis>;
@@ -92,7 +91,7 @@ export class QuantumSecureValidator implements QuantumInputValidator {
     console.log('🛡️ Initializing Quantum Security Validators');
   }
 
-  async validateQuantumSchema(data: any, schema: any): QuantumValidationResult {
+  async validateQuantumSchema(data: any, schema: any): Promise<QuantumValidationResult> {
     try {
       // Quantum-safe length validation
       if (typeof data === 'string' && data.length > 50000) {
