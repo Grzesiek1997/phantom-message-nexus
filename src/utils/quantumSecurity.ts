@@ -10,6 +10,11 @@ export type {
   ZKValidationResult 
 } from '../lib/crypto/quantum-validation';
 
+// Import the actual exports
+import { quantumSecureValidator } from '../lib/validation/input-validator';
+import { QuantumKeyManager } from '../lib/crypto/key-management';
+import { QuantumCrypto } from '../lib/crypto/quantum-algorithms';
+
 // Main validator export (keeping the original interface)
 export const quantumValidator = {
   validateMessage: quantumSecureValidator.validateMessage,
