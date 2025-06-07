@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Eye, EyeOff, Mail, Lock, Shield, Fingerprint } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import TurnstileWidget from './TurnstileWidget';
 
 interface LoginFormProps {
   onClose: () => void;
@@ -19,7 +19,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose }) => {
   const [loginData, setLoginData] = useState({
     email: '',
     password: '',
-    rememberMe: false
+    rememberMe: false,
+    captchaToken: ''
   });
   const [registerData, setRegisterData] = useState({
     email: '',
@@ -27,7 +28,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose }) => {
     confirmPassword: '',
     username: '',
     agreeTerms: false,
-    agreePrivacy: false
+    agreePrivacy: false,
+    captchaToken: ''
   });
   const [authMode, setAuthMode] = useState<'email' | 'without-email'>('email');
   const [loading, setLoading] = useState(false);
@@ -35,8 +37,27 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose }) => {
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
 
+  const handleCaptchaVerify = (token: string, formType: 'login' | 'register') => {
+    console.log('🔐 CAPTCHA verified for:', formType);
+    if (formType === 'login') {
+      setLoginData(prev => ({ ...prev, captchaToken: token }));
+    } else {
+      setRegisterData(prev => ({ ...prev, captchaToken: token }));
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!loginData.captchaToken) {
+      toast({
+        title: 'Weryfikacja wymagana',
+        description: 'Proszę ukończyć weryfikację CAPTCHA',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setLoading(true);
     
     try {
@@ -44,6 +65,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose }) => {
       onClose();
     } catch (error) {
       console.error('Login error:', error);
+      // Reset CAPTCHA on error
+      setLoginData(prev => ({ ...prev, captchaToken: '' }));
     } finally {
       setLoading(false);
     }
@@ -51,6 +74,15 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose }) => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!registerData.captchaToken) {
+      toast({
+        title: 'Weryfikacja wymagana',
+        description: 'Proszę ukończyć weryfikację CAPTCHA',
+        variant: 'destructive'
+      });
+      return;
+    }
     
     if (registerData.password !== registerData.confirmPassword) {
       toast({
@@ -77,6 +109,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose }) => {
       onClose();
     } catch (error) {
       console.error('Register error:', error);
+      // Reset CAPTCHA on error
+      setRegisterData(prev => ({ ...prev, captchaToken: '' }));
     } finally {
       setLoading(false);
     }
@@ -84,6 +118,15 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose }) => {
 
   const handleWithoutEmailRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!registerData.captchaToken) {
+      toast({
+        title: 'Weryfikacja wymagana',
+        description: 'Proszę ukończyć weryfikację CAPTCHA',
+        variant: 'destructive'
+      });
+      return;
+    }
     
     if (registerData.password !== registerData.confirmPassword) {
       toast({
@@ -119,6 +162,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose }) => {
       onClose();
     } catch (error) {
       console.error('Without email register error:', error);
+      // Reset CAPTCHA on error
+      setRegisterData(prev => ({ ...prev, captchaToken: '' }));
     } finally {
       setLoading(false);
     }
@@ -180,6 +225,23 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose }) => {
                   </div>
                 </div>
 
+                {/* CAPTCHA for Login */}
+                <div className="space-y-2">
+                  <Label className="text-white">Weryfikacja bezpieczeństwa</Label>
+                  <TurnstileWidget
+                    onVerify={(token) => handleCaptchaVerify(token, 'login')}
+                    onError={(error) => {
+                      console.error('Login CAPTCHA error:', error);
+                      toast({
+                        title: 'Błąd CAPTCHA',
+                        description: 'Nie udało się załadować weryfikacji. Spróbuj ponownie.',
+                        variant: 'destructive'
+                      });
+                    }}
+                    className="w-full"
+                  />
+                </div>
+
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="remember"
@@ -194,7 +256,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose }) => {
                 <Button 
                   type="submit" 
                   className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-                  disabled={loading}
+                  disabled={loading || !loginData.captchaToken}
                 >
                   {loading ? 'Logowanie...' : 'Zaloguj się'}
                 </Button>
@@ -290,6 +352,23 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose }) => {
                         />
                       </div>
 
+                      {/* CAPTCHA for Registration */}
+                      <div className="space-y-2">
+                        <Label className="text-white">Weryfikacja bezpieczeństwa</Label>
+                        <TurnstileWidget
+                          onVerify={(token) => handleCaptchaVerify(token, 'register')}
+                          onError={(error) => {
+                            console.error('Register CAPTCHA error:', error);
+                            toast({
+                              title: 'Błąd CAPTCHA',
+                              description: 'Nie udało się załadować weryfikacji. Spróbuj ponownie.',
+                              variant: 'destructive'
+                            });
+                          }}
+                          className="w-full"
+                        />
+                      </div>
+
                       <div className="space-y-3">
                         <div className="flex items-center space-x-2">
                           <Checkbox
@@ -317,7 +396,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose }) => {
                       <Button
                         type="submit"
                         className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
-                        disabled={loading}
+                        disabled={loading || !registerData.captchaToken}
                       >
                         {loading ? 'Tworzenie...' : '🛡️ Utwórz Konto Bez Emaila'}
                       </Button>
@@ -373,6 +452,23 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose }) => {
                       />
                     </div>
 
+                    {/* CAPTCHA for Registration */}
+                    <div className="space-y-2">
+                      <Label className="text-white">Weryfikacja bezpieczeństwa</Label>
+                      <TurnstileWidget
+                        onVerify={(token) => handleCaptchaVerify(token, 'register')}
+                        onError={(error) => {
+                          console.error('Register CAPTCHA error:', error);
+                          toast({
+                            title: 'Błąd CAPTCHA',
+                            description: 'Nie udało się załadować weryfikacji. Spróbuj ponownie.',
+                            variant: 'destructive'
+                          });
+                        }}
+                        className="w-full"
+                      />
+                    </div>
+
                     <div className="space-y-3">
                       <div className="flex items-center space-x-2">
                         <Checkbox
@@ -400,7 +496,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose }) => {
                     <Button 
                       type="submit" 
                       className="w-full bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700"
-                      disabled={loading}
+                      disabled={loading || !registerData.captchaToken}
                     >
                       {loading ? 'Tworzenie konta...' : 'Utwórz Konto'}
                     </Button>

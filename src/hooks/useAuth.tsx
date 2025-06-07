@@ -8,8 +8,8 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, username: string) => Promise<void>;
-  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, username: string, captchaToken?: string) => Promise<void>;
+  signIn: (email: string, password: string, captchaToken?: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -50,8 +50,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, username: string) => {
-    const { error } = await supabase.auth.signUp({
+  const signUp = async (email: string, password: string, username: string, captchaToken?: string) => {
+    const signUpData: any = {
       email,
       password,
       options: {
@@ -60,7 +60,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           display_name: username
         }
       }
-    });
+    };
+
+    // Add CAPTCHA token if provided
+    if (captchaToken) {
+      signUpData.options.captchaToken = captchaToken;
+    }
+
+    const { error } = await supabase.auth.signUp(signUpData);
 
     if (error) {
       toast({
@@ -77,11 +84,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+  const signIn = async (email: string, password: string, captchaToken?: string) => {
+    const signInData: any = {
       email,
       password
-    });
+    };
+
+    // Add CAPTCHA token if provided
+    if (captchaToken) {
+      signInData.options = {
+        captchaToken
+      };
+    }
+
+    const { error } = await supabase.auth.signInWithPassword(signInData);
 
     if (error) {
       toast({
