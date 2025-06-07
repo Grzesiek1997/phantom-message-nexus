@@ -25,23 +25,32 @@ export const useAdminCheck = (): AdminData => {
       }
 
       try {
-        // Check if user has admin or moderator role
-        const { data: roles, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id);
+        // Sprawdzenie czy użytkownik jest adminem przez funkcję is_admin
+        const { data: isAdminResult, error: adminError } = await supabase
+          .rpc('is_admin', { check_user_id: user.id });
 
-        if (error) {
-          console.error('Error checking admin status:', error);
-          setAdminData({ isAdmin: false, isModerator: false, loading: false });
+        if (adminError) {
+          console.error('Error checking admin status:', adminError);
+          // Fallback - sprawdź po emailu
+          const isAdmin = user.email === '97gibek@gmail.com';
+          setAdminData({ isAdmin, isModerator: false, loading: false });
           return;
         }
 
-        const userRoles = roles?.map(r => r.role) || [];
-        const isAdmin = userRoles.includes('admin') || user.email === '97gibek@gmail.com';
-        const isModerator = userRoles.includes('moderator');
+        const isAdmin = isAdminResult || user.email === '97gibek@gmail.com';
+        
+        // Sprawdzenie roli moderatora
+        const { data: userRole, error: roleError } = await supabase
+          .rpc('get_user_role', { check_user_id: user.id });
 
-        console.log('🔐 Admin check:', { userEmail: user.email, roles: userRoles, isAdmin, isModerator });
+        const isModerator = !roleError && userRole === 'moderator';
+
+        console.log('🔐 Admin check:', { 
+          userEmail: user.email, 
+          isAdmin, 
+          isModerator,
+          userRole 
+        });
 
         setAdminData({
           isAdmin,
@@ -50,7 +59,9 @@ export const useAdminCheck = (): AdminData => {
         });
       } catch (error) {
         console.error('Admin check error:', error);
-        setAdminData({ isAdmin: false, isModerator: false, loading: false });
+        // Fallback dla błędów
+        const isAdmin = user.email === '97gibek@gmail.com';
+        setAdminData({ isAdmin, isModerator: false, loading: false });
       }
     };
 

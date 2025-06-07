@@ -9,6 +9,32 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      cities: {
+        Row: {
+          country_id: number | null
+          id: number
+          name: string
+        }
+        Insert: {
+          country_id?: number | null
+          id?: never
+          name: string
+        }
+        Update: {
+          country_id?: number | null
+          id?: never
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cities_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contacts: {
         Row: {
           contact_user_id: string
@@ -89,6 +115,21 @@ export type Database = {
           name?: string | null
           type?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      countries: {
+        Row: {
+          id: number
+          name: string
+        }
+        Insert: {
+          id?: never
+          name: string
+        }
+        Update: {
+          id?: never
+          name?: string
         }
         Relationships: []
       }
@@ -175,6 +216,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -184,9 +246,17 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_user_role: {
+        Args: { check_user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      is_admin: {
+        Args: { check_user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -301,6 +371,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const

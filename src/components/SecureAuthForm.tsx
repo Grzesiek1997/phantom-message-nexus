@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Eye, EyeOff, Shield, UserPlus, LogIn } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import TurnstileWidget from '@/components/auth/TurnstileWidget';
 
 interface SecureAuthFormProps {
   mode: 'login' | 'register';
@@ -21,10 +22,14 @@ const SecureAuthForm: React.FC<SecureAuthFormProps> = ({ mode, onModeChange }) =
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [showCaptcha, setShowCaptcha] = useState(false);
   const { signIn, signUp } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
+    
     setLoading(true);
 
     try {
@@ -32,12 +37,20 @@ const SecureAuthForm: React.FC<SecureAuthFormProps> = ({ mode, onModeChange }) =
         if (formData.password !== formData.confirmPassword) {
           throw new Error('Hasła nie są identyczne');
         }
-        await signUp(formData.email, formData.password, formData.username);
+        if (formData.password.length < 6) {
+          throw new Error('Hasło musi mieć co najmniej 6 znaków');
+        }
+        
+        await signUp(formData.email, formData.password, formData.username, captchaToken || undefined);
       } else {
-        await signIn(formData.email, formData.password);
+        await signIn(formData.email, formData.password, captchaToken || undefined);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Auth error:', error);
+      // Po błędzie pokaż CAPTCHA
+      if (!showCaptcha) {
+        setShowCaptcha(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -48,6 +61,16 @@ const SecureAuthForm: React.FC<SecureAuthFormProps> = ({ mode, onModeChange }) =
       ...prev,
       [e.target.name]: e.target.value
     }));
+  };
+
+  const handleCaptchaVerify = (token: string) => {
+    setCaptchaToken(token);
+    console.log('🔐 CAPTCHA verified successfully');
+  };
+
+  const handleCaptchaError = (error: string) => {
+    console.error('CAPTCHA error:', error);
+    setCaptchaToken(null);
   };
 
   return (
@@ -137,6 +160,17 @@ const SecureAuthForm: React.FC<SecureAuthFormProps> = ({ mode, onModeChange }) =
                   onChange={handleInputChange}
                   className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
                   placeholder="Potwierdź hasło"
+                />
+              </div>
+            )}
+            
+            {showCaptcha && (
+              <div className="space-y-2">
+                <Label className="text-white">Weryfikacja bezpieczeństwa</Label>
+                <TurnstileWidget
+                  onVerify={handleCaptchaVerify}
+                  onError={handleCaptchaError}
+                  className="w-full"
                 />
               </div>
             )}
