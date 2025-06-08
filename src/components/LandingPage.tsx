@@ -1,89 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, Lock, Brain, Zap, Globe, Atom, Dna, Volume2, Waves, Eye, MessageCircle, Users, Phone, Video, FileText, Settings, Crown, Sparkles, ArrowRight, CheckCircle, Star, Award, Verified, Languages } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Shield, Lock, Brain, Zap, Globe, Atom, Dna, Volume2, Waves, Eye, MessageCircle, Users, Phone, Video, FileText, Settings, Crown, Sparkles, ArrowRight, CheckCircle, Star, Award, Verified } from 'lucide-react';
 
 interface LandingPageProps {
   onGetStarted: () => void;
 }
 
-interface Language {
-  code: string;
-  name: string;
-  flag: string;
-}
-
-const languages: Language[] = [
-  { code: 'pl', name: 'Polski', flag: '🇵🇱' },
-  { code: 'en', name: 'English', flag: '🇺🇸' },
-  { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
-  { code: 'fr', name: 'Français', flag: '🇫🇷' },
-  { code: 'es', name: 'Español', flag: '🇪🇸' },
-  { code: 'it', name: 'Italiano', flag: '🇮🇹' },
-  { code: 'ru', name: 'Русский', flag: '🇷🇺' },
-  { code: 'zh', name: '中文', flag: '🇨🇳' },
-  { code: 'ja', name: '日本語', flag: '🇯🇵' },
-  { code: 'ko', name: '한국어', flag: '🇰🇷' }
-];
-
-const translations = {
-  pl: {
-    title: 'SecureChat Quantum',
-    subtitle: 'Najbezpieczniejszy komunikator na świecie. Używamy technologii 2030+ do ochrony Twoich danych przed komputerami kwantowymi, AI i przyszłymi zagrożeniami.',
-    enterButton: 'Wejdź do SecureChat',
-    freeAccount: 'Bezpłatne konto',
-    quantumEncryption: 'Quantum encryption',
-    zeroKnowledge: 'Zero-knowledge',
-    revolutionarySecurity: '🛡️ Rewolucyjne Zabezpieczenia',
-    appFeatures: '📱 Funkcje Komunikatora',
-    statistics: '📊 Liczby, które mówią same za siebie',
-    whySecureChat: '🥇 Dlaczego SecureChat Quantum?',
-    advancedSecurity: '🚀 Zaawansowane Funkcje Bezpieczeństwa',
-    futureStarts: '🛡️ Przyszłość Bezpiecznej Komunikacji Zaczyna Się Tutaj',
-    futureDescription: 'Dołącz do elit cyberbezpieczeństwa. Chroń swoje dane technologią 2030+ już dziś.',
-    startQuantum: 'Rozpocznij Quantum Security'
-  },
-  en: {
-    title: 'SecureChat Quantum',
-    subtitle: 'The world\'s most secure messenger. We use 2030+ technology to protect your data from quantum computers, AI and future threats.',
-    enterButton: 'Enter SecureChat',
-    freeAccount: 'Free account',
-    quantumEncryption: 'Quantum encryption',
-    zeroKnowledge: 'Zero-knowledge',
-    revolutionarySecurity: '🛡️ Revolutionary Security',
-    appFeatures: '📱 Messenger Features',
-    statistics: '📊 Numbers that speak for themselves',
-    whySecureChat: '🥇 Why SecureChat Quantum?',
-    advancedSecurity: '🚀 Advanced Security Features',
-    futureStarts: '🛡️ The Future of Secure Communication Starts Here',
-    futureDescription: 'Join the cybersecurity elite. Protect your data with 2030+ technology today.',
-    startQuantum: 'Start Quantum Security'
-  }
-};
-
 const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
   const [activeFeature, setActiveFeature] = useState<string | null>(null);
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
-  const [currentLanguage, setCurrentLanguage] = useState<string>('pl');
-
-  // Auto-detect user language
-  useEffect(() => {
-    const detectLanguage = () => {
-      const browserLang = navigator.language.split('-')[0];
-      const supportedLang = languages.find(lang => lang.code === browserLang);
-      if (supportedLang) {
-        setCurrentLanguage(browserLang);
-      } else {
-        setCurrentLanguage('en'); // fallback to English if not supported
-      }
-    };
-
-    detectLanguage();
-  }, []);
-
-  const t = translations[currentLanguage as keyof typeof translations] || translations.en;
 
   const securityFeatures = [
     {
@@ -165,30 +92,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
-      {/* Language Selection Header */}
-      <div className="absolute top-4 right-4 z-50">
-        <Select value={currentLanguage} onValueChange={setCurrentLanguage}>
-          <SelectTrigger className="w-[180px] bg-black/20 border-white/20 text-white">
-            <SelectValue>
-              <div className="flex items-center gap-2">
-                <Languages className="w-4 h-4" />
-                {languages.find(lang => lang.code === currentLanguage)?.flag} {languages.find(lang => lang.code === currentLanguage)?.name}
-              </div>
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent className="bg-gray-800 border-gray-600">
-            {languages.map((language) => (
-              <SelectItem key={language.code} value={language.code} className="text-white hover:bg-gray-700">
-                <div className="flex items-center gap-2">
-                  <span>{language.flag}</span>
-                  <span>{language.name}</span>
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
       {/* Hero Section with Prominent CTA */}
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-16">
@@ -198,10 +101,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             </div>
           </div>
           <h1 className="text-6xl font-bold text-white mb-6">
-            {t.title.split(' ')[0]} <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">{t.title.split(' ')[1]}</span>
+            SecureChat <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">Quantum</span>
           </h1>
           <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
-            {t.subtitle}
+            Najbezpieczniejszy komunikator na świecie. Używamy technologii 2030+ do ochrony Twoich danych przed komputerami kwantowymi, AI i przyszłymi zagrożeniami.
           </p>
           
           {/* Prominent Auth Buttons */}
@@ -213,7 +116,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 className="px-12 py-6 text-xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-2xl transform hover:scale-105 transition-all duration-300"
               >
                 <Crown className="w-6 h-6 mr-3" />
-                {t.enterButton}
+                Załóż Bezpieczne Konto
                 <ArrowRight className="w-6 h-6 ml-3" />
               </Button>
             </div>
@@ -221,15 +124,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <div className="flex items-center gap-4 text-sm text-gray-300">
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-green-400" />
-                <span>{t.freeAccount}</span>
+                <span>Bezpłatne konto</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-green-400" />
-                <span>{t.quantumEncryption}</span>
+                <span>Quantum encryption</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-green-400" />
-                <span>{t.zeroKnowledge}</span>
+                <span>Zero-knowledge</span>
               </div>
             </div>
           </div>
@@ -258,7 +161,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         {/* Security Features Grid */}
         <div className="mb-16">
           <h2 className="text-4xl font-bold text-white text-center mb-12">
-            {t.revolutionarySecurity}
+            🛡️ Rewolucyjne Zabezpieczenia
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {securityFeatures.map((feature) => (
@@ -297,7 +200,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         {/* App Features */}
         <div className="mb-16">
           <h2 className="text-4xl font-bold text-white text-center mb-12">
-            {t.appFeatures}
+            📱 Funkcje Komunikatora
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {appFeatures.map((feature, index) => (
@@ -323,7 +226,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         {/* Statistics */}
         <div className="mb-16">
           <h2 className="text-4xl font-bold text-white text-center mb-12">
-            {t.statistics}
+            📊 Liczby, które mówią same za siebie
           </h2>
           <div className="grid md:grid-cols-4 gap-6">
             <Card className="glass border-white/20 text-center">
@@ -356,7 +259,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         {/* Comparison */}
         <div className="mb-16">
           <h2 className="text-4xl font-bold text-white text-center mb-12">
-            {t.whySecureChat}
+            🥇 Dlaczego SecureChat Quantum?
           </h2>
           <Card className="glass border-white/20">
             <CardContent className="p-8">
@@ -395,7 +298,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         {/* Additional Features */}
         <div className="mb-16">
           <h2 className="text-4xl font-bold text-white text-center mb-12">
-            {t.advancedSecurity}
+            🚀 Zaawansowane Funkcje Bezpieczeństwa
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card className="glass border-white/20">
@@ -469,10 +372,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           <Card className="glass border-white/20 max-w-4xl mx-auto">
             <CardContent className="p-12">
               <h3 className="text-4xl font-bold text-white mb-6">
-                {t.futureStarts}
+                🛡️ Przyszłość Bezpiecznej Komunikacji Zaczyna Się Tutaj
               </h3>
               <p className="text-xl text-gray-300 mb-8">
-                {t.futureDescription}
+                Dołącz do elit cyberbezpieczeństwa. Chroń swoje dane technologią 2030+ już dziś.
               </p>
               <div className="flex flex-col items-center gap-6">
                 <Button 
@@ -481,7 +384,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   className="px-16 py-6 text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-2xl transform hover:scale-105 transition-all duration-300"
                 >
                   <Crown className="w-8 h-8 mr-4" />
-                  {t.startQuantum}
+                  Rozpocznij Quantum Security
                   <Sparkles className="w-8 h-8 ml-4" />
                 </Button>
                 

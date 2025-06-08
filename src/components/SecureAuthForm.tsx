@@ -4,9 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Eye, EyeOff, Shield, UserPlus, LogIn, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, Shield, UserPlus, LogIn } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import TurnstileWidget from '@/components/auth/TurnstileWidget';
 
 interface SecureAuthFormProps {
   mode: 'login' | 'register';
@@ -22,64 +21,23 @@ const SecureAuthForm: React.FC<SecureAuthFormProps> = ({ mode, onModeChange }) =
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const [showCaptcha, setShowCaptcha] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
   const { signIn, signUp } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (loading) return;
-    
     setLoading(true);
-    setFormError(null);
 
     try {
-      // Validation
       if (mode === 'register') {
         if (formData.password !== formData.confirmPassword) {
           throw new Error('Hasła nie są identyczne');
         }
-        if (formData.password.length < 6) {
-          throw new Error('Hasło musi mieć co najmniej 6 znaków');
-        }
-        if (!formData.username.trim()) {
-          throw new Error('Nazwa użytkownika jest wymagana');
-        }
-      }
-
-      if (!formData.email || !formData.password) {
-        throw new Error('Email i hasło są wymagane');
-      }
-
-      // Show CAPTCHA after first failed attempt or for registration
-      if (mode === 'register' && !showCaptcha) {
-        setShowCaptcha(true);
-        setLoading(false);
-        return;
-      }
-
-      // For login, proceed without CAPTCHA first time, then require it
-      if (mode === 'login' && showCaptcha && !captchaToken) {
-        throw new Error('Proszę zweryfikować CAPTCHA');
-      }
-
-      console.log('🔐 Attempting authentication...', { mode, hasToken: !!captchaToken });
-
-      if (mode === 'register') {
-        await signUp(formData.email, formData.password, formData.username, captchaToken || undefined);
+        await signUp(formData.email, formData.password, formData.username);
       } else {
-        await signIn(formData.email, formData.password, captchaToken || undefined);
+        await signIn(formData.email, formData.password);
       }
-    } catch (error: any) {
-      console.error('❌ Auth error:', error);
-      setFormError(error.message);
-      
-      // Show CAPTCHA after any error
-      if (!showCaptcha) {
-        setShowCaptcha(true);
-        console.log('🔐 Showing CAPTCHA after auth error');
-      }
+    } catch (error) {
+      console.error('Auth error:', error);
     } finally {
       setLoading(false);
     }
@@ -90,22 +48,6 @@ const SecureAuthForm: React.FC<SecureAuthFormProps> = ({ mode, onModeChange }) =
       ...prev,
       [e.target.name]: e.target.value
     }));
-    // Clear form error when user starts typing
-    if (formError) {
-      setFormError(null);
-    }
-  };
-
-  const handleCaptchaVerify = (token: string) => {
-    setCaptchaToken(token);
-    setFormError(null);
-    console.log('✅ CAPTCHA verified successfully');
-  };
-
-  const handleCaptchaError = (error: string) => {
-    console.error('❌ CAPTCHA error:', error);
-    setCaptchaToken(null);
-    setFormError(`CAPTCHA error: ${error}`);
   };
 
   return (
@@ -128,13 +70,6 @@ const SecureAuthForm: React.FC<SecureAuthFormProps> = ({ mode, onModeChange }) =
         
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {formError && (
-              <div className="flex items-center gap-2 p-3 bg-red-900/20 border border-red-500/30 rounded-lg">
-                <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
-                <p className="text-red-300 text-sm">{formError}</p>
-              </div>
-            )}
-
             {mode === 'register' && (
               <div className="space-y-2">
                 <Label htmlFor="username" className="text-white">Nazwa użytkownika</Label>
@@ -206,21 +141,10 @@ const SecureAuthForm: React.FC<SecureAuthFormProps> = ({ mode, onModeChange }) =
               </div>
             )}
             
-            {showCaptcha && (
-              <div className="space-y-2">
-                <Label className="text-white">Weryfikacja bezpieczeństwa</Label>
-                <TurnstileWidget
-                  onVerify={handleCaptchaVerify}
-                  onError={handleCaptchaError}
-                  className="w-full"
-                />
-              </div>
-            )}
-            
             <Button 
               type="submit" 
               className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-              disabled={loading || (showCaptcha && !captchaToken)}
+              disabled={loading}
             >
               {loading ? (
                 'Ładowanie...'

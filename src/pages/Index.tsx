@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import LandingPage from '@/components/LandingPage';
 import LoginForm from '@/components/auth/LoginForm';
-import ModernChatInterface from '@/components/ModernChatInterface';
+import RealTimeChatInterface from '@/components/RealTimeChatInterface';
 import { useAuth } from '@/hooks/useAuth';
 
 const Index = () => {
@@ -25,9 +25,13 @@ const Index = () => {
     );
   }
 
-  // If user is logged in, show the modern chat interface
+  // If user is logged in, show the chat interface
   if (user) {
-    return <ModernChatInterface />;
+    return (
+      <Layout>
+        <RealTimeChatInterface />
+      </Layout>
+    );
   }
 
   // If user is not logged in, show landing page

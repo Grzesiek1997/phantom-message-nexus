@@ -8,8 +8,8 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, username: string, captchaToken?: string) => Promise<void>;
-  signIn: (email: string, password: string, captchaToken?: string) => Promise<void>;
+  signUp: (email: string, password: string, username: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -44,18 +44,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
-        
-        if (event === 'SIGNED_IN') {
-          console.log('🔐 User signed in successfully');
-        }
       }
     );
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, username: string, captchaToken?: string) => {
-    const signUpData: any = {
+  const signUp = async (email: string, password: string, username: string) => {
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -64,14 +60,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           display_name: username
         }
       }
-    };
-
-    // Add CAPTCHA token if provided
-    if (captchaToken) {
-      signUpData.options.captchaToken = captchaToken;
-    }
-
-    const { error } = await supabase.auth.signUp(signUpData);
+    });
 
     if (error) {
       toast({
@@ -88,20 +77,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const signIn = async (email: string, password: string, captchaToken?: string) => {
-    const signInData: any = {
+  const signIn = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password
-    };
-
-    // Add CAPTCHA token if provided
-    if (captchaToken) {
-      signInData.options = {
-        captchaToken
-      };
-    }
-
-    const { error } = await supabase.auth.signInWithPassword(signInData);
+    });
 
     if (error) {
       toast({
