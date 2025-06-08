@@ -48,78 +48,76 @@ export const useMessages = (conversationId?: string) => {
     if (!user) return;
 
     try {
-      // Get conversations user participates in
-      const { data: participantsData, error: participantsError } = await supabase
-        .from('conversation_participants')
-        .select('conversation_id')
-        .eq('user_id', user.id);
+      console.log('Fetching conversations for user:', user.id);
 
-      if (participantsError) {
-        console.error('Error fetching participants:', participantsError);
+      // Get conversations data with RLS policies
+      const { data: conversationsData, error: conversationsError } = await supabase
+        .from('conversations')
+        .select(`
+          *,
+          conversation_participants!inner(
+            user_id,
+            role,
+            profiles!conversation_participants_user_id_fkey(
+              username,
+              display_name
+            )
+          )
+        `)
+        .eq('conversation_participants.user_id', user.id);
+
+      if (conversationsError) {
+        console.error('Error fetching conversations:', conversationsError);
+        setLoading(false);
         return;
       }
 
-      if (!participantsData || participantsData.length === 0) {
+      console.log('Raw conversations data:', conversationsData);
+
+      if (!conversationsData || conversationsData.length === 0) {
         setConversations([]);
         setLoading(false);
         return;
       }
 
-      const conversationIds = participantsData.map(p => p.conversation_id);
-
-      // Get conversation details
-      const { data: conversationsData, error: conversationsError } = await supabase
-        .from('conversations')
-        .select('*')
-        .in('id', conversationIds);
-
-      if (conversationsError) {
-        console.error('Error fetching conversations:', conversationsError);
-        return;
-      }
-
       // Get all participants for these conversations
-      const { data: allParticipants, error: allParticipantsError } = await supabase
+      const conversationIds = conversationsData.map(c => c.id);
+      const { data: allParticipants, error: participantsError } = await supabase
         .from('conversation_participants')
-        .select('*')
+        .select(`
+          *,
+          profiles!conversation_participants_user_id_fkey(
+            username,
+            display_name
+          )
+        `)
         .in('conversation_id', conversationIds);
 
-      if (allParticipantsError) {
-        console.error('Error fetching all participants:', allParticipantsError);
+      if (participantsError) {
+        console.error('Error fetching participants:', participantsError);
+        setLoading(false);
         return;
       }
 
-      // Get profiles for all participants
-      const participantUserIds = allParticipants?.map(p => p.user_id) || [];
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, username, display_name')
-        .in('id', participantUserIds);
+      console.log('All participants:', allParticipants);
 
-      if (profilesError) {
-        console.error('Error fetching profiles:', profilesError);
-        return;
-      }
-
-      // Combine data
-      const formattedConversations = conversationsData?.map(conv => ({
+      // Format conversations with all participants
+      const formattedConversations = conversationsData.map(conv => ({
         ...conv,
         type: conv.type as 'direct' | 'group',
         participants: allParticipants
           ?.filter(p => p.conversation_id === conv.id)
-          .map(p => {
-            const profile = profilesData?.find(prof => prof.id === p.user_id);
-            return {
-              user_id: p.user_id,
-              role: p.role,
-              profiles: {
-                username: profile?.username || 'Unknown',
-                display_name: profile?.display_name || profile?.username || 'Unknown'
-              }
-            };
-          }) || []
-      })) || [];
+          .map(p => ({
+            user_id: p.user_id,
+            role: p.role,
+            profiles: {
+              username: p.profiles?.username || 'Unknown',
+              display_name: p.profiles?.display_name || p.profiles?.username || 'Unknown'
+            }
+          })) || []
+      }));
 
+      console.log('Formatted conversations:', formattedConversations);
       setConversations(formattedConversations);
     } catch (error) {
       console.error('Error in fetchConversations:', error);
@@ -130,10 +128,20 @@ export const useMessages = (conversationId?: string) => {
 
   // Fetch messages for a conversation
   const fetchMessages = async (convId: string) => {
+    if (!user) return;
+
     try {
+      console.log('Fetching messages for conversation:', convId);
+
       const { data: messagesData, error: messagesError } = await supabase
         .from('messages')
-        .select('*')
+        .select(`
+          *,
+          profiles!messages_sender_id_fkey(
+            username,
+            display_name
+          )
+        `)
         .eq('conversation_id', convId)
         .order('created_at', { ascending: true });
 
@@ -142,34 +150,16 @@ export const useMessages = (conversationId?: string) => {
         return;
       }
 
-      if (!messagesData || messagesData.length === 0) {
-        setMessages([]);
-        return;
-      }
+      console.log('Messages data:', messagesData);
 
-      // Get sender profiles
-      const senderIds = [...new Set(messagesData.map(m => m.sender_id))];
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, username, display_name')
-        .in('id', senderIds);
-
-      if (profilesError) {
-        console.error('Error fetching sender profiles:', profilesError);
-        return;
-      }
-
-      const formattedMessages = messagesData.map(msg => {
-        const senderProfile = profilesData?.find(p => p.id === msg.sender_id);
-        return {
-          ...msg,
-          message_type: msg.message_type as 'text' | 'file' | 'image',
-          sender: senderProfile ? {
-            username: senderProfile.username,
-            display_name: senderProfile.display_name || senderProfile.username
-          } : undefined
-        };
-      });
+      const formattedMessages = messagesData?.map(msg => ({
+        ...msg,
+        message_type: msg.message_type as 'text' | 'file' | 'image',
+        sender: msg.profiles ? {
+          username: msg.profiles.username,
+          display_name: msg.profiles.display_name || msg.profiles.username
+        } : undefined
+      })) || [];
 
       setMessages(formattedMessages);
     } catch (error) {
@@ -196,6 +186,7 @@ export const useMessages = (conversationId?: string) => {
         });
 
       if (error) {
+        console.error('Error sending message:', error);
         toast({
           title: 'Błąd wysyłania wiadomości',
           description: error.message,
@@ -203,6 +194,8 @@ export const useMessages = (conversationId?: string) => {
         });
         throw error;
       }
+
+      console.log('Message sent successfully');
     } catch (error) {
       console.error('Error in sendMessage:', error);
       throw error;
@@ -214,6 +207,8 @@ export const useMessages = (conversationId?: string) => {
     if (!user) return;
 
     try {
+      console.log('Creating conversation with participants:', participantIds);
+
       const { data: conversation, error } = await supabase
         .from('conversations')
         .insert({
@@ -225,6 +220,7 @@ export const useMessages = (conversationId?: string) => {
         .single();
 
       if (error) {
+        console.error('Error creating conversation:', error);
         toast({
           title: 'Błąd tworzenia konwersacji',
           description: error.message,
@@ -232,6 +228,8 @@ export const useMessages = (conversationId?: string) => {
         });
         throw error;
       }
+
+      console.log('Conversation created:', conversation);
 
       // Add participants
       const participants = [user.id, ...participantIds].map(userId => ({
@@ -245,6 +243,7 @@ export const useMessages = (conversationId?: string) => {
         .insert(participants);
 
       if (participantError) {
+        console.error('Error adding participants:', participantError);
         toast({
           title: 'Błąd dodawania uczestników',
           description: participantError.message,
@@ -253,6 +252,7 @@ export const useMessages = (conversationId?: string) => {
         throw participantError;
       }
 
+      console.log('Participants added successfully');
       await fetchConversations();
       return conversation.id;
     } catch (error) {
@@ -268,20 +268,23 @@ export const useMessages = (conversationId?: string) => {
   }, [user]);
 
   useEffect(() => {
-    if (conversationId) {
+    if (conversationId && user) {
       fetchMessages(conversationId);
     }
-  }, [conversationId]);
+  }, [conversationId, user]);
 
   // Real-time subscriptions
   useEffect(() => {
     if (!user) return;
+
+    console.log('Setting up real-time subscriptions');
 
     const messagesSubscription = supabase
       .channel('messages')
       .on('postgres_changes', 
         { event: 'INSERT', schema: 'public', table: 'messages' },
         (payload) => {
+          console.log('New message received:', payload);
           const newMessage = payload.new as any;
           if (conversationId && newMessage.conversation_id === conversationId) {
             setMessages(prev => [...prev, {
@@ -298,12 +301,14 @@ export const useMessages = (conversationId?: string) => {
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'conversations' },
         () => {
+          console.log('Conversation updated, refetching...');
           fetchConversations();
         }
       )
       .subscribe();
 
     return () => {
+      console.log('Cleaning up subscriptions');
       supabase.removeChannel(messagesSubscription);
       supabase.removeChannel(conversationsSubscription);
     };

@@ -1,376 +1,231 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
-import { Send, Clock, Shield, Users, Settings, Search, Plus, LogOut, Wallet, Bot, ArrowLeft, Smile, Paperclip, Mic, Video, Phone, MoreVertical } from 'lucide-react';
-import { useMessages, Message, Conversation } from '@/hooks/useMessages';
+import { Search, Plus, Settings, MessageCircle, Users, Bot, Send, Paperclip, Smile } from 'lucide-react';
+import { useMessages } from '@/hooks/useMessages';
 import { useContacts } from '@/hooks/useContacts';
 import { useAuth } from '@/hooks/useAuth';
-import { useAdvancedMessaging } from '@/hooks/useAdvancedMessaging';
+import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { pl } from 'date-fns/locale';
+import ContactSearch from './ContactSearch';
 import AIAssistant from './AIAssistant';
 
 const RealTimeChatInterface: React.FC = () => {
-  const [newMessage, setNewMessage] = useState('');
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showContacts, setShowContacts] = useState(false);
-  const [showAI, setShowAI] = useState(false);
-  const [showChatSettings, setShowChatSettings] = useState(false);
-  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
-  const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  const { user, signOut } = useAuth();
-  const { messages, conversations, sendMessage, createConversation } = useMessages(selectedConversation?.id);
-  const { contacts, searchUsers, addContact } = useContacts();
-  const { 
-    messagingFeatures, 
-    callFeatures,
-    sendDisappearingMessage,
-    initiateVoiceCall,
-    initiateVideoCall,
-    shareFile,
-    createSecretChat
-  } = useAdvancedMessaging();
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [messageInput, setMessageInput] = useState('');
+  const [showContactSearch, setShowContactSearch] = useState(false);
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [showConversationList, setShowConversationList] = useState(true);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const { user } = useAuth();
+  const { messages, conversations, loading, sendMessage, createConversation } = useMessages(selectedConversationId || undefined);
+  const { contacts } = useContacts();
+  const { toast } = useToast();
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+      if (window.innerWidth >= 768) {
+        setShowConversationList(true);
+      }
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
-  useEffect(() => {
-    if (conversations.length > 0 && !selectedConversation) {
-      setSelectedConversation(conversations[0]);
-    }
-  }, [conversations, selectedConversation]);
-
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !selectedConversation) return;
+  const handleSendMessage = async () => {
+    if (!messageInput.trim() || !selectedConversationId) return;
 
     try {
-      setIsTyping(true);
-      await sendMessage(newMessage, selectedConversation.id, 24); // 24h expiry
-      setNewMessage('');
-      setReplyingTo(null);
+      await sendMessage(messageInput, selectedConversationId, 24);
+      setMessageInput('');
     } catch (error) {
       console.error('Error sending message:', error);
-    } finally {
-      setIsTyping(false);
+      toast({
+        title: 'Błąd wysyłania',
+        description: 'Nie udało się wysłać wiadomości',
+        variant: 'destructive'
+      });
     }
   };
 
-  const handleStartConversation = async (contactUserId: string) => {
+  const handleSelectConversation = (conversationId: string) => {
+    setSelectedConversationId(conversationId);
+    if (isMobile) {
+      setShowConversationList(false);
+    }
+  };
+
+  const handleBackToConversations = () => {
+    if (isMobile) {
+      setShowConversationList(true);
+      setSelectedConversationId(null);
+    }
+  };
+
+  const handleCreateConversation = async (contactId: string) => {
     try {
-      const conversationId = await createConversation([contactUserId]);
+      const conversationId = await createConversation([contactId]);
       if (conversationId) {
-        const newConversation = conversations.find(c => c.id === conversationId);
-        if (newConversation) {
-          setSelectedConversation(newConversation);
+        setSelectedConversationId(conversationId);
+        setShowContactSearch(false);
+        if (isMobile) {
+          setShowConversationList(false);
         }
       }
-      setShowContacts(false);
     } catch (error) {
       console.error('Error creating conversation:', error);
     }
   };
 
-  const handleVoiceCall = async () => {
-    if (!selectedConversation) return;
-    const otherParticipant = selectedConversation.participants.find(p => p.user_id !== user?.id);
-    if (otherParticipant) {
-      await initiateVoiceCall(otherParticipant.user_id);
-    }
-  };
-
-  const handleVideoCall = async () => {
-    if (!selectedConversation) return;
-    const otherParticipant = selectedConversation.participants.find(p => p.user_id !== user?.id);
-    if (otherParticipant) {
-      await initiateVideoCall(otherParticipant.user_id);
-    }
-  };
-
-  const handleFileShare = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      await shareFile(file);
-    }
-  };
-
-  const handleCreateSecretChat = async () => {
-    if (!selectedConversation) return;
-    const otherParticipant = selectedConversation.participants.find(p => p.user_id !== user?.id);
-    if (otherParticipant) {
-      const secretChatId = await createSecretChat(otherParticipant.user_id);
-      console.log('Secret chat created:', secretChatId);
-    }
-  };
-
-  const formatTime = (date: string) => {
-    return new Date(date).toLocaleTimeString('pl-PL', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: false 
-    });
-  };
-
-  const getConversationName = (conversation: Conversation) => {
-    if (conversation.type === 'group') {
-      return conversation.name || 'Czat grupowy';
-    }
-    
-    const otherParticipant = conversation.participants.find(p => p.user_id !== user?.id);
-    return otherParticipant?.profiles.display_name || 'Nieznany użytkownik';
-  };
-
-  const getConversationAvatar = (conversation: Conversation) => {
-    if (conversation.type === 'group') {
-      return conversation.name?.[0] || 'G';
-    }
-    
-    const otherParticipant = conversation.participants.find(p => p.user_id !== user?.id);
-    return otherParticipant?.profiles.display_name?.[0] || '?';
-  };
-
-  if (showContacts) {
-    return (
-      <div className="flex h-[calc(100vh-80px)] max-w-7xl mx-auto">
-        <Card className="flex-1 glass border-white/20 flex flex-col">
-          <div className="p-4 border-b border-white/10 flex items-center">
-            <Button
-              variant="ghost"
-              onClick={() => setShowContacts(false)}
-              className="text-white hover:bg-white/10 mr-4"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <h2 className="text-xl font-semibold text-white">📱 Kontakty</h2>
-          </div>
-          
-          <div className="p-4">
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-              <Input
-                placeholder="Szukaj kontaktów..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
-              />
-            </div>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto p-4">
-            {contacts.map((contact) => (
-              <div
-                key={contact.id}
-                onClick={() => handleStartConversation(contact.contact_user_id)}
-                className="p-4 hover:bg-white/5 cursor-pointer rounded-lg transition-colors mb-2"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-600 rounded-full flex items-center justify-center">
-                    <span className="text-white font-semibold text-lg">
-                      {contact.profile.display_name[0]}
-                    </span>
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-white">{contact.profile.display_name}</h4>
-                    <p className="text-sm text-gray-400">@{contact.profile.username}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
-    );
-  }
+  const selectedConversation = conversations.find(c => c.id === selectedConversationId);
 
   return (
-    <div className="flex h-[calc(100vh-80px)] max-w-7xl mx-auto gap-4">
-      {/* Conversations Sidebar */}
-      <Card className="w-80 glass border-white/20 flex flex-col">
+    <div className="flex h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
+      {/* Conversations List */}
+      <div className={`${
+        isMobile ? (showConversationList ? 'flex' : 'hidden') : 'flex'
+      } flex-col w-full md:w-80 bg-black/20 backdrop-blur-sm border-r border-white/10`}>
+        
+        {/* Header */}
         <div className="p-4 border-b border-white/10">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-white">💬 Czaty</h2>
-            <div className="flex items-center space-x-2">
+            <h2 className="text-xl font-bold text-white">Czaty</h2>
+            <div className="flex space-x-2">
               <Button
-                variant="ghost"
                 size="sm"
-                className="text-gray-400 hover:text-white"
-                onClick={() => setShowContacts(true)}
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-              <Button
                 variant="ghost"
-                size="sm"
-                className="text-purple-400 hover:text-purple-300"
-                onClick={() => setShowAI(!showAI)}
-                title="AI Assistant"
+                onClick={() => setShowAIAssistant(true)}
+                className="text-white hover:bg-white/10"
+                title="AI Asystent"
               >
                 <Bot className="w-4 h-4" />
               </Button>
-              {user?.email === '97gibek@gmail.com' && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-yellow-400 hover:text-yellow-300"
-                  onClick={() => window.open('/?admin=true', '_blank')}
-                  title="Panel Administracyjny"
-                >
-                  <Settings className="w-4 h-4" />
-                </Button>
-              )}
               <Button
-                variant="ghost"
                 size="sm"
-                className="text-gray-400 hover:text-white"
-                onClick={signOut}
+                variant="ghost"
+                onClick={() => setShowContactSearch(true)}
+                className="text-white hover:bg-white/10"
+                title="Dodaj kontakt"
               >
-                <LogOut className="w-4 h-4" />
+                <Plus className="w-4 h-4" />
               </Button>
             </div>
           </div>
           
           <div className="relative">
-            <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
-              placeholder="Szukaj konwersacji..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Szukaj czatów..."
               className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
             />
           </div>
         </div>
-        
+
+        {/* Conversations */}
         <div className="flex-1 overflow-y-auto">
-          {conversations.map((conversation) => (
-            <div
-              key={conversation.id}
-              onClick={() => setSelectedConversation(conversation)}
-              className={`p-4 border-b border-white/10 cursor-pointer transition-colors ${
-                selectedConversation?.id === conversation.id ? 'bg-white/10' : 'hover:bg-white/5'
-              }`}
-            >
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <span className="text-white font-semibold text-lg">
-                    {getConversationAvatar(conversation)}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-white truncate">
-                    {getConversationName(conversation)}
-                  </h3>
-                  <p className="text-gray-400 text-sm truncate">
-                    {conversation.last_message?.content || 'Brak wiadomości'}
-                  </p>
-                  <p className="text-gray-500 text-xs">
-                    {formatTime(conversation.updated_at)}
-                  </p>
+          {loading ? (
+            <div className="p-4 text-center text-gray-400">Ładowanie...</div>
+          ) : conversations.length === 0 ? (
+            <div className="p-4 text-center text-gray-400">
+              <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p>Brak konwersacji</p>
+              <p className="text-sm">Dodaj kontakt, aby rozpocząć czat</p>
+            </div>
+          ) : (
+            conversations.map((conversation) => (
+              <div
+                key={conversation.id}
+                onClick={() => handleSelectConversation(conversation.id)}
+                className={`p-4 border-b border-white/5 cursor-pointer transition-colors ${
+                  selectedConversationId === conversation.id 
+                    ? 'bg-blue-500/20' 
+                    : 'hover:bg-white/5'
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                    <span className="text-white font-bold">
+                      {conversation.name?.charAt(0).toUpperCase() || 
+                       conversation.participants?.find(p => p.user_id !== user?.id)?.profiles?.display_name?.charAt(0).toUpperCase() || '?'}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-medium text-white truncate">
+                        {conversation.name || 
+                         conversation.participants?.find(p => p.user_id !== user?.id)?.profiles?.display_name || 
+                         'Nieznany użytkownik'}
+                      </h3>
+                      {conversation.last_message && (
+                        <span className="text-xs text-gray-400">
+                          {format(new Date(conversation.last_message.created_at), 'HH:mm', { locale: pl })}
+                        </span>
+                      )}
+                    </div>
+                    {conversation.last_message && (
+                      <p className="text-sm text-gray-400 truncate">
+                        {conversation.last_message.content}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
-      </Card>
+      </div>
 
       {/* Chat Area */}
-      {selectedConversation ? (
-        <div className="flex-1 flex flex-col space-y-4">
-          <Card className="flex-1 glass border-white/20 flex flex-col">
+      <div className={`${
+        isMobile ? (showConversationList ? 'hidden' : 'flex') : 'flex'
+      } flex-1 flex-col`}>
+        
+        {selectedConversation ? (
+          <>
             {/* Chat Header */}
-            <div className="p-4 border-b border-white/10 flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <span className="text-white font-semibold">
-                    {getConversationAvatar(selectedConversation)}
-                  </span>
+            <div className="p-4 bg-black/20 backdrop-blur-sm border-b border-white/10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  {isMobile && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleBackToConversations}
+                      className="text-white hover:bg-white/10 mr-2"
+                    >
+                      ←
+                    </Button>
+                  )}
+                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                    <span className="text-white font-bold">
+                      {selectedConversation.name?.charAt(0).toUpperCase() || 
+                       selectedConversation.participants?.find(p => p.user_id !== user?.id)?.profiles?.display_name?.charAt(0).toUpperCase() || '?'}
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-white">
+                      {selectedConversation.name || 
+                       selectedConversation.participants?.find(p => p.user_id !== user?.id)?.profiles?.display_name || 
+                       'Nieznany użytkownik'}
+                    </h3>
+                    <p className="text-sm text-gray-400">Online</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="font-semibold text-white">
-                    {getConversationName(selectedConversation)}
-                  </h2>
-                  <p className="text-sm text-gray-400">
-                    {selectedConversation.participants.length} uczestników • Online
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <div className="flex items-center space-x-1 text-green-400 bg-green-400/10 px-3 py-1 rounded-full">
-                  <Shield className="w-4 h-4" />
-                  <span className="text-xs font-medium">Quantum E2E</span>
-                </div>
-                
-                {/* Call buttons */}
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="text-gray-400 hover:text-white"
-                  onClick={handleVoiceCall}
-                  title="Połączenie głosowe"
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-white hover:bg-white/10"
                 >
-                  <Phone className="w-4 h-4" />
-                </Button>
-                
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="text-gray-400 hover:text-white"
-                  onClick={handleVideoCall}
-                  title="Połączenie wideo"
-                >
-                  <Video className="w-4 h-4" />
-                </Button>
-                
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="text-gray-400 hover:text-white"
-                  title="Wyślij pieniądze"
-                >
-                  <Wallet className="w-4 h-4" />
-                </Button>
-                
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="text-gray-400 hover:text-white"
-                  onClick={() => setShowChatSettings(!showChatSettings)}
-                >
-                  <MoreVertical className="w-4 h-4" />
+                  <Settings className="w-4 h-4" />
                 </Button>
               </div>
             </div>
-
-            {/* Reply to message bar */}
-            {replyingTo && (
-              <div className="px-4 py-2 bg-white/5 border-b border-white/10">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-1 h-8 bg-blue-500 rounded"></div>
-                    <div>
-                      <p className="text-xs text-gray-400">Odpowiadasz na:</p>
-                      <p className="text-sm text-white truncate max-w-md">{replyingTo.content}</p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setReplyingTo(null)}
-                    className="text-gray-400 hover:text-white"
-                  >
-                    ✕
-                  </Button>
-                </div>
-              </div>
-            )}
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -379,134 +234,81 @@ const RealTimeChatInterface: React.FC = () => {
                   key={message.id}
                   className={`flex ${message.sender_id === user?.id ? 'justify-end' : 'justify-start'}`}
                 >
-                  <div 
-                    className={`max-w-xs lg:max-w-md group ${
-                      message.sender_id === user?.id 
-                        ? 'message-bubble message-sent' 
-                        : 'message-bubble message-received'
+                  <div
+                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                      message.sender_id === user?.id
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-white/10 text-white'
                     }`}
-                    onDoubleClick={() => setReplyingTo(message)}
                   >
-                    {message.sender_id !== user?.id && message.sender && (
-                      <p className="text-xs font-semibold mb-1 opacity-70">
-                        {message.sender.display_name}
-                      </p>
-                    )}
                     <p className="text-sm">{message.content}</p>
-                    <div className="flex items-center justify-between mt-2 text-xs opacity-70">
-                      <span>{formatTime(message.created_at)}</span>
-                      {message.expires_at && (
-                        <div className="flex items-center space-x-1">
-                          <Clock className="w-3 h-3" />
-                          <span>24h</span>
-                        </div>
-                      )}
-                    </div>
+                    <p className="text-xs opacity-70 mt-1">
+                      {format(new Date(message.created_at), 'HH:mm', { locale: pl })}
+                    </p>
                   </div>
                 </div>
               ))}
-              
-              {isTyping && (
-                <div className="flex justify-start">
-                  <div className="message-bubble message-received">
-                    <div className="flex items-center space-x-1">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              <div ref={messagesEndRef} />
             </div>
 
             {/* Message Input */}
-            <div className="p-4 border-t border-white/10">
-              <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
+            <div className="p-4 bg-black/20 backdrop-blur-sm border-t border-white/10">
+              <div className="flex items-center space-x-2">
                 <Button
-                  type="button"
-                  variant="ghost"
                   size="sm"
-                  className="text-gray-400 hover:text-white"
-                >
-                  <Smile className="w-4 h-4" />
-                </Button>
-                
-                <input
-                  type="file"
-                  id="file-upload"
-                  className="hidden"
-                  onChange={handleFileShare}
-                />
-                <Button
-                  type="button"
                   variant="ghost"
-                  size="sm"
-                  className="text-gray-400 hover:text-white"
-                  onClick={() => document.getElementById('file-upload')?.click()}
+                  className="text-white hover:bg-white/10"
                 >
                   <Paperclip className="w-4 h-4" />
                 </Button>
-                
                 <Input
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="💬 Wpisz bezpieczną wiadomość..."
+                  value={messageInput}
+                  onChange={(e) => setMessageInput(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  placeholder="Napisz wiadomość..."
                   className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
                 />
-                
                 <Button
-                  type="button"
-                  variant="ghost"
                   size="sm"
-                  className="text-gray-400 hover:text-white"
+                  variant="ghost"
+                  className="text-white hover:bg-white/10"
                 >
-                  <Mic className="w-4 h-4" />
+                  <Smile className="w-4 h-4" />
                 </Button>
-                
-                <Button 
-                  type="submit" 
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!messageInput.trim()}
+                  className="bg-blue-500 hover:bg-blue-600"
                 >
                   <Send className="w-4 h-4" />
                 </Button>
-              </form>
-              <p className="text-xs text-gray-500 mt-2 text-center">
-                🔒 Wiadomości są szyfrowane kwantowo i automatycznie usuwane po 24 godzinach
-              </p>
+              </div>
             </div>
-          </Card>
-
-          {/* AI Assistant Panel */}
-          {showAI && <AIAssistant />}
-        </div>
-      ) : (
-        <Card className="flex-1 glass border-white/20 flex items-center justify-center">
-          <div className="text-center">
-            <Shield className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-2">🚀 Wybierz konwersację</h3>
-            <p className="text-gray-400 mb-4">Wybierz konwersację aby rozpocząć bezpieczny czat z quantum encryption</p>
-            <div className="flex justify-center space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowContacts(true)}
-                className="bg-blue-900/20 border-blue-500/30 text-blue-300"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                💬 Nowy czat
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setShowAI(!showAI)}
-                className="bg-purple-900/20 border-purple-500/30 text-purple-300"
-              >
-                <Bot className="w-4 h-4 mr-2" />
-                🤖 AI Assistant
-              </Button>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <MessageCircle className="w-16 h-16 mx-auto mb-4 text-gray-400 opacity-50" />
+              <h3 className="text-xl font-medium text-white mb-2">Wybierz czat</h3>
+              <p className="text-gray-400">Wybierz konwersację z listy lub utwórz nową</p>
             </div>
           </div>
-        </Card>
+        )}
+      </div>
+
+      {/* Modals */}
+      {showContactSearch && (
+        <ContactSearch
+          isOpen={showContactSearch}
+          onClose={() => setShowContactSearch(false)}
+          onSelectContact={handleCreateConversation}
+        />
+      )}
+
+      {showAIAssistant && (
+        <AIAssistant
+          isOpen={showAIAssistant}
+          onClose={() => setShowAIAssistant(false)}
+        />
       )}
     </div>
   );
