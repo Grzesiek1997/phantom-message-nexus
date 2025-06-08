@@ -50,48 +50,11 @@ export const useMessages = (conversationId?: string) => {
     try {
       console.log('Fetching conversations for user:', user.id);
 
-      // Get conversations data with RLS policies
-      const { data: conversationsData, error: conversationsError } = await supabase
-        .from('conversations')
-        .select(`
-          *,
-          conversation_participants!inner(
-            user_id,
-            role,
-            profiles!conversation_participants_user_id_fkey(
-              username,
-              display_name
-            )
-          )
-        `)
-        .eq('conversation_participants.user_id', user.id);
-
-      if (conversationsError) {
-        console.error('Error fetching conversations:', conversationsError);
-        setLoading(false);
-        return;
-      }
-
-      console.log('Raw conversations data:', conversationsData);
-
-      if (!conversationsData || conversationsData.length === 0) {
-        setConversations([]);
-        setLoading(false);
-        return;
-      }
-
-      // Get all participants for these conversations
-      const conversationIds = conversationsData.map(c => c.id);
-      const { data: allParticipants, error: participantsError } = await supabase
+      // Get conversations where user participates
+      const { data: userParticipants, error: participantsError } = await supabase
         .from('conversation_participants')
-        .select(`
-          *,
-          profiles!conversation_participants_user_id_fkey(
-            username,
-            display_name
-          )
-        `)
-        .in('conversation_id', conversationIds);
+        .select('conversation_id')
+        .eq('user_id', user.id);
 
       if (participantsError) {
         console.error('Error fetching participants:', participantsError);
@@ -99,23 +62,69 @@ export const useMessages = (conversationId?: string) => {
         return;
       }
 
-      console.log('All participants:', allParticipants);
+      if (!userParticipants || userParticipants.length === 0) {
+        setConversations([]);
+        setLoading(false);
+        return;
+      }
 
-      // Format conversations with all participants
-      const formattedConversations = conversationsData.map(conv => ({
+      const conversationIds = userParticipants.map(p => p.conversation_id);
+
+      // Get conversations data
+      const { data: conversationsData, error: conversationsError } = await supabase
+        .from('conversations')
+        .select('*')
+        .in('id', conversationIds);
+
+      if (conversationsError) {
+        console.error('Error fetching conversations:', conversationsError);
+        setLoading(false);
+        return;
+      }
+
+      // Get all participants for these conversations
+      const { data: allParticipants, error: allParticipantsError } = await supabase
+        .from('conversation_participants')
+        .select('*')
+        .in('conversation_id', conversationIds);
+
+      if (allParticipantsError) {
+        console.error('Error fetching all participants:', allParticipantsError);
+        setLoading(false);
+        return;
+      }
+
+      // Get profiles for all participants
+      const participantUserIds = allParticipants?.map(p => p.user_id) || [];
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('id', participantUserIds);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        setLoading(false);
+        return;
+      }
+
+      // Combine the data
+      const formattedConversations = conversationsData?.map(conv => ({
         ...conv,
         type: conv.type as 'direct' | 'group',
         participants: allParticipants
           ?.filter(p => p.conversation_id === conv.id)
-          .map(p => ({
-            user_id: p.user_id,
-            role: p.role,
-            profiles: {
-              username: p.profiles?.username || 'Unknown',
-              display_name: p.profiles?.display_name || p.profiles?.username || 'Unknown'
-            }
-          })) || []
-      }));
+          .map(p => {
+            const profile = profiles?.find(prof => prof.id === p.user_id);
+            return {
+              user_id: p.user_id,
+              role: p.role,
+              profiles: {
+                username: profile?.username || 'Unknown',
+                display_name: profile?.display_name || profile?.username || 'Unknown'
+              }
+            };
+          }) || []
+      })) || [];
 
       console.log('Formatted conversations:', formattedConversations);
       setConversations(formattedConversations);
@@ -135,13 +144,7 @@ export const useMessages = (conversationId?: string) => {
 
       const { data: messagesData, error: messagesError } = await supabase
         .from('messages')
-        .select(`
-          *,
-          profiles!messages_sender_id_fkey(
-            username,
-            display_name
-          )
-        `)
+        .select('*')
         .eq('conversation_id', convId)
         .order('created_at', { ascending: true });
 
@@ -150,16 +153,29 @@ export const useMessages = (conversationId?: string) => {
         return;
       }
 
-      console.log('Messages data:', messagesData);
+      // Get sender profiles
+      const senderIds = messagesData?.map(msg => msg.sender_id) || [];
+      const { data: senderProfiles, error: senderProfilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('id', senderIds);
 
-      const formattedMessages = messagesData?.map(msg => ({
-        ...msg,
-        message_type: msg.message_type as 'text' | 'file' | 'image',
-        sender: msg.profiles ? {
-          username: msg.profiles.username,
-          display_name: msg.profiles.display_name || msg.profiles.username
-        } : undefined
-      })) || [];
+      if (senderProfilesError) {
+        console.error('Error fetching sender profiles:', senderProfilesError);
+        return;
+      }
+
+      const formattedMessages = messagesData?.map(msg => {
+        const senderProfile = senderProfiles?.find(p => p.id === msg.sender_id);
+        return {
+          ...msg,
+          message_type: msg.message_type as 'text' | 'file' | 'image',
+          sender: senderProfile ? {
+            username: senderProfile.username,
+            display_name: senderProfile.display_name || senderProfile.username
+          } : undefined
+        };
+      }) || [];
 
       setMessages(formattedMessages);
     } catch (error) {
