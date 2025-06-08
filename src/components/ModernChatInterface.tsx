@@ -1,9 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { 
   Send, 
   Paperclip, 
@@ -13,7 +11,12 @@ import {
   Shield, 
   Clock,
   Check,
-  CheckCheck
+  CheckCheck,
+  ArrowLeft,
+  Menu,
+  Plus,
+  Phone,
+  Video
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -38,10 +41,12 @@ interface Chat {
 }
 
 const ModernChatInterface: React.FC = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [chats] = useState<Chat[]>([
     {
       id: '1',
@@ -79,7 +84,6 @@ const ModernChatInterface: React.FC = () => {
   };
 
   const loadMessages = (chatId: string) => {
-    // Symulacja wiadomości
     const mockMessages: Message[] = [
       {
         id: '1',
@@ -119,7 +123,6 @@ const ModernChatInterface: React.FC = () => {
     setMessages(prev => [...prev, message]);
     setNewMessage('');
 
-    // Symulacja wysyłania
     setTimeout(() => {
       setMessages(prev => 
         prev.map(msg => 
@@ -151,43 +154,54 @@ const ModernChatInterface: React.FC = () => {
     }
   };
 
-  return (
-    <div className="h-screen flex bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
-      {/* Sidebar z listą chatów */}
-      <div className="w-80 border-r border-white/20 bg-black/40">
-        <div className="p-4 border-b border-white/20">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-white">Chats</h2>
+  // Mobile: Show chat list when no chat selected, or chat when selected
+  const isMobile = window.innerWidth < 768;
+
+  if (isMobile && !selectedChat) {
+    return (
+      <div className="h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 flex flex-col">
+        {/* Mobile Header */}
+        <div className="flex items-center justify-between p-4 bg-black/40 backdrop-blur-lg border-b border-white/10">
+          <h1 className="text-xl font-bold text-white">SecureChat</h1>
+          <div className="flex items-center space-x-2">
             <Button size="sm" variant="ghost" className="text-white">
-              <Search className="w-4 h-4" />
+              <Search className="w-5 h-5" />
+            </Button>
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="text-white"
+              onClick={signOut}
+            >
+              <MoreVertical className="w-5 h-5" />
             </Button>
           </div>
+        </div>
+
+        {/* Search */}
+        <div className="p-4">
           <Input
             placeholder="Szukaj rozmów..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
           />
         </div>
-        
-        <div className="overflow-y-auto">
+
+        {/* Chat List */}
+        <div className="flex-1 overflow-y-auto">
           {chats.map((chat) => (
             <div
               key={chat.id}
-              onClick={() => {
-                setSelectedChat(chat);
-                loadMessages(chat.id);
-              }}
-              className={`p-4 border-b border-white/10 cursor-pointer transition-colors ${
-                selectedChat?.id === chat.id
-                  ? 'bg-blue-600/30'
-                  : 'hover:bg-white/10'
-              }`}
+              onClick={() => setSelectedChat(chat)}
+              className="p-4 border-b border-white/10 active:bg-white/10 cursor-pointer"
             >
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
                     {chat.name.charAt(0)}
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-white font-medium">{chat.name}</span>
                       {chat.isOnline && (
@@ -204,9 +218,193 @@ const ModernChatInterface: React.FC = () => {
                     {chat.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
                   {chat.unreadCount > 0 && (
-                    <Badge className="bg-blue-600 text-white text-xs mt-1">
+                    <div className="bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center mt-1">
                       {chat.unreadCount}
-                    </Badge>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (isMobile && selectedChat) {
+    return (
+      <div className="h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 flex flex-col">
+        {/* Mobile Chat Header */}
+        <div className="flex items-center justify-between p-4 bg-black/40 backdrop-blur-lg border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-white"
+              onClick={() => setSelectedChat(null)}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+              {selectedChat.name.charAt(0)}
+            </div>
+            <div>
+              <h3 className="text-white font-semibold">{selectedChat.name}</h3>
+              <div className="flex items-center gap-1 text-xs">
+                <Shield className="w-3 h-3 text-green-400" />
+                <span className="text-green-400">Encrypted</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center space-x-1">
+            <Button size="sm" variant="ghost" className="text-white">
+              <Phone className="w-4 h-4" />
+            </Button>
+            <Button size="sm" variant="ghost" className="text-white">
+              <Video className="w-4 h-4" />
+            </Button>
+            <Button size="sm" variant="ghost" className="text-white">
+              <MoreVertical className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className={`flex ${
+                message.sender_id === user?.id ? 'justify-end' : 'justify-start'
+              }`}
+            >
+              <div
+                className={`max-w-[80%] px-4 py-2 rounded-2xl ${
+                  message.sender_id === user?.id
+                    ? 'bg-blue-600 text-white rounded-br-md'
+                    : 'bg-white/10 text-white rounded-bl-md'
+                }`}
+              >
+                <p className="text-sm">{message.content}</p>
+                <div className="flex items-center justify-end gap-1 mt-1">
+                  {message.isEncrypted && (
+                    <Shield className="w-3 h-3 text-green-400" />
+                  )}
+                  <span className="text-xs opacity-70">
+                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                  {message.sender_id === user?.id && getStatusIcon(message.status)}
+                </div>
+              </div>
+            </div>
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Message Input */}
+        <div className="p-4 bg-black/40 backdrop-blur-lg border-t border-white/10">
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="ghost" className="text-white">
+              <Plus className="w-4 h-4" />
+            </Button>
+            <Input
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Wiadomość..."
+              className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-gray-400 rounded-full"
+            />
+            {newMessage.trim() ? (
+              <Button 
+                onClick={sendMessage}
+                size="sm" 
+                className="bg-blue-600 hover:bg-blue-700 text-white rounded-full w-10 h-10 p-0"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            ) : (
+              <Button size="sm" variant="ghost" className="text-white rounded-full w-10 h-10 p-0">
+                <Mic className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop Layout
+  return (
+    <div className="h-screen flex bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
+      {/* Desktop Sidebar */}
+      <div className="w-80 border-r border-white/20 bg-black/40 backdrop-blur-lg flex flex-col">
+        <div className="p-4 border-b border-white/20">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-white">SecureChat</h2>
+            <div className="flex items-center space-x-2">
+              <Button size="sm" variant="ghost" className="text-white">
+                <Search className="w-4 h-4" />
+              </Button>
+              <Button size="sm" variant="ghost" className="text-white">
+                <Plus className="w-4 h-4" />
+              </Button>
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                className="text-white"
+                onClick={signOut}
+              >
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+          <Input
+            placeholder="Szukaj rozmów..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+          />
+        </div>
+        
+        <div className="flex-1 overflow-y-auto">
+          {chats.map((chat) => (
+            <div
+              key={chat.id}
+              onClick={() => {
+                setSelectedChat(chat);
+                loadMessages(chat.id);
+              }}
+              className={`p-4 border-b border-white/10 cursor-pointer transition-colors ${
+                selectedChat?.id === chat.id
+                  ? 'bg-blue-600/30'
+                  : 'hover:bg-white/10'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+                    {chat.name.charAt(0)}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-white font-medium">{chat.name}</span>
+                      {chat.isOnline && (
+                        <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                      )}
+                    </div>
+                    <div className="text-sm text-gray-400 truncate">
+                      {chat.lastMessage}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs text-gray-400">
+                    {chat.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                  {chat.unreadCount > 0 && (
+                    <div className="bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center mt-1">
+                      {chat.unreadCount}
+                    </div>
                   )}
                 </div>
               </div>
@@ -215,12 +413,12 @@ const ModernChatInterface: React.FC = () => {
         </div>
       </div>
 
-      {/* Główny obszar chatu */}
+      {/* Desktop Main Chat Area */}
       <div className="flex-1 flex flex-col">
         {selectedChat ? (
           <>
-            {/* Header chatu */}
-            <div className="p-4 border-b border-white/20 bg-black/40">
+            {/* Desktop Chat Header */}
+            <div className="p-4 border-b border-white/20 bg-black/40 backdrop-blur-lg">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
@@ -235,17 +433,25 @@ const ModernChatInterface: React.FC = () => {
                         <span className="text-gray-400">Last seen recently</span>
                       )}
                       <Shield className="w-4 h-4 text-green-400" />
-                      <span className="text-green-400">Encrypted</span>
+                      <span className="text-green-400">End-to-end encrypted</span>
                     </div>
                   </div>
                 </div>
-                <Button size="sm" variant="ghost" className="text-white">
-                  <MoreVertical className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center space-x-2">
+                  <Button size="sm" variant="ghost" className="text-white">
+                    <Phone className="w-4 h-4" />
+                  </Button>
+                  <Button size="sm" variant="ghost" className="text-white">
+                    <Video className="w-4 h-4" />
+                  </Button>
+                  <Button size="sm" variant="ghost" className="text-white">
+                    <MoreVertical className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </div>
 
-            {/* Obszar wiadomości */}
+            {/* Desktop Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {messages.map((message) => (
                 <div
@@ -255,10 +461,10 @@ const ModernChatInterface: React.FC = () => {
                   }`}
                 >
                   <div
-                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                    className={`max-w-md px-4 py-2 rounded-2xl ${
                       message.sender_id === user?.id
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white/10 text-white'
+                        ? 'bg-blue-600 text-white rounded-br-md'
+                        : 'bg-white/10 text-white rounded-bl-md'
                     }`}
                   >
                     <p className="text-sm">{message.content}</p>
@@ -277,8 +483,8 @@ const ModernChatInterface: React.FC = () => {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input do wysyłania wiadomości */}
-            <div className="p-4 border-t border-white/20 bg-black/40">
+            {/* Desktop Message Input */}
+            <div className="p-4 border-t border-white/20 bg-black/40 backdrop-blur-lg">
               <div className="flex items-center gap-2">
                 <Button size="sm" variant="ghost" className="text-white">
                   <Paperclip className="w-4 h-4" />
