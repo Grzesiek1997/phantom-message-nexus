@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, Settings, MessageCircle, Users, Bot, Send, Paperclip, Smile } from 'lucide-react';
+import { Search, Plus, Settings, MessageCircle, Users, Bot, Send, Paperclip, Smile, ArrowLeft } from 'lucide-react';
 import { useMessages } from '@/hooks/useMessages';
 import { useContacts } from '@/hooks/useContacts';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,14 +11,18 @@ import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import ContactSearch from './ContactSearch';
 import AIAssistant from './AIAssistant';
+import GroupManagement from './GroupManagement';
+import MessageBubble from './MessageBubble';
 
 const RealTimeChatInterface: React.FC = () => {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState('');
   const [showContactSearch, setShowContactSearch] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
+  const [showGroupManagement, setShowGroupManagement] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showConversationList, setShowConversationList] = useState(true);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
 
   const { user } = useAuth();
   const { messages, conversations, loading, sendMessage, createConversation } = useMessages(selectedConversationId || undefined);
@@ -42,7 +46,16 @@ const RealTimeChatInterface: React.FC = () => {
     if (!messageInput.trim() || !selectedConversationId) return;
 
     try {
-      await sendMessage(messageInput, selectedConversationId, 24);
+      let finalMessage = messageInput;
+      if (replyingTo) {
+        const repliedMessage = messages.find(m => m.id === replyingTo);
+        if (repliedMessage) {
+          finalMessage = `↩️ Odpowiedź na: "${repliedMessage.content.substring(0, 50)}..."\n\n${messageInput}`;
+        }
+        setReplyingTo(null);
+      }
+
+      await sendMessage(finalMessage, selectedConversationId, 24);
       setMessageInput('');
     } catch (error) {
       console.error('Error sending message:', error);
@@ -83,6 +96,37 @@ const RealTimeChatInterface: React.FC = () => {
     }
   };
 
+  const handleCreateGroup = async (groupName: string, participantIds: string[]) => {
+    try {
+      const conversationId = await createConversation(participantIds, 'group', groupName);
+      if (conversationId) {
+        setSelectedConversationId(conversationId);
+        setShowGroupManagement(false);
+        if (isMobile) {
+          setShowConversationList(false);
+        }
+        toast({
+          title: 'Grupa utworzona',
+          description: `Grupa "${groupName}" została pomyślnie utworzona`,
+        });
+      }
+    } catch (error) {
+      console.error('Error creating group:', error);
+    }
+  };
+
+  const handleReply = (messageId: string) => {
+    setReplyingTo(messageId);
+  };
+
+  const handleReact = (messageId: string, emoji: string) => {
+    // TODO: Implement message reactions
+    toast({
+      title: 'Reakcja dodana',
+      description: `Dodano reakcję ${emoji}`,
+    });
+  };
+
   const selectedConversation = conversations.find(c => c.id === selectedConversationId);
 
   return (
@@ -105,6 +149,15 @@ const RealTimeChatInterface: React.FC = () => {
                 title="AI Asystent"
               >
                 <Bot className="w-4 h-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setShowGroupManagement(true)}
+                className="text-white hover:bg-white/10"
+                title="Utwórz grupę"
+              >
+                <Users className="w-4 h-4" />
               </Button>
               <Button
                 size="sm"
@@ -150,10 +203,14 @@ const RealTimeChatInterface: React.FC = () => {
               >
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                    <span className="text-white font-bold">
-                      {conversation.name?.charAt(0).toUpperCase() || 
-                       conversation.participants?.find(p => p.user_id !== user?.id)?.profiles?.display_name?.charAt(0).toUpperCase() || '?'}
-                    </span>
+                    {conversation.type === 'group' ? (
+                      <Users className="w-6 h-6 text-white" />
+                    ) : (
+                      <span className="text-white font-bold">
+                        {conversation.name?.charAt(0).toUpperCase() || 
+                         conversation.participants?.find(p => p.user_id !== user?.id)?.profiles?.display_name?.charAt(0).toUpperCase() || '?'}
+                      </span>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
@@ -199,14 +256,18 @@ const RealTimeChatInterface: React.FC = () => {
                       onClick={handleBackToConversations}
                       className="text-white hover:bg-white/10 mr-2"
                     >
-                      ←
+                      <ArrowLeft className="w-4 h-4" />
                     </Button>
                   )}
                   <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                    <span className="text-white font-bold">
-                      {selectedConversation.name?.charAt(0).toUpperCase() || 
-                       selectedConversation.participants?.find(p => p.user_id !== user?.id)?.profiles?.display_name?.charAt(0).toUpperCase() || '?'}
-                    </span>
+                    {selectedConversation.type === 'group' ? (
+                      <Users className="w-5 h-5 text-white" />
+                    ) : (
+                      <span className="text-white font-bold">
+                        {selectedConversation.name?.charAt(0).toUpperCase() || 
+                         selectedConversation.participants?.find(p => p.user_id !== user?.id)?.profiles?.display_name?.charAt(0).toUpperCase() || '?'}
+                      </span>
+                    )}
                   </div>
                   <div>
                     <h3 className="font-medium text-white">
@@ -214,7 +275,12 @@ const RealTimeChatInterface: React.FC = () => {
                        selectedConversation.participants?.find(p => p.user_id !== user?.id)?.profiles?.display_name || 
                        'Nieznany użytkownik'}
                     </h3>
-                    <p className="text-sm text-gray-400">Online</p>
+                    <p className="text-sm text-gray-400">
+                      {selectedConversation.type === 'group' 
+                        ? `${selectedConversation.participants?.length || 0} członków`
+                        : 'Online'
+                      }
+                    </p>
                   </div>
                 </div>
                 <Button
@@ -230,25 +296,37 @@ const RealTimeChatInterface: React.FC = () => {
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {messages.map((message) => (
-                <div
+                <MessageBubble
                   key={message.id}
-                  className={`flex ${message.sender_id === user?.id ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                      message.sender_id === user?.id
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-white/10 text-white'
-                    }`}
-                  >
-                    <p className="text-sm">{message.content}</p>
-                    <p className="text-xs opacity-70 mt-1">
-                      {format(new Date(message.created_at), 'HH:mm', { locale: pl })}
-                    </p>
-                  </div>
-                </div>
+                  message={message}
+                  currentUserId={user?.id || ''}
+                  onReply={handleReply}
+                  onReact={handleReact}
+                />
               ))}
             </div>
+
+            {/* Reply Preview */}
+            {replyingTo && (
+              <div className="px-4 py-2 bg-gray-800/50 border-t border-white/10">
+                <div className="flex items-center justify-between bg-gray-700/50 rounded p-2">
+                  <div className="flex-1">
+                    <p className="text-xs text-gray-400">Odpowiadasz na:</p>
+                    <p className="text-sm text-white truncate">
+                      {messages.find(m => m.id === replyingTo)?.content}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setReplyingTo(null)}
+                    className="text-gray-400 hover:text-white"
+                  >
+                    ✕
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* Message Input */}
             <div className="p-4 bg-black/20 backdrop-blur-sm border-t border-white/10">
@@ -308,6 +386,15 @@ const RealTimeChatInterface: React.FC = () => {
         <AIAssistant
           isOpen={showAIAssistant}
           onClose={() => setShowAIAssistant(false)}
+        />
+      )}
+
+      {showGroupManagement && (
+        <GroupManagement
+          isOpen={showGroupManagement}
+          onClose={() => setShowGroupManagement(false)}
+          onCreateGroup={handleCreateGroup}
+          contacts={contacts}
         />
       )}
     </div>

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Bot, Send, X, Sparkles } from 'lucide-react';
+import { Bot, Send, X, Sparkles, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface AIAssistantProps {
@@ -22,18 +22,73 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose }) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      content: '👋 Cześć! Jestem AI Asystentem SecureChat. Mogę pomóc Ci z:\n\n🔒 Bezpieczeństwem i prywatnością\n💬 Zarządzaniem czatami\n⚙️ Ustawieniami aplikacji\n🤔 Odpowiedzieć na pytania\n\nW czym mogę pomóc?',
+      content: `👋 Cześć! Jestem AI Asystentem SecureChat.
+
+🔧 **Aby mnie uruchomić, potrzebujesz klucza API Gemini:**
+
+1. Przejdź do: https://makersuite.google.com/app/apikey
+2. Zaloguj się kontem Google
+3. Kliknij "Create API Key"
+4. Skopiuj wygenerowany klucz
+5. Wklej go poniżej i naciśnij "Zapisz"
+
+Po skonfigurowaniu będę mógł Ci pomóc z:
+🔒 Bezpieczeństwem i prywatnością
+💬 Zarządzaniem czatami  
+⚙️ Ustawieniami aplikacji
+🤔 Odpowiedziami na pytania`,
       isUser: false,
       timestamp: new Date()
     }
   ]);
   const [inputMessage, setInputMessage] = useState('');
+  const [apiKey, setApiKey] = useState('');
+  const [isConfigured, setIsConfigured] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
 
   const { toast } = useToast();
 
+  const handleSaveApiKey = () => {
+    if (!apiKey.trim()) {
+      toast({
+        title: 'Błąd',
+        description: 'Wprowadź klucz API',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Save API key to localStorage for this user
+    localStorage.setItem('gemini_api_key', apiKey.trim());
+    setIsConfigured(true);
+    
+    const configMessage: Message = {
+      id: Date.now().toString(),
+      content: '✅ Klucz API został zapisany! Teraz jestem gotowy do pomocy. W czym mogę Ci pomóc?',
+      isUser: false,
+      timestamp: new Date()
+    };
+    
+    setMessages(prev => [...prev, configMessage]);
+    setApiKey('');
+    
+    toast({
+      title: 'Sukces',
+      description: 'AI Asystent został skonfigurowany',
+    });
+  };
+
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
+
+    if (!isConfigured) {
+      toast({
+        title: 'Błąd',
+        description: 'Najpierw skonfiguruj klucz API Gemini',
+        variant: 'destructive'
+      });
+      return;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -46,7 +101,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose }) => {
     setInputMessage('');
     setIsTyping(true);
 
-    // Simulate AI response
+    // Simulate AI response (replace with actual Gemini API call)
     setTimeout(() => {
       const responses = [
         'Dziękuję za pytanie! SecureChat używa zaawansowanego szyfrowania kwantowego end-to-end, co oznacza, że tylko Ty i odbiorca możecie odczytać wiadomości.',
@@ -70,6 +125,14 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose }) => {
     }, 1500);
   };
 
+  React.useEffect(() => {
+    // Check if API key is already saved
+    const savedApiKey = localStorage.getItem('gemini_api_key');
+    if (savedApiKey) {
+      setIsConfigured(true);
+    }
+  }, []);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-lg h-[600px] flex flex-col">
@@ -92,6 +155,39 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose }) => {
             </Button>
           </div>
         </DialogHeader>
+
+        {!isConfigured && (
+          <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4 mb-4">
+            <h3 className="text-blue-300 font-semibold mb-2">🔧 Konfiguracja API</h3>
+            <p className="text-sm text-gray-300 mb-3">
+              Wprowadź swój klucz API Gemini:
+            </p>
+            <div className="flex space-x-2 mb-2">
+              <Input
+                type="password"
+                placeholder="Wklej klucz API Gemini..."
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                className="flex-1 bg-gray-800 border-gray-600 text-white"
+              />
+              <Button
+                onClick={handleSaveApiKey}
+                className="bg-blue-500 hover:bg-blue-600"
+              >
+                Zapisz
+              </Button>
+            </div>
+            <a
+              href="https://makersuite.google.com/app/apikey"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:text-blue-300 text-sm flex items-center"
+            >
+              <ExternalLink className="w-3 h-3 mr-1" />
+              Pobierz klucz API Gemini
+            </a>
+          </div>
+        )}
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-800/50 rounded-lg">
@@ -134,13 +230,13 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose }) => {
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-            placeholder="Zadaj pytanie AI Asystentowi..."
+            placeholder={isConfigured ? "Zadaj pytanie AI Asystentowi..." : "Najpierw skonfiguruj klucz API"}
             className="flex-1 bg-gray-800 border-gray-600 text-white"
-            disabled={isTyping}
+            disabled={isTyping || !isConfigured}
           />
           <Button
             onClick={handleSendMessage}
-            disabled={!inputMessage.trim() || isTyping}
+            disabled={!inputMessage.trim() || isTyping || !isConfigured}
             className="bg-purple-500 hover:bg-purple-600"
           >
             <Send className="w-4 h-4" />
