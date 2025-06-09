@@ -254,6 +254,16 @@ export type Database = {
         Args: { check_user_id: string }
         Returns: boolean
       }
+      login_user: {
+        Args: { login_or_email: string; password: string }
+        Returns: undefined
+      }
+      register_user: {
+        Args:
+          | Record<PropertyKey, never>
+          | { username: string; password: string; display_name?: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
