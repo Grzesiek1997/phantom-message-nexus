@@ -1,18 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Search, Plus, Settings, MessageCircle, Users, Bot, Send, Paperclip, Smile, ArrowLeft } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 import { useMessages } from '@/hooks/useMessages';
 import { useContacts } from '@/hooks/useContacts';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import ContactSearch from './ContactSearch';
 import AIAssistant from './AIAssistant';
 import GroupManagement from './GroupManagement';
 import MessageBubble from './MessageBubble';
+import ConversationList from './ConversationList';
+import ChatHeader from './ChatHeader';
+import MessageInput from './MessageInput';
 
 const RealTimeChatInterface: React.FC = () => {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
@@ -128,115 +127,22 @@ const RealTimeChatInterface: React.FC = () => {
   };
 
   const selectedConversation = conversations.find(c => c.id === selectedConversationId);
+  const replyingToMessage = messages.find(m => m.id === replyingTo);
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
       {/* Conversations List */}
-      <div className={`${
-        isMobile ? (showConversationList ? 'flex' : 'hidden') : 'flex'
-      } flex-col w-full md:w-80 bg-black/20 backdrop-blur-sm border-r border-white/10`}>
-        
-        {/* Header */}
-        <div className="p-4 border-b border-white/10">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-white">Czaty</h2>
-            <div className="flex space-x-2">
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setShowAIAssistant(true)}
-                className="text-white hover:bg-white/10"
-                title="AI Asystent"
-              >
-                <Bot className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setShowGroupManagement(true)}
-                className="text-white hover:bg-white/10"
-                title="Utwórz grupę"
-              >
-                <Users className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setShowContactSearch(true)}
-                className="text-white hover:bg-white/10"
-                title="Dodaj kontakt"
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-          
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input
-              placeholder="Szukaj czatów..."
-              className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
-            />
-          </div>
-        </div>
-
-        {/* Conversations */}
-        <div className="flex-1 overflow-y-auto">
-          {loading ? (
-            <div className="p-4 text-center text-gray-400">Ładowanie...</div>
-          ) : conversations.length === 0 ? (
-            <div className="p-4 text-center text-gray-400">
-              <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
-              <p>Brak konwersacji</p>
-              <p className="text-sm">Dodaj kontakt, aby rozpocząć czat</p>
-            </div>
-          ) : (
-            conversations.map((conversation) => (
-              <div
-                key={conversation.id}
-                onClick={() => handleSelectConversation(conversation.id)}
-                className={`p-4 border-b border-white/5 cursor-pointer transition-colors ${
-                  selectedConversationId === conversation.id 
-                    ? 'bg-blue-500/20' 
-                    : 'hover:bg-white/5'
-                }`}
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                    {conversation.type === 'group' ? (
-                      <Users className="w-6 h-6 text-white" />
-                    ) : (
-                      <span className="text-white font-bold">
-                        {conversation.name?.charAt(0).toUpperCase() || 
-                         conversation.participants?.find(p => p.user_id !== user?.id)?.profiles?.display_name?.charAt(0).toUpperCase() || '?'}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-medium text-white truncate">
-                        {conversation.name || 
-                         conversation.participants?.find(p => p.user_id !== user?.id)?.profiles?.display_name || 
-                         'Nieznany użytkownik'}
-                      </h3>
-                      {conversation.last_message && (
-                        <span className="text-xs text-gray-400">
-                          {format(new Date(conversation.last_message.created_at), 'HH:mm', { locale: pl })}
-                        </span>
-                      )}
-                    </div>
-                    {conversation.last_message && (
-                      <p className="text-sm text-gray-400 truncate">
-                        {conversation.last_message.content}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+      <ConversationList
+        conversations={conversations}
+        selectedConversationId={selectedConversationId}
+        currentUserId={user?.id || ''}
+        loading={loading}
+        isVisible={isMobile ? showConversationList : true}
+        onSelectConversation={handleSelectConversation}
+        onShowContactSearch={() => setShowContactSearch(true)}
+        onShowAIAssistant={() => setShowAIAssistant(true)}
+        onShowGroupManagement={() => setShowGroupManagement(true)}
+      />
 
       {/* Chat Area */}
       <div className={`${
@@ -246,52 +152,12 @@ const RealTimeChatInterface: React.FC = () => {
         {selectedConversation ? (
           <>
             {/* Chat Header */}
-            <div className="p-4 bg-black/20 backdrop-blur-sm border-b border-white/10">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  {isMobile && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={handleBackToConversations}
-                      className="text-white hover:bg-white/10 mr-2"
-                    >
-                      <ArrowLeft className="w-4 h-4" />
-                    </Button>
-                  )}
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                    {selectedConversation.type === 'group' ? (
-                      <Users className="w-5 h-5 text-white" />
-                    ) : (
-                      <span className="text-white font-bold">
-                        {selectedConversation.name?.charAt(0).toUpperCase() || 
-                         selectedConversation.participants?.find(p => p.user_id !== user?.id)?.profiles?.display_name?.charAt(0).toUpperCase() || '?'}
-                      </span>
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-white">
-                      {selectedConversation.name || 
-                       selectedConversation.participants?.find(p => p.user_id !== user?.id)?.profiles?.display_name || 
-                       'Nieznany użytkownik'}
-                    </h3>
-                    <p className="text-sm text-gray-400">
-                      {selectedConversation.type === 'group' 
-                        ? `${selectedConversation.participants?.length || 0} członków`
-                        : 'Online'
-                      }
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-white hover:bg-white/10"
-                >
-                  <Settings className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
+            <ChatHeader
+              conversation={selectedConversation}
+              currentUserId={user?.id || ''}
+              showBackButton={isMobile}
+              onBack={handleBackToConversations}
+            />
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -306,61 +172,15 @@ const RealTimeChatInterface: React.FC = () => {
               ))}
             </div>
 
-            {/* Reply Preview */}
-            {replyingTo && (
-              <div className="px-4 py-2 bg-gray-800/50 border-t border-white/10">
-                <div className="flex items-center justify-between bg-gray-700/50 rounded p-2">
-                  <div className="flex-1">
-                    <p className="text-xs text-gray-400">Odpowiadasz na:</p>
-                    <p className="text-sm text-white truncate">
-                      {messages.find(m => m.id === replyingTo)?.content}
-                    </p>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setReplyingTo(null)}
-                    className="text-gray-400 hover:text-white"
-                  >
-                    ✕
-                  </Button>
-                </div>
-              </div>
-            )}
-
             {/* Message Input */}
-            <div className="p-4 bg-black/20 backdrop-blur-sm border-t border-white/10">
-              <div className="flex items-center space-x-2">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-white hover:bg-white/10"
-                >
-                  <Paperclip className="w-4 h-4" />
-                </Button>
-                <Input
-                  value={messageInput}
-                  onChange={(e) => setMessageInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                  placeholder="Napisz wiadomość..."
-                  className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
-                />
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-white hover:bg-white/10"
-                >
-                  <Smile className="w-4 h-4" />
-                </Button>
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={!messageInput.trim()}
-                  className="bg-blue-500 hover:bg-blue-600"
-                >
-                  <Send className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
+            <MessageInput
+              messageInput={messageInput}
+              replyingTo={replyingTo}
+              replyingToMessage={replyingToMessage}
+              onMessageChange={setMessageInput}
+              onSendMessage={handleSendMessage}
+              onCancelReply={() => setReplyingTo(null)}
+            />
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center">
