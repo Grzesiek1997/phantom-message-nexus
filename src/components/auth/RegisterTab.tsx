@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Fingerprint } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useBiometric } from '@/hooks/useBiometric';
 
 interface RegisterTabProps {
   onClose: () => void;
@@ -18,11 +20,13 @@ const RegisterTab: React.FC<RegisterTabProps> = ({ onClose }) => {
     confirmPassword: '',
     username: '',
     agreeTerms: false,
-    agreePrivacy: false
+    agreePrivacy: false,
+    enableBiometric: false
   });
   const [loading, setLoading] = useState(false);
   
   const { signUp } = useAuth();
+  const { setupBiometric, isSupported } = useBiometric();
   const { toast } = useToast();
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -50,6 +54,23 @@ const RegisterTab: React.FC<RegisterTabProps> = ({ onClose }) => {
     
     try {
       await signUp(registerData.email, registerData.password, registerData.username);
+      
+      if (registerData.enableBiometric && isSupported) {
+        try {
+          await setupBiometric(registerData.username);
+          toast({
+            title: 'Sukces',
+            description: 'Konto utworzone z logowaniem biometrycznym',
+          });
+        } catch (error) {
+          toast({
+            title: 'Ostrzeżenie',
+            description: 'Konto utworzone, ale nie udało się skonfigurować biometrii',
+            variant: 'destructive'
+          });
+        }
+      }
+      
       onClose();
     } catch (error) {
       console.error('Register error:', error);
@@ -130,6 +151,20 @@ const RegisterTab: React.FC<RegisterTabProps> = ({ onClose }) => {
             Akceptuję <span className="text-blue-400">Politykę Prywatności</span>
           </Label>
         </div>
+
+        {isSupported && (
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="biometric"
+              checked={registerData.enableBiometric}
+              onCheckedChange={(checked) => setRegisterData({...registerData, enableBiometric: checked as boolean})}
+            />
+            <Label htmlFor="biometric" className="text-sm text-gray-300 flex items-center">
+              <Fingerprint className="w-4 h-4 mr-1" />
+              Włącz logowanie biometryczne
+            </Label>
+          </div>
+        )}
       </div>
 
       <Button 

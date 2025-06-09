@@ -7,6 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Eye, EyeOff, Fingerprint } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useBiometric } from '@/hooks/useBiometric';
 
 interface LoginTabProps {
   onClose: () => void;
@@ -21,7 +22,8 @@ const LoginTab: React.FC<LoginTabProps> = ({ onClose }) => {
   });
   const [loading, setLoading] = useState(false);
   
-  const { signIn } = useAuth();
+  const { signIn, signInWithUsername } = useAuth();
+  const { authenticateWithBiometric, isSupported } = useBiometric();
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -29,18 +31,14 @@ const LoginTab: React.FC<LoginTabProps> = ({ onClose }) => {
     setLoading(true);
     
     try {
-      let email = loginData.emailOrUsername;
-      if (!email.includes('@')) {
-        toast({
-          title: 'Błąd logowania',
-          description: 'Wprowadź adres email zamiast nazwy użytkownika',
-          variant: 'destructive'
-        });
-        setLoading(false);
-        return;
-      }
+      const { emailOrUsername, password } = loginData;
       
-      await signIn(email, loginData.password);
+      // Check if input contains @ symbol to determine if it's email or username
+      if (emailOrUsername.includes('@')) {
+        await signIn(emailOrUsername, password);
+      } else {
+        await signInWithUsername(emailOrUsername, password);
+      }
       onClose();
     } catch (error) {
       console.error('Login error:', error);
@@ -49,13 +47,24 @@ const LoginTab: React.FC<LoginTabProps> = ({ onClose }) => {
     }
   };
 
+  const handleBiometricLogin = async () => {
+    try {
+      const success = await authenticateWithBiometric();
+      if (success) {
+        onClose();
+      }
+    } catch (error) {
+      console.error('Biometric authentication error:', error);
+    }
+  };
+
   return (
     <form onSubmit={handleLogin} className="space-y-4">
       <div className="space-y-2">
-        <Label className="text-white">Email</Label>
+        <Label className="text-white">Email lub nazwa użytkownika</Label>
         <Input
-          type="email"
-          placeholder="twoj@email.com"
+          type="text"
+          placeholder="twoj@email.com lub nazwa_uzytkownika"
           value={loginData.emailOrUsername}
           onChange={(e) => setLoginData({...loginData, emailOrUsername: e.target.value})}
           className="bg-gray-800 border-gray-600 text-white"
@@ -103,16 +112,19 @@ const LoginTab: React.FC<LoginTabProps> = ({ onClose }) => {
         {loading ? 'Logowanie...' : 'Zaloguj się'}
       </Button>
 
-      <div className="space-y-2">
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full bg-green-600/20 border-green-500/30 text-green-300 hover:bg-green-600/30"
-        >
-          <Fingerprint className="w-4 h-4 mr-2" />
-          Logowanie biometryczne
-        </Button>
-      </div>
+      {isSupported && (
+        <div className="space-y-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full bg-green-600/20 border-green-500/30 text-green-300 hover:bg-green-600/30"
+            onClick={handleBiometricLogin}
+          >
+            <Fingerprint className="w-4 h-4 mr-2" />
+            Logowanie biometryczne
+          </Button>
+        </div>
+      )}
     </form>
   );
 };

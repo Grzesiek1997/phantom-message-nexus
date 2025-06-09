@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, UserPlus, X } from 'lucide-react';
+import { Search, UserPlus, X, Check, UserX } from 'lucide-react';
 import { useContacts } from '@/hooks/useContacts';
 import { useToast } from '@/hooks/use-toast';
 
@@ -17,7 +18,7 @@ const ContactSearch: React.FC<ContactSearchProps> = ({ isOpen, onClose, onSelect
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
   
-  const { contacts, searchUsers, addContact } = useContacts();
+  const { contacts, pendingRequests, searchUsers, addContact, acceptContact, rejectContact } = useContacts();
   const { toast } = useToast();
 
   const handleSearch = async () => {
@@ -42,10 +43,8 @@ const ContactSearch: React.FC<ContactSearchProps> = ({ isOpen, onClose, onSelect
   const handleAddContact = async (userId: string) => {
     try {
       await addContact(userId);
-      toast({
-        title: 'Zaproszenie wysłane',
-        description: 'Zaproszenie do kontaktów zostało wysłane'
-      });
+      // Remove from search results after adding
+      setSearchResults(prev => prev.filter(user => user.id !== userId));
     } catch (error) {
       console.error('Add contact error:', error);
     }
@@ -56,9 +55,25 @@ const ContactSearch: React.FC<ContactSearchProps> = ({ isOpen, onClose, onSelect
     onClose();
   };
 
+  const handleAcceptContact = async (contactId: string) => {
+    try {
+      await acceptContact(contactId);
+    } catch (error) {
+      console.error('Accept contact error:', error);
+    }
+  };
+
+  const handleRejectContact = async (contactId: string) => {
+    try {
+      await rejectContact(contactId);
+    } catch (error) {
+      console.error('Reject contact error:', error);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-md">
+      <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-md max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl font-bold">Kontakty</DialogTitle>
@@ -125,6 +140,49 @@ const ContactSearch: React.FC<ContactSearchProps> = ({ isOpen, onClose, onSelect
                     >
                       <UserPlus className="w-4 h-4" />
                     </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Pending Requests */}
+          {pendingRequests.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium text-gray-300">Oczekujące zaproszenia:</h3>
+              <div className="max-h-40 overflow-y-auto space-y-1">
+                {pendingRequests.map((request) => (
+                  <div
+                    key={request.id}
+                    className="flex items-center justify-between p-2 bg-gray-800 rounded-lg"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center">
+                        <span className="text-white text-sm font-bold">
+                          {request.profile.display_name?.charAt(0).toUpperCase() || '?'}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-white">{request.profile.display_name}</p>
+                        <p className="text-xs text-gray-400">@{request.profile.username}</p>
+                      </div>
+                    </div>
+                    <div className="flex space-x-1">
+                      <Button
+                        size="sm"
+                        onClick={() => handleAcceptContact(request.id)}
+                        className="bg-green-500 hover:bg-green-600"
+                      >
+                        <Check className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleRejectContact(request.id)}
+                        className="bg-red-500 hover:bg-red-600"
+                      >
+                        <UserX className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>

@@ -10,6 +10,7 @@ interface AuthContextType {
   loading: boolean;
   signUp: (email: string, password: string, username: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithUsername: (username: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -98,6 +99,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const signInWithUsername = async (username: string, password: string) => {
+    try {
+      // First, get the email associated with this username
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', username)
+        .single();
+
+      if (profileError || !profile) {
+        toast({
+          title: 'Błąd logowania',
+          description: 'Nie znaleziono użytkownika o podanej nazwie',
+          variant: 'destructive'
+        });
+        throw new Error('User not found');
+      }
+
+      // Get user email from auth.users using the profile id
+      const { data: { user }, error: userError } = await supabase.auth.admin.getUserById(profile.id);
+      
+      if (userError || !user?.email) {
+        toast({
+          title: 'Błąd logowania',
+          description: 'Nie udało się pobrać danych użytkownika',
+          variant: 'destructive'
+        });
+        throw userError;
+      }
+
+      // Now sign in with email and password
+      await signIn(user.email, password);
+    } catch (error) {
+      console.error('Username login error:', error);
+      // For security reasons, we'll use a generic error message
+      toast({
+        title: 'Błąd logowania',
+        description: 'Nieprawidłowa nazwa użytkownika lub hasło',
+        variant: 'destructive'
+      });
+      throw error;
+    }
+  };
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -116,6 +161,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     loading,
     signUp,
     signIn,
+    signInWithUsername,
     signOut
   };
 
