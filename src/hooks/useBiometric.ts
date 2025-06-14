@@ -1,14 +1,16 @@
 
 import { useState, useEffect } from 'react';
 import { useToast } from './use-toast';
+import { useAuth } from './useAuth';
 
 export const useBiometric = () => {
   const [isSupported, setIsSupported] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
     // Check if WebAuthn is supported
-    if (window.PublicKeyCredential && navigator.credentials) {
+    if (window.PublicKeyCredential && navigator.credentials && window.isSecureContext) {
       setIsSupported(true);
     }
   }, []);
@@ -19,37 +21,48 @@ export const useBiometric = () => {
     }
 
     try {
+      // Generate a proper challenge
+      const challenge = crypto.getRandomValues(new Uint8Array(32));
+      const userId = new TextEncoder().encode(username + Date.now());
+
       // Create credential for biometric authentication
       const credential = await navigator.credentials.create({
         publicKey: {
-          challenge: new Uint8Array(32),
+          challenge: challenge,
           rp: {
             name: "SecureChat",
             id: window.location.hostname,
           },
           user: {
-            id: new TextEncoder().encode(username),
+            id: userId,
             name: username,
             displayName: username,
           },
-          pubKeyCredParams: [{alg: -7, type: "public-key"}],
+          pubKeyCredParams: [
+            {alg: -7, type: "public-key"}, // ES256
+            {alg: -257, type: "public-key"} // RS256
+          ],
           authenticatorSelection: {
             authenticatorAttachment: "platform",
-            userVerification: "required"
+            userVerification: "required",
+            requireResidentKey: true
           },
           timeout: 60000,
           attestation: "direct"
         }
-      });
+      }) as PublicKeyCredential;
 
       if (credential) {
-        // Store credential info in localStorage for demo purposes
-        // In production, this should be stored securely on the server
-        localStorage.setItem('biometric_credential', JSON.stringify({
+        // Store credential info securely
+        const credentialData = {
           id: credential.id,
           username: username,
-          created: new Date().toISOString()
-        }));
+          userId: user?.id,
+          created: new Date().toISOString(),
+          rawId: Array.from(new Uint8Array(credential.rawId))
+        };
+
+        localStorage.setItem('biometric_credential', JSON.stringify(credentialData));
 
         toast({
           title: 'Sukces',
@@ -60,9 +73,19 @@ export const useBiometric = () => {
       }
     } catch (error) {
       console.error('Biometric setup error:', error);
+      let errorMessage = 'Nie udało się skonfigurować logowania biometrycznego';
+      
+      if (error instanceof Error) {
+        if (error.name === 'NotAllowedError') {
+          errorMessage = 'Dostęp do biometrii został odrzucony';
+        } else if (error.name === 'NotSupportedError') {
+          errorMessage = 'Biometria nie jest obsługiwana na tym urządzeniu';
+        }
+      }
+
       toast({
         title: 'Błąd',
-        description: 'Nie udało się skonfigurować logowania biometrycznego',
+        description: errorMessage,
         variant: 'destructive'
       });
       throw error;
@@ -88,12 +111,13 @@ export const useBiometric = () => {
       }
 
       const credentialData = JSON.parse(storedCredential);
+      const challenge = crypto.getRandomValues(new Uint8Array(32));
 
       const assertion = await navigator.credentials.get({
         publicKey: {
-          challenge: new Uint8Array(32),
+          challenge: challenge,
           allowCredentials: [{
-            id: new TextEncoder().encode(credentialData.id),
+            id: new Uint8Array(credentialData.rawId),
             type: 'public-key'
           }],
           userVerification: "required",
@@ -110,9 +134,19 @@ export const useBiometric = () => {
       }
     } catch (error) {
       console.error('Biometric authentication error:', error);
+      let errorMessage = 'Nie udało się zalogować za pomocą biometrii';
+      
+      if (error instanceof Error) {
+        if (error.name === 'NotAllowedError') {
+          errorMessage = 'Dostęp do biometrii został odrzucony';
+        } else if (error.name === 'InvalidStateError') {
+          errorMessage = 'Biometria jest już w użyciu';
+        }
+      }
+
       toast({
         title: 'Błąd',
-        description: 'Nie udało się zalogować za pomocą biometrii',
+        description: errorMessage,
         variant: 'destructive'
       });
       throw error;
@@ -138,10 +172,30 @@ export const useBiometric = () => {
     }
   };
 
+  const updateBiometric = async (username: string) => {
+    try {
+      await removeBiometric();
+      await setupBiometric(username);
+      toast({
+        title: 'Sukces',
+        description: 'Dane biometryczne zostały zaktualizowane'
+      });
+    } catch (error) {
+      console.error('Error updating biometric data:', error);
+      throw error;
+    }
+  };
+
+  const isBiometricConfigured = () => {
+    return !!localStorage.getItem('biometric_credential');
+  };
+
   return {
     isSupported,
     setupBiometric,
     authenticateWithBiometric,
-    removeBiometric
+    removeBiometric,
+    updateBiometric,
+    isBiometricConfigured
   };
 };

@@ -9,6 +9,146 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      attachments: {
+        Row: {
+          created_at: string | null
+          file_type: string
+          file_url: string
+          id: string
+          message_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          file_type: string
+          file_url: string
+          id?: string
+          message_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          file_type?: string
+          file_url?: string
+          id?: string
+          message_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      biometric_auth_attempts: {
+        Row: {
+          attempt_time: string
+          biometric_type: string
+          id: string
+          success: boolean
+          user_id: string
+        }
+        Insert: {
+          attempt_time?: string
+          biometric_type: string
+          id?: string
+          success: boolean
+          user_id: string
+        }
+        Update: {
+          attempt_time?: string
+          biometric_type?: string
+          id?: string
+          success?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
+      biometric_data: {
+        Row: {
+          biometric_type: string
+          biometric_value: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          biometric_type: string
+          biometric_value: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          biometric_type?: string
+          biometric_value?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      biometric_settings: {
+        Row: {
+          id: string
+          is_enabled: boolean
+          last_updated: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          is_enabled?: boolean
+          last_updated?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          is_enabled?: boolean
+          last_updated?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      blocked_users: {
+        Row: {
+          blocked_user_id: string | null
+          created_at: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          blocked_user_id?: string | null
+          created_at?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          blocked_user_id?: string | null
+          created_at?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blocked_users_blocked_user_id_fkey"
+            columns: ["blocked_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blocked_users_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cities: {
         Row: {
           country_id: number | null
@@ -133,6 +273,181 @@ export type Database = {
         }
         Relationships: []
       }
+      group_chat_members: {
+        Row: {
+          group_chat_id: string | null
+          id: string
+          joined_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          group_chat_id?: string | null
+          id?: string
+          joined_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          group_chat_id?: string | null
+          id?: string
+          joined_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_chat_members_group_chat_id_fkey"
+            columns: ["group_chat_id"]
+            isOneToOne: false
+            referencedRelation: "group_chats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_chat_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_chats: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string | null
+        }
+        Relationships: []
+      }
+      invitations: {
+        Row: {
+          created_at: string
+          id: string
+          recipient_id: string
+          sender_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          recipient_id: string
+          sender_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          recipient_id?: string
+          sender_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      message_reactions: {
+        Row: {
+          created_at: string | null
+          id: string
+          message_id: string | null
+          reaction_type: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message_id?: string | null
+          reaction_type?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message_id?: string | null
+          reaction_type?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_reactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_status: {
+        Row: {
+          id: string
+          message_id: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          message_id?: string | null
+          status: string
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          message_id?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_status_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_threads: {
+        Row: {
+          created_at: string | null
+          group_chat_id: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string | null
+          group_chat_id?: string | null
+          id?: string
+        }
+        Update: {
+          created_at?: string | null
+          group_chat_id?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_threads_group_chat_id_fkey"
+            columns: ["group_chat_id"]
+            isOneToOne: false
+            referencedRelation: "group_chats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string
@@ -170,6 +485,48 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message_id: string | null
+          notification_type: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message_id?: string | null
+          notification_type?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message_id?: string | null
+          notification_type?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -237,6 +594,56 @@ export type Database = {
         }
         Relationships: []
       }
+      user_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          setting_key: string
+          setting_value: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          setting_key: string
+          setting_value?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          setting_key?: string
+          setting_value?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          id: string
+          public_key: string | null
+        }
+        Insert: {
+          id?: string
+          public_key?: string | null
+        }
+        Update: {
+          id?: string
+          public_key?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -245,6 +652,10 @@ export type Database = {
       cleanup_expired_messages: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      create_group_chat: {
+        Args: { group_name: string; user_id: string }
+        Returns: string
       }
       get_user_role: {
         Args: { check_user_id: string }
@@ -262,6 +673,10 @@ export type Database = {
         Args:
           | Record<PropertyKey, never>
           | { username: string; password: string; display_name?: string }
+        Returns: undefined
+      }
+      send_message: {
+        Args: { conversation_id: string; sender_id: string; content: string }
         Returns: undefined
       }
     }

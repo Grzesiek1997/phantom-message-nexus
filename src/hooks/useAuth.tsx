@@ -9,9 +9,12 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signUp: (email: string, password: string, username: string) => Promise<void>;
+  signUpWithUsername: (username: string, password: string, displayName?: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithUsername: (username: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  checkUsernameAvailability: (username: string) => Promise<boolean>;
+  checkEmailAvailability: (email: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -42,6 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -51,7 +55,65 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
+  const checkUsernameAvailability = async (username: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.rpc('is_username_available', { 
+        username_to_check: username 
+      });
+      
+      if (error) {
+        console.error('Error checking username availability:', error);
+        return false;
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error checking username availability:', error);
+      return false;
+    }
+  };
+
+  const checkEmailAvailability = async (email: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.rpc('is_email_available', { 
+        email_to_check: email 
+      });
+      
+      if (error) {
+        console.error('Error checking email availability:', error);
+        return false;
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error checking email availability:', error);
+      return false;
+    }
+  };
+
   const signUp = async (email: string, password: string, username: string) => {
+    // Check if username is available
+    const isUsernameAvailable = await checkUsernameAvailability(username);
+    if (!isUsernameAvailable) {
+      toast({
+        title: 'Błąd rejestracji',
+        description: 'Ta nazwa użytkownika jest już zajęta',
+        variant: 'destructive'
+      });
+      throw new Error('Username already taken');
+    }
+
+    // Check if email is available
+    const isEmailAvailable = await checkEmailAvailability(email);
+    if (!isEmailAvailable) {
+      toast({
+        title: 'Błąd rejestracji',
+        description: 'Ten email jest już zarejestrowany',
+        variant: 'destructive'
+      });
+      throw new Error('Email already taken');
+    }
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -59,7 +121,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         data: {
           username,
           display_name: username
-        }
+        },
+        emailRedirectTo: `${window.location.origin}/`
       }
     });
 
@@ -75,6 +138,48 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     toast({
       title: 'Konto utworzone',
       description: 'Sprawdź swoją skrzynkę e-mail aby zweryfikować konto'
+    });
+  };
+
+  const signUpWithUsername = async (username: string, password: string, displayName?: string) => {
+    // Check if username is available
+    const isUsernameAvailable = await checkUsernameAvailability(username);
+    if (!isUsernameAvailable) {
+      toast({
+        title: 'Błąd rejestracji',
+        description: 'Ta nazwa użytkownika jest już zajęta',
+        variant: 'destructive'
+      });
+      throw new Error('Username already taken');
+    }
+
+    // Generate a temporary email for username-only registration
+    const tempEmail = `${username}@temp.securechat.local`;
+    
+    const { error } = await supabase.auth.signUp({
+      email: tempEmail,
+      password,
+      options: {
+        data: {
+          username,
+          display_name: displayName || username,
+          is_username_only: true
+        }
+      }
+    });
+
+    if (error) {
+      toast({
+        title: 'Błąd rejestracji',
+        description: error.message,
+        variant: 'destructive'
+      });
+      throw error;
+    }
+
+    toast({
+      title: 'Konto utworzone',
+      description: 'Możesz się teraz zalogować używając swojej nazwy użytkownika'
     });
   };
 
@@ -101,7 +206,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signInWithUsername = async (username: string, password: string) => {
     try {
-      // First, get the email associated with this username
+      // First, get the user ID associated with this username
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('id')
@@ -117,23 +222,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('User not found');
       }
 
-      // Get user email from auth.users using the profile id
-      const { data: { user }, error: userError } = await supabase.auth.admin.getUserById(profile.id);
-      
-      if (userError || !user?.email) {
-        toast({
-          title: 'Błąd logowania',
-          description: 'Nie udało się pobrać danych użytkownika',
-          variant: 'destructive'
-        });
-        throw userError;
+      // Get the auth user by ID to find email
+      const { data: authUsers, error: authError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', profile.id)
+        .single();
+
+      if (authError) {
+        // Try with temp email format for username-only accounts
+        const tempEmail = `${username}@temp.securechat.local`;
+        await signIn(tempEmail, password);
+        return;
       }
 
-      // Now sign in with email and password
-      await signIn(user.email, password);
+      // If we have the email, use it for login
+      const { data: { users }, error: listError } = await supabase.auth.admin.listUsers();
+      const authUser = users?.find(u => u.id === profile.id);
+      
+      if (authUser?.email) {
+        await signIn(authUser.email, password);
+      } else {
+        // Fallback to temp email
+        const tempEmail = `${username}@temp.securechat.local`;
+        await signIn(tempEmail, password);
+      }
     } catch (error) {
       console.error('Username login error:', error);
-      // For security reasons, we'll use a generic error message
       toast({
         title: 'Błąd logowania',
         description: 'Nieprawidłowa nazwa użytkownika lub hasło',
@@ -160,9 +275,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     session,
     loading,
     signUp,
+    signUpWithUsername,
     signIn,
     signInWithUsername,
-    signOut
+    signOut,
+    checkUsernameAvailability,
+    checkEmailAvailability
   };
 
   return (

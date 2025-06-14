@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Fingerprint } from 'lucide-react';
+import { Fingerprint, Mail, User } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useBiometric } from '@/hooks/useBiometric';
@@ -14,20 +14,46 @@ interface RegisterTabProps {
 }
 
 const RegisterTab: React.FC<RegisterTabProps> = ({ onClose }) => {
+  const [registrationMethod, setRegistrationMethod] = useState<'email' | 'username'>('email');
   const [registerData, setRegisterData] = useState({
     email: '',
     password: '',
     confirmPassword: '',
     username: '',
+    displayName: '',
     agreeTerms: false,
     agreePrivacy: false,
     enableBiometric: false
   });
   const [loading, setLoading] = useState(false);
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
   
-  const { signUp } = useAuth();
+  const { signUp, signUpWithUsername, checkUsernameAvailability, checkEmailAvailability } = useAuth();
   const { setupBiometric, isSupported } = useBiometric();
   const { toast } = useToast();
+
+  const checkAvailability = async (field: 'username' | 'email', value: string) => {
+    if (!value.trim()) return;
+    
+    setCheckingAvailability(true);
+    try {
+      const isAvailable = field === 'username' 
+        ? await checkUsernameAvailability(value)
+        : await checkEmailAvailability(value);
+      
+      if (!isAvailable) {
+        toast({
+          title: 'Niedostępne',
+          description: `Ta ${field === 'username' ? 'nazwa użytkownika' : 'adres email'} jest już zajęta`,
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      console.error('Error checking availability:', error);
+    } finally {
+      setCheckingAvailability(false);
+    }
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,10 +76,32 @@ const RegisterTab: React.FC<RegisterTabProps> = ({ onClose }) => {
       return;
     }
 
+    if (registrationMethod === 'email' && !registerData.email.trim()) {
+      toast({
+        title: 'Błąd',
+        description: 'Email jest wymagany',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!registerData.username.trim()) {
+      toast({
+        title: 'Błąd',
+        description: 'Nazwa użytkownika jest wymagana',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setLoading(true);
     
     try {
-      await signUp(registerData.email, registerData.password, registerData.username);
+      if (registrationMethod === 'email') {
+        await signUp(registerData.email, registerData.password, registerData.username);
+      } else {
+        await signUpWithUsername(registerData.username, registerData.password, registerData.displayName);
+      }
       
       if (registerData.enableBiometric && isSupported) {
         try {
@@ -81,6 +129,43 @@ const RegisterTab: React.FC<RegisterTabProps> = ({ onClose }) => {
 
   return (
     <form onSubmit={handleRegister} className="space-y-4">
+      {/* Registration Method Selector */}
+      <div className="flex space-x-2 mb-4">
+        <Button
+          type="button"
+          variant={registrationMethod === 'email' ? 'default' : 'outline'}
+          onClick={() => setRegistrationMethod('email')}
+          className="flex-1"
+        >
+          <Mail className="w-4 h-4 mr-2" />
+          Email + Username
+        </Button>
+        <Button
+          type="button"
+          variant={registrationMethod === 'username' ? 'default' : 'outline'}
+          onClick={() => setRegistrationMethod('username')}
+          className="flex-1"
+        >
+          <User className="w-4 h-4 mr-2" />
+          Tylko Username
+        </Button>
+      </div>
+
+      {registrationMethod === 'email' && (
+        <div className="space-y-2">
+          <Label className="text-white">Email</Label>
+          <Input
+            type="email"
+            placeholder="twoj@email.com"
+            value={registerData.email}
+            onChange={(e) => setRegisterData({...registerData, email: e.target.value})}
+            onBlur={(e) => checkAvailability('email', e.target.value)}
+            className="bg-gray-800 border-gray-600 text-white"
+            required
+          />
+        </div>
+      )}
+
       <div className="space-y-2">
         <Label className="text-white">Nazwa użytkownika</Label>
         <Input
@@ -88,22 +173,27 @@ const RegisterTab: React.FC<RegisterTabProps> = ({ onClose }) => {
           placeholder="twoja_nazwa"
           value={registerData.username}
           onChange={(e) => setRegisterData({...registerData, username: e.target.value})}
+          onBlur={(e) => checkAvailability('username', e.target.value)}
           className="bg-gray-800 border-gray-600 text-white"
           required
         />
+        {checkingAvailability && (
+          <p className="text-sm text-gray-400">Sprawdzanie dostępności...</p>
+        )}
       </div>
 
-      <div className="space-y-2">
-        <Label className="text-white">Email</Label>
-        <Input
-          type="email"
-          placeholder="twoj@email.com"
-          value={registerData.email}
-          onChange={(e) => setRegisterData({...registerData, email: e.target.value})}
-          className="bg-gray-800 border-gray-600 text-white"
-          required
-        />
-      </div>
+      {registrationMethod === 'username' && (
+        <div className="space-y-2">
+          <Label className="text-white">Nazwa wyświetlana (opcjonalna)</Label>
+          <Input
+            type="text"
+            placeholder="Jak chcesz być wyświetlany"
+            value={registerData.displayName}
+            onChange={(e) => setRegisterData({...registerData, displayName: e.target.value})}
+            className="bg-gray-800 border-gray-600 text-white"
+          />
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label className="text-white">Hasło</Label>
@@ -170,7 +260,7 @@ const RegisterTab: React.FC<RegisterTabProps> = ({ onClose }) => {
       <Button 
         type="submit" 
         className="w-full bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700"
-        disabled={loading}
+        disabled={loading || checkingAvailability}
       >
         {loading ? 'Tworzenie konta...' : 'Utwórz Konto'}
       </Button>

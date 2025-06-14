@@ -1,71 +1,129 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Fingerprint, Shield, AlertTriangle } from 'lucide-react';
+import { Fingerprint, Shield, Trash2, RotateCcw } from 'lucide-react';
 import { useBiometric } from '@/hooks/useBiometric';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
 const BiometricSettings: React.FC = () => {
+  const [isConfigured, setIsConfigured] = useState(false);
   const [isEnabled, setIsEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { isSupported, setupBiometric, removeBiometric } = useBiometric();
+  
+  const { 
+    isSupported, 
+    setupBiometric, 
+    removeBiometric, 
+    updateBiometric, 
+    isBiometricConfigured,
+    authenticateWithBiometric 
+  } = useBiometric();
   const { user } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
-    // Check if biometric is already set up
-    const credentialData = localStorage.getItem('biometric_credential');
-    setIsEnabled(!!credentialData);
+    const configured = isBiometricConfigured();
+    setIsConfigured(configured);
+    setIsEnabled(configured);
   }, []);
 
-  const handleToggleBiometric = async (enabled: boolean) => {
-    if (!user) return;
+  const handleSetupBiometric = async () => {
+    if (!user?.user_metadata?.username) {
+      toast({
+        title: 'Błąd',
+        description: 'Brak nazwy użytkownika do konfiguracji biometrii',
+        variant: 'destructive'
+      });
+      return;
+    }
 
     setLoading(true);
     try {
-      if (enabled) {
-        await setupBiometric(user.email || 'user');
-        setIsEnabled(true);
-      } else {
-        await removeBiometric();
-        setIsEnabled(false);
-      }
+      await setupBiometric(user.user_metadata.username);
+      setIsConfigured(true);
+      setIsEnabled(true);
     } catch (error) {
-      console.error('Biometric toggle error:', error);
+      console.error('Setup biometric error:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleReconfigureBiometric = async () => {
-    if (!user) return;
-
+  const handleRemoveBiometric = async () => {
     setLoading(true);
     try {
       await removeBiometric();
-      await setupBiometric(user.email || 'user');
+      setIsConfigured(false);
+      setIsEnabled(false);
     } catch (error) {
-      console.error('Biometric reconfiguration error:', error);
+      console.error('Remove biometric error:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUpdateBiometric = async () => {
+    if (!user?.user_metadata?.username) {
+      toast({
+        title: 'Błąd',
+        description: 'Brak nazwy użytkownika do aktualizacji biometrii',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await updateBiometric(user.user_metadata.username);
+    } catch (error) {
+      console.error('Update biometric error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTestBiometric = async () => {
+    setLoading(true);
+    try {
+      const success = await authenticateWithBiometric();
+      if (success) {
+        toast({
+          title: 'Test zakończony pomyślnie',
+          description: 'Biometria działa poprawnie'
+        });
+      }
+    } catch (error) {
+      console.error('Test biometric error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleBiometric = async (enabled: boolean) => {
+    if (enabled && !isConfigured) {
+      await handleSetupBiometric();
+    } else if (!enabled && isConfigured) {
+      await handleRemoveBiometric();
     }
   };
 
   if (!isSupported) {
     return (
-      <Card className="glass border-white/20">
+      <Card className="bg-gray-800 border-gray-700">
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-white">
-            <Fingerprint className="w-5 h-5" />
-            <span>Logowanie Biometryczne</span>
+          <CardTitle className="text-white flex items-center">
+            <Fingerprint className="w-5 h-5 mr-2" />
+            Logowanie Biometryczne
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center space-x-3 text-gray-400">
-            <AlertTriangle className="w-5 h-5" />
-            <p>Logowanie biometryczne nie jest obsługiwane w tej przeglądarce</p>
+        <CardContent className="space-y-4">
+          <div className="flex items-center space-x-2 text-gray-400">
+            <Shield className="w-4 h-4" />
+            <span>Biometria nie jest obsługiwana na tym urządzeniu</span>
           </div>
         </CardContent>
       </Card>
@@ -73,19 +131,20 @@ const BiometricSettings: React.FC = () => {
   }
 
   return (
-    <Card className="glass border-white/20">
+    <Card className="bg-gray-800 border-gray-700">
       <CardHeader>
-        <CardTitle className="flex items-center space-x-2 text-white">
-          <Fingerprint className="w-5 h-5" />
-          <span>Logowanie Biometryczne</span>
+        <CardTitle className="text-white flex items-center">
+          <Fingerprint className="w-5 h-5 mr-2" />
+          Logowanie Biometryczne
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Enable/Disable Toggle */}
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <Label className="text-white">Włącz logowanie biometryczne</Label>
             <p className="text-sm text-gray-400">
-              Używaj odcisku palca lub rozpoznawania twarzy do logowania
+              Używaj odcisku palca lub Face ID do logowania
             </p>
           </div>
           <Switch
@@ -95,45 +154,78 @@ const BiometricSettings: React.FC = () => {
           />
         </div>
 
-        {isEnabled && (
-          <div className="space-y-4">
-            <div className="flex items-center space-x-3 p-3 bg-green-500/20 border border-green-500/30 rounded-lg">
-              <Shield className="w-5 h-5 text-green-400" />
-              <div>
-                <p className="text-sm font-medium text-green-300">
-                  Logowanie biometryczne jest aktywne
-                </p>
-                <p className="text-xs text-green-400">
-                  Możesz teraz logować się używając biometrii
-                </p>
-              </div>
-            </div>
+        {/* Status Information */}
+        <div className="space-y-2">
+          <Label className="text-white">Status</Label>
+          <div className="flex items-center space-x-2">
+            {isConfigured ? (
+              <>
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-green-400">Skonfigurowane</span>
+              </>
+            ) : (
+              <>
+                <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
+                <span className="text-gray-400">Nie skonfigurowane</span>
+              </>
+            )}
+          </div>
+        </div>
 
-            <div className="space-y-2">
+        {/* Action Buttons */}
+        {isConfigured && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
               <Button
-                onClick={handleReconfigureBiometric}
+                onClick={handleTestBiometric}
                 disabled={loading}
                 variant="outline"
-                className="w-full"
+                className="bg-blue-500/10 border-blue-500/30 text-blue-300 hover:bg-blue-500/20"
               >
-                <Fingerprint className="w-4 h-4 mr-2" />
-                {loading ? 'Konfigurowanie...' : 'Ponownie skonfiguruj biometrię'}
+                <Shield className="w-4 h-4 mr-2" />
+                Testuj
               </Button>
               
-              <p className="text-xs text-gray-400">
-                Użyj tej opcji jeśli chcesz zaktualizować swoje dane biometryczne
-              </p>
+              <Button
+                onClick={handleUpdateBiometric}
+                disabled={loading}
+                variant="outline"
+                className="bg-yellow-500/10 border-yellow-500/30 text-yellow-300 hover:bg-yellow-500/20"
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Aktualizuj
+              </Button>
             </div>
+            
+            <Button
+              onClick={handleRemoveBiometric}
+              disabled={loading}
+              variant="outline"
+              className="w-full bg-red-500/10 border-red-500/30 text-red-300 hover:bg-red-500/20"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Usuń dane biometryczne
+            </Button>
           </div>
         )}
 
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium text-white">Informacje o bezpieczeństwie</h4>
-          <ul className="text-xs text-gray-400 space-y-1">
-            <li>• Dane biometryczne są przechowywane lokalnie w Twojej przeglądarce</li>
-            <li>• Żadne dane biometryczne nie są wysyłane na nasze serwery</li>
-            <li>• Możesz wyłączyć tę funkcję w dowolnym momencie</li>
-          </ul>
+        {!isConfigured && (
+          <Button
+            onClick={handleSetupBiometric}
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+          >
+            <Fingerprint className="w-4 h-4 mr-2" />
+            {loading ? 'Konfigurowanie...' : 'Skonfiguruj biometrię'}
+          </Button>
+        )}
+
+        {/* Information */}
+        <div className="bg-gray-700/50 rounded-lg p-3">
+          <p className="text-xs text-gray-400">
+            <strong>Uwaga:</strong> Logowanie biometryczne jest przechowywane lokalnie na Twoim urządzeniu. 
+            Jeśli zmienisz urządzenie, będziesz musiał skonfigurować biometrię ponownie.
+          </p>
         </div>
       </CardContent>
     </Card>
