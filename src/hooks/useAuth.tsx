@@ -57,16 +57,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const checkUsernameAvailability = async (username: string): Promise<boolean> => {
     try {
-      const { data, error } = await supabase.rpc('is_username_available', { 
-        username_to_check: username 
-      });
+      // Sprawdź bezpośrednio w tabeli profiles
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', username)
+        .maybeSingle();
       
       if (error) {
         console.error('Error checking username availability:', error);
         return false;
       }
       
-      return data;
+      // Jeśli nie ma danych, username jest dostępny
+      return !data;
     } catch (error) {
       console.error('Error checking username availability:', error);
       return false;
@@ -75,19 +79,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const checkEmailAvailability = async (email: string): Promise<boolean> => {
     try {
-      const { data, error } = await supabase.rpc('is_email_available', { 
-        email_to_check: email 
-      });
+      // Sprawdź bezpośrednio przez auth API
+      const { data: { users }, error } = await supabase.auth.admin.listUsers();
       
       if (error) {
         console.error('Error checking email availability:', error);
         return false;
       }
       
-      return data;
+      // Sprawdź czy email już istnieje
+      const existingUser = users?.find(u => u.email === email);
+      return !existingUser;
     } catch (error) {
       console.error('Error checking email availability:', error);
-      return false;
+      return true; // Zakładamy że jest dostępny w przypadku błędu
     }
   };
 
@@ -211,9 +216,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .from('profiles')
         .select('id')
         .eq('username', username)
-        .single();
+        .maybeSingle();
 
-      if (profileError || !profile) {
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+        toast({
+          title: 'Błąd logowania',
+          description: 'Nie znaleziono użytkownika o podanej nazwie',
+          variant: 'destructive'
+        });
+        throw new Error('User not found');
+      }
+
+      if (!profile) {
         toast({
           title: 'Błąd logowania',
           description: 'Nie znaleziono użytkownika o podanej nazwie',
@@ -223,21 +238,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       // Get the auth user by ID to find email
-      const { data: authUsers, error: authError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', profile.id)
-        .single();
-
+      const { data: { users }, error: authError } = await supabase.auth.admin.listUsers();
+      
       if (authError) {
+        console.error('Auth error:', authError);
         // Try with temp email format for username-only accounts
         const tempEmail = `${username}@temp.securechat.local`;
         await signIn(tempEmail, password);
         return;
       }
 
-      // If we have the email, use it for login
-      const { data: { users }, error: listError } = await supabase.auth.admin.listUsers();
+      // If we have the users list, find the one with matching ID
       const authUser = users?.find(u => u.id === profile.id);
       
       if (authUser?.email) {
