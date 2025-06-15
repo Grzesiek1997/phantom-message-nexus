@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -62,7 +61,13 @@ export const useFriendRequests = () => {
           .in('id', senderIds);
 
         const requestsWithProfiles = receivedData.map(req => ({
-          ...req,
+          id: req.id,
+          sender_id: req.sender_id,
+          receiver_id: req.receiver_id,
+          status: req.status as 'pending' | 'accepted' | 'rejected',
+          attempt_count: req.attempt_count || 1,
+          created_at: req.created_at || '',
+          updated_at: req.updated_at || '',
           sender_profile: profiles?.find(p => p.id === req.sender_id)
         }));
 
@@ -71,7 +76,18 @@ export const useFriendRequests = () => {
         setFriendRequests([]);
       }
 
-      setSentRequests(sentData || []);
+      // Map sent requests with proper types
+      const mappedSentRequests = (sentData || []).map(req => ({
+        id: req.id,
+        sender_id: req.sender_id,
+        receiver_id: req.receiver_id,
+        status: req.status as 'pending' | 'accepted' | 'rejected',
+        attempt_count: req.attempt_count || 1,
+        created_at: req.created_at || '',
+        updated_at: req.updated_at || ''
+      }));
+
+      setSentRequests(mappedSentRequests);
     } catch (error) {
       console.error('Error in fetchFriendRequests:', error);
     } finally {
@@ -92,7 +108,7 @@ export const useFriendRequests = () => {
         .eq('status', 'rejected');
 
       if (existingRequests && existingRequests.length > 0) {
-        const totalAttempts = existingRequests.reduce((sum, req) => sum + req.attempt_count, 0);
+        const totalAttempts = existingRequests.reduce((sum, req) => sum + (req.attempt_count || 0), 0);
         if (totalAttempts >= 3) {
           toast({
             title: 'Limit osiągnięty',

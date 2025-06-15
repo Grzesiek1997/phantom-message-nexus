@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -35,8 +34,20 @@ export const useNotifications = () => {
         return;
       }
 
-      setNotifications(data || []);
-      setUnreadCount(data?.filter(n => !n.is_read).length || 0);
+      // Map database fields to interface fields
+      const mappedNotifications = (data || []).map(item => ({
+        id: item.id,
+        user_id: item.user_id,
+        type: item.type as 'friend_request' | 'friend_accepted' | 'message' | 'call',
+        title: item.title || '',
+        message: item.message || '',
+        data: item.data,
+        is_read: item.is_read || false,
+        created_at: item.created_at || ''
+      }));
+
+      setNotifications(mappedNotifications);
+      setUnreadCount(mappedNotifications.filter(n => !n.is_read).length);
     } catch (error) {
       console.error('Error in fetchNotifications:', error);
     } finally {
