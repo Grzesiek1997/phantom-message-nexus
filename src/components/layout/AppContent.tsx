@@ -1,8 +1,8 @@
 
 import React from 'react';
-import RealTimeChatInterface from '../RealTimeChatInterface';
-import CallsScreen from '../CallsScreen';
-import ContactsScreenNew from '../ContactsScreenNew';
+import ConversationList from '../ConversationList';
+import ContactsScreen from '../contacts/ContactsScreen';
+import CallsScreen from '../calls/CallsScreen';
 import SettingsScreenNew from '../SettingsScreenNew';
 
 interface AppContentProps {
@@ -10,26 +10,18 @@ interface AppContentProps {
 }
 
 const AppContent: React.FC<AppContentProps> = ({ activeTab }) => {
-  const renderActiveScreen = () => {
-    switch (activeTab) {
-      case 'chats':
-        return <RealTimeChatInterface />;
-      case 'calls':
-        return <CallsScreen />;
-      case 'contacts':
-        return <ContactsScreenNew />;
-      case 'settings':
-        return <SettingsScreenNew />;
-      default:
-        return <RealTimeChatInterface />;
-    }
-  };
-
-  return (
-    <div className="flex-1 overflow-hidden">
-      {renderActiveScreen()}
-    </div>
-  );
+  switch (activeTab) {
+    case 'chats':
+      return <ConversationList />;
+    case 'calls':
+      return <CallsScreen />;
+    case 'contacts':
+      return <ContactsScreen />;
+    case 'settings':
+      return <SettingsScreenNew />;
+    default:
+      return <ConversationList />;
+  }
 };
 
 export default AppContent;
