@@ -103,11 +103,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             {/* Prominent Logout Button */}
             <Button
               onClick={handleSignOut}
-              className="bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 rounded-lg transition-colors shadow-lg"
+              className="bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-2 rounded-lg transition-colors shadow-lg border-2 border-red-500 hover:border-red-400"
               title="Wyloguj się"
             >
               <LogOut className="w-4 h-4 mr-2" />
-              Wyloguj
+              WYLOGUJ
             </Button>
           </div>
         </div>
