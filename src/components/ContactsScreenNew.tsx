@@ -15,6 +15,7 @@ const ContactsScreenNew: React.FC = () => {
     showFriendSearchDialog,
     setShowFriendSearchDialog,
     contacts,
+    loading,
     receivedRequests,
     sentRequests,
     handleSelectContact,
@@ -47,7 +48,7 @@ const ContactsScreenNew: React.FC = () => {
     : [];
 
   // Obsługa ładowania
-  if (!contacts || typeof contacts === 'undefined') {
+  if (loading) {
     return (
       <div className="flex flex-col h-full items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
         <Loader2 className="w-8 h-8 animate-spin text-white mb-4" />
@@ -60,7 +61,8 @@ const ContactsScreenNew: React.FC = () => {
   if (
     filteredContacts.length === 0 &&
     filteredReceivedRequests.length === 0 &&
-    filteredSentRequests.length === 0
+    filteredSentRequests.length === 0 &&
+    searchQuery === ''
   ) {
     return (
       <div className="flex flex-col h-full items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
@@ -109,4 +111,3 @@ const ContactsScreenNew: React.FC = () => {
   );
 };
 
-export default ContactsScreenNew;

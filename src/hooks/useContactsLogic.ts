@@ -13,7 +13,7 @@ export const useContactsLogic = () => {
 
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { contacts, deleteContact, fetchContacts } = useContacts();
+  const { contacts, loading, deleteContact, fetchContacts } = useContacts();
   const { 
     receivedRequests, 
     sentRequests, 
@@ -148,6 +148,7 @@ export const useContactsLogic = () => {
     showFriendSearchDialog,
     setShowFriendSearchDialog,
     contacts,
+    loading,
     receivedRequests,
     sentRequests,
     handleSelectContact,
@@ -157,3 +158,4 @@ export const useContactsLogic = () => {
     handleDeleteContact
   };
 };
+
