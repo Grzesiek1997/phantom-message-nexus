@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { useFriendRequests } from './useFriendRequests';
+import { useFriendRequests } from './friends/useFriendRequests';
 
 export interface Notification {
   id: string;

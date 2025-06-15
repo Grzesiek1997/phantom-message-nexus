@@ -7,7 +7,7 @@ import AppContent from './layout/AppContent';
 import AppModals from './layout/AppModals';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
-import { useFriendRequests } from '@/hooks/useFriendRequests';
+import { useFriendRequests } from '@/hooks/friends/useFriendRequests';
 import { useUserStatus } from '@/hooks/useUserStatus';
 
 const MainApp: React.FC = () => {
