@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useContacts } from '@/hooks/useContacts';
@@ -10,11 +9,13 @@ import ContactsTabNavigation from './contacts/ContactsTabNavigation';
 import ContactsContent from './contacts/ContactsContent';
 import ContactsQuickActions from './contacts/ContactsQuickActions';
 import FriendSearch from './FriendSearch';
+import FriendSearchDialog from './contacts/FriendSearchDialog';
 
 const ContactsScreenNew: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'friends' | 'received' | 'sent' | 'groups'>('friends');
   const [searchQuery, setSearchQuery] = useState('');
   const [showFriendSearch, setShowFriendSearch] = useState(false);
+  const [showFriendSearchDialog, setShowFriendSearchDialog] = useState(false);
 
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -112,6 +113,8 @@ const ContactsScreenNew: React.FC = () => {
     setShowFriendSearch(true);
   };
 
+  const handleAddFriend = () => setShowFriendSearchDialog(true);
+
   const handleAcceptRequest = async (requestId: string) => {
     try {
       await acceptFriendRequest(requestId);
@@ -206,16 +209,29 @@ const ContactsScreenNew: React.FC = () => {
         />
       </div>
 
-      <ContactsQuickActions onAddContact={handleAddContact} />
+      {/* Nowy widoczny przycisk */}
+      <div className="flex justify-center pb-4">
+        <Button
+          onClick={handleAddFriend}
+          className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-700 hover:to-purple-800 text-white font-semibold py-2 px-6 rounded-lg text-lg shadow"
+        >
+          <UserPlus className="w-5 h-5 mr-2" />
+          Dodaj znajomego
+        </Button>
+      </div>
 
-      {showFriendSearch && (
-        <FriendSearch
-          isOpen={showFriendSearch}
-          onClose={() => setShowFriendSearch(false)}
+      <ContactsQuickActions onAddContact={handleAddFriend} />
+
+      {/* Dialog */}
+      {showFriendSearchDialog && (
+        <FriendSearchDialog
+          isOpen={showFriendSearchDialog}
+          onClose={() => setShowFriendSearchDialog(false)}
         />
       )}
+
+      {/* ... stare (niepotrzebne) FriendSearch */}
     </div>
   );
 };
-
 export default ContactsScreenNew;

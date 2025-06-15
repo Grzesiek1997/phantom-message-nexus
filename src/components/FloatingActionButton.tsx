@@ -1,7 +1,7 @@
-
 import React, { useState } from 'react';
 import { Plus, Search, MessageCircle, Users, UserPlus, X } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
+import FriendSearchDialog from "./contacts/FriendSearchDialog";
 
 interface FloatingActionButtonProps {
   onNewChat: () => void;
@@ -17,6 +17,7 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
   onAddContacts
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [showAddFriend, setShowAddFriend] = useState(false);
   const { t } = useTranslation();
 
   const menuItems = [
@@ -43,10 +44,17 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
     },
     {
       icon: UserPlus,
-      label: t('addContacts'),
-      action: onAddContacts,
+      label: 'Dodaj znajomego', // Nowa, jasna opcja!
+      action: () => setShowAddFriend(true),
       color: 'bg-orange-500',
       delay: 'delay-400'
+    },
+    {
+      icon: Users,
+      label: t('addContacts'),
+      action: onAddContacts,
+      color: 'bg-cyan-500',
+      delay: 'delay-500'
     }
   ];
 
@@ -99,6 +107,11 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
           <Plus className="w-6 h-6 text-white" />
         )}
       </button>
+
+      {/* FRIEND SEARCH DIALOG */}
+      {showAddFriend && (
+        <FriendSearchDialog isOpen={showAddFriend} onClose={() => setShowAddFriend(false)} />
+      )}
 
       {/* Background Overlay */}
       {isOpen && (
