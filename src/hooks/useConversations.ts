@@ -108,6 +108,39 @@ export const useConversations = () => {
     try {
       console.log('Creating conversation with participants:', participantIds);
 
+      // For direct conversations, check if one already exists
+      if (type === 'direct' && participantIds.length === 1) {
+        const otherUserId = participantIds[0];
+        
+        // Check if direct conversation already exists
+        const { data: existingParticipants, error: checkError } = await supabase
+          .from('conversation_participants')
+          .select('conversation_id, conversations!inner(type)')
+          .in('user_id', [user.id, otherUserId]);
+
+        if (checkError) {
+          console.error('Error checking existing conversations:', checkError);
+        } else if (existingParticipants) {
+          // Find conversations that have both users and are direct
+          const conversationCounts = existingParticipants.reduce((acc, p) => {
+            if (p.conversations?.type === 'direct') {
+              acc[p.conversation_id] = (acc[p.conversation_id] || 0) + 1;
+            }
+            return acc;
+          }, {} as Record<string, number>);
+
+          const existingConversationId = Object.keys(conversationCounts).find(
+            id => conversationCounts[id] === 2
+          );
+
+          if (existingConversationId) {
+            console.log('Direct conversation already exists:', existingConversationId);
+            await fetchConversations();
+            return existingConversationId;
+          }
+        }
+      }
+
       const { data: conversation, error } = await supabase
         .from('conversations')
         .insert({
@@ -143,6 +176,14 @@ export const useConversations = () => {
 
       if (participantError) {
         console.error('Error adding participants:', participantError);
+        
+        // If constraint violation (conversation already exists), just return the existing one
+        if (participantError.code === '23505') {
+          console.log('Conversation participants already exist, fetching conversations...');
+          await fetchConversations();
+          return conversation.id;
+        }
+        
         toast({
           title: 'Błąd dodawania uczestników',
           description: participantError.message,

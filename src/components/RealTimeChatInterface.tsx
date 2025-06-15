@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { MessageCircle, Bell } from 'lucide-react';
 import { useMessages } from '@/hooks/useMessages';
@@ -13,6 +14,7 @@ import ConversationList from './ConversationList';
 import ChatHeader from './ChatHeader';
 import MessageInput from './MessageInput';
 import NotificationPanel from './NotificationPanel';
+import SearchOverlay from './search/SearchOverlay';
 import { Button } from '@/components/ui/button';
 
 const RealTimeChatInterface: React.FC = () => {
@@ -22,6 +24,8 @@ const RealTimeChatInterface: React.FC = () => {
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [showGroupManagement, setShowGroupManagement] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showSearchOverlay, setShowSearchOverlay] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [isMobile, setIsMobile] = useState(false);
   const [showConversationList, setShowConversationList] = useState(true);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
@@ -130,6 +134,34 @@ const RealTimeChatInterface: React.FC = () => {
     });
   };
 
+  const handleSearchChats = () => {
+    setShowSearchOverlay(true);
+    setSearchQuery('');
+  };
+
+  const handleCloseSearch = () => {
+    setShowSearchOverlay(false);
+    setSearchQuery('');
+  };
+
+  // Filter conversations based on search query
+  const filteredConversations = conversations.filter(conv => {
+    if (!searchQuery.trim()) return false;
+    
+    const query = searchQuery.toLowerCase();
+    
+    // Search by conversation name (for groups)
+    if (conv.name && conv.name.toLowerCase().includes(query)) {
+      return true;
+    }
+    
+    // Search by participant names
+    return conv.participants.some(p => 
+      p.profiles.display_name.toLowerCase().includes(query) ||
+      p.profiles.username.toLowerCase().includes(query)
+    );
+  });
+
   const selectedConversation = conversations.find(c => c.id === selectedConversationId);
   const replyingToMessage = messages.find(m => m.id === replyingTo);
 
@@ -165,6 +197,7 @@ const RealTimeChatInterface: React.FC = () => {
         onShowContactSearch={() => setShowContactSearch(true)}
         onShowAIAssistant={() => setShowAIAssistant(true)}
         onShowGroupManagement={() => setShowGroupManagement(true)}
+        onSearchChats={handleSearchChats}
       />
 
       {/* Chat Area */}
@@ -215,6 +248,15 @@ const RealTimeChatInterface: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Search Overlay */}
+      <SearchOverlay
+        isVisible={showSearchOverlay}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onClose={handleCloseSearch}
+        results={filteredConversations}
+      />
 
       {/* Modals */}
       {showContactSearch && (
