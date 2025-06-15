@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -71,7 +72,7 @@ export const useEnhancedContacts = () => {
         .filter(contact => contact.contact_profile !== null)
         .map(contact => ({
           ...contact,
-          contact_profile: contact.contact_profile
+          contact_profile: contact.contact_profile && typeof contact.contact_profile === 'object' && !Array.isArray(contact.contact_profile)
             ? contact.contact_profile as EnhancedContact['contact_profile']
             : {
                 username: 'Unknown',

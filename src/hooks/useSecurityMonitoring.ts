@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -50,7 +51,8 @@ export const useSecurityMonitoring = () => {
         severity: (event.severity as 'low' | 'medium' | 'high' | 'critical') || 'medium',
         metadata: typeof event.metadata === 'object' && event.metadata !== null 
           ? event.metadata as Record<string, any>
-          : {}
+          : {},
+        ip_address: typeof event.ip_address === 'string' ? event.ip_address : undefined
       })) as SecurityEvent[];
 
       setSecurityEvents(processedEvents);
@@ -115,7 +117,8 @@ export const useSecurityMonitoring = () => {
         severity: data.severity as 'low' | 'medium' | 'high' | 'critical',
         metadata: typeof data.metadata === 'object' && data.metadata !== null 
           ? data.metadata as Record<string, any>
-          : {}
+          : {},
+        ip_address: typeof data.ip_address === 'string' ? data.ip_address : undefined
       };
 
       setSecurityEvents(prev => [processedEvent, ...prev]);
@@ -162,6 +165,27 @@ export const useSecurityMonitoring = () => {
     }
   };
 
+  const clearOldEvents = async (daysOld: number) => {
+    if (!user) return;
+
+    try {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - daysOld);
+
+      const { error } = await supabase
+        .from('security_events')
+        .delete()
+        .eq('user_id', user.id)
+        .lt('created_at', cutoffDate.toISOString());
+
+      if (error) throw error;
+
+      await fetchSecurityEvents();
+    } catch (error) {
+      console.error('Error clearing old events:', error);
+    }
+  };
+
   useEffect(() => {
     const loadData = async () => {
       await Promise.all([fetchSecurityEvents(), fetchDecryptionFailures()]);
@@ -177,6 +201,7 @@ export const useSecurityMonitoring = () => {
     loading,
     logSecurityEvent,
     logDecryptionFailure,
+    clearOldEvents,
     refetch: () => Promise.all([fetchSecurityEvents(), fetchDecryptionFailures()])
   };
 };

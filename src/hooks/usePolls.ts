@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -75,7 +76,7 @@ export const usePolls = () => {
 
         return {
           ...poll,
-          poll_type: poll.poll_type as 'single' | 'multiple' | 'quiz',
+          poll_type: (poll.poll_type as 'single' | 'multiple' | 'quiz') || 'single',
           options,
           user_votes: userVotes,
           total_votes: totalVotes
@@ -209,8 +210,15 @@ export const usePolls = () => {
 
       if (error) throw error;
 
+      // Update vote counts directly
       for (const optionId of optionIds) {
-        await supabase.rpc('increment_vote_count', { option_id: optionId });
+        const currentOption = poll.options.find(opt => opt.id === optionId);
+        if (currentOption) {
+          await supabase
+            .from('poll_options')
+            .update({ vote_count: (currentOption.vote_count || 0) + 1 })
+            .eq('id', optionId);
+        }
       }
 
       await fetchPolls();

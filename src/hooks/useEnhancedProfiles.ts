@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -59,7 +60,7 @@ export const useEnhancedProfiles = () => {
         ...data,
         status: (data.status as 'available' | 'away' | 'busy' | 'invisible') || 'available',
         privacy_settings: (data.privacy_settings && typeof data.privacy_settings === 'object' && !Array.isArray(data.privacy_settings))
-          ? data.privacy_settings as PrivacySettings
+          ? data.privacy_settings as unknown as PrivacySettings
           : {
               read_receipts: true,
               last_seen: 'contacts',
@@ -104,7 +105,7 @@ export const useEnhancedProfiles = () => {
         ...data,
         status: (data.status as 'available' | 'away' | 'busy' | 'invisible') || 'available',
         privacy_settings: (data.privacy_settings && typeof data.privacy_settings === 'object' && !Array.isArray(data.privacy_settings))
-          ? data.privacy_settings as PrivacySettings
+          ? data.privacy_settings as unknown as PrivacySettings
           : {
               read_receipts: true,
               last_seen: 'contacts',

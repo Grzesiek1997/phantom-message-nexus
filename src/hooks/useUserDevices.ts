@@ -34,7 +34,13 @@ export const useUserDevices = () => {
         .order('last_active', { ascending: false });
 
       if (error) throw error;
-      setDevices(data || []);
+
+      const processedDevices = (data || []).map(device => ({
+        ...device,
+        platform: (device.platform as 'ios' | 'android' | 'desktop' | 'web') || 'web'
+      })) as UserDevice[];
+
+      setDevices(processedDevices);
     } catch (error) {
       console.error('Error fetching devices:', error);
       toast({
@@ -71,13 +77,18 @@ export const useUserDevices = () => {
 
       if (error) throw error;
 
-      setDevices(prev => [data, ...prev]);
+      const processedDevice = {
+        ...data,
+        platform: data.platform as 'ios' | 'android' | 'desktop' | 'web'
+      } as UserDevice;
+
+      setDevices(prev => [processedDevice, ...prev]);
       toast({
         title: 'Sukces',
         description: 'Urządzenie zostało zarejestrowane'
       });
 
-      return data;
+      return processedDevice;
     } catch (error) {
       console.error('Error registering device:', error);
       toast({

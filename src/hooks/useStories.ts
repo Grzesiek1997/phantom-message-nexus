@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -61,8 +62,8 @@ export const useStories = () => {
 
       const processedStories = (data || []).map(story => ({
         ...story,
-        content_type: story.content_type as 'text' | 'image' | 'video',
-        visibility: story.visibility as 'public' | 'contacts' | 'close_friends' | 'custom',
+        content_type: (story.content_type as 'text' | 'image' | 'video') || 'text',
+        visibility: (story.visibility as 'public' | 'contacts' | 'close_friends' | 'custom') || 'contacts',
         author: story.author && typeof story.author === 'object' && !Array.isArray(story.author)
           ? story.author as UserStory['author']
           : { username: 'Unknown', display_name: 'Unknown User', avatar_url: '' },
@@ -90,8 +91,8 @@ export const useStories = () => {
       
       const processedStories = (data || []).map(story => ({
         ...story,
-        content_type: story.content_type as 'text' | 'image' | 'video',
-        visibility: story.visibility as 'public' | 'contacts' | 'close_friends' | 'custom'
+        content_type: (story.content_type as 'text' | 'image' | 'video') || 'text',
+        visibility: (story.visibility as 'public' | 'contacts' | 'close_friends' | 'custom') || 'contacts'
       })) as UserStory[];
       
       setUserStories(processedStories);
@@ -173,11 +174,18 @@ export const useStories = () => {
 
       if (error) throw error;
 
-      await supabase.rpc('increment_story_view_count', { story_id: storyId });
+      // Update view count directly
+      const currentStory = stories.find(s => s.id === storyId);
+      if (currentStory) {
+        await supabase
+          .from('user_stories')
+          .update({ view_count: (currentStory.view_count || 0) + 1 })
+          .eq('id', storyId);
+      }
 
       setStories(prev => prev.map(story => 
         story.id === storyId 
-          ? { ...story, viewed_by_user: true, view_count: story.view_count + 1 }
+          ? { ...story, viewed_by_user: true, view_count: (story.view_count || 0) + 1 }
           : story
       ));
     } catch (error) {

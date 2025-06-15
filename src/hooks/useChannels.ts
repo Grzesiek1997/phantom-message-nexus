@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -159,8 +160,13 @@ export const useChannels = () => {
 
       if (error) throw error;
 
-      // Use RPC function to update subscriber count
-      await supabase.rpc('increment_subscriber_count', { channel_id: channelId });
+      // Update subscriber count directly
+      await supabase
+        .from('channels')
+        .update({ 
+          subscriber_count: channels.find(c => c.id === channelId)?.subscriber_count + 1 || 1 
+        })
+        .eq('id', channelId);
 
       await fetchSubscribedChannels();
       await fetchPublicChannels();
@@ -191,8 +197,14 @@ export const useChannels = () => {
 
       if (error) throw error;
 
-      // Use RPC function to update subscriber count
-      await supabase.rpc('decrement_subscriber_count', { channel_id: channelId });
+      // Update subscriber count directly
+      const currentCount = channels.find(c => c.id === channelId)?.subscriber_count || 0;
+      await supabase
+        .from('channels')
+        .update({ 
+          subscriber_count: Math.max(0, currentCount - 1)
+        })
+        .eq('id', channelId);
 
       setSubscribedChannels(prev => prev.filter(ch => ch.id !== channelId));
       await fetchPublicChannels();
