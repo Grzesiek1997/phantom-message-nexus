@@ -25,30 +25,41 @@ const ContactsScreenNew: React.FC = () => {
     handleDeleteContact
   } = useContactsLogic();
 
+  // Defensywna inicjalizacja danych, logi do debugowania
+  const safeContacts = Array.isArray(contacts) ? contacts : [];
+  const safeReceived = Array.isArray(receivedRequests) ? receivedRequests : [];
+  const safeSent = Array.isArray(sentRequests) ? sentRequests : [];
+
+  // Debug logi
+  console.log("ContactsScreenNew loaded", {
+    loading,
+    contacts: safeContacts,
+    receivedRequests: safeReceived,
+    sentRequests: safeSent,
+    searchQuery,
+    activeTab,
+    showFriendSearchDialog
+  });
+
   // Filtrowanie kontaktów na podstawie wyszukiwania
-  const filteredContacts = Array.isArray(contacts)
-    ? contacts.filter(contact =>
-        contact.profile.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        contact.profile.username.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : [];
+  const filteredContacts = safeContacts.filter(contact =>
+    contact?.profile?.display_name?.toLowerCase()?.includes(searchQuery.toLowerCase()) ||
+    contact?.profile?.username?.toLowerCase()?.includes(searchQuery.toLowerCase())
+  );
 
-  const filteredReceivedRequests = Array.isArray(receivedRequests)
-    ? receivedRequests.filter(request =>
-        request.sender_profile?.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        request.sender_profile?.username.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : [];
+  const filteredReceivedRequests = safeReceived.filter(request =>
+    request?.sender_profile?.display_name?.toLowerCase()?.includes(searchQuery.toLowerCase()) ||
+    request?.sender_profile?.username?.toLowerCase()?.includes(searchQuery.toLowerCase())
+  );
 
-  const filteredSentRequests = Array.isArray(sentRequests)
-    ? sentRequests.filter(request =>
-        request.receiver_profile?.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        request.receiver_profile?.username.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : [];
+  const filteredSentRequests = safeSent.filter(request =>
+    request?.receiver_profile?.display_name?.toLowerCase()?.includes(searchQuery.toLowerCase()) ||
+    request?.receiver_profile?.username?.toLowerCase()?.includes(searchQuery.toLowerCase())
+  );
 
   // Obsługa ładowania
   if (loading) {
+    console.log("Loading contacts...");
     return (
       <div className="flex flex-col h-full items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
         <Loader2 className="w-8 h-8 animate-spin text-white mb-4" />
@@ -64,6 +75,7 @@ const ContactsScreenNew: React.FC = () => {
     filteredSentRequests.length === 0 &&
     searchQuery === ''
   ) {
+    console.log("No contacts or requests found.");
     return (
       <div className="flex flex-col h-full items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
         <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-full w-24 h-24 flex items-center justify-center mb-6">
@@ -82,6 +94,7 @@ const ContactsScreenNew: React.FC = () => {
     );
   }
 
+  // Główny ekran kontaktów
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
       <ContactsMainContent
@@ -112,3 +125,4 @@ const ContactsScreenNew: React.FC = () => {
 };
 
 export default ContactsScreenNew;
+
