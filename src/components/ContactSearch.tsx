@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, UserPlus, X, Check, UserX, Clock } from 'lucide-react';
 import { useContacts } from '@/hooks/useContacts';
+import { useFriendRequests } from '@/hooks/useFriendRequests';
 import { useToast } from '@/hooks/use-toast';
 
 interface ContactSearchProps {
@@ -18,15 +19,14 @@ const ContactSearch: React.FC<ContactSearchProps> = ({ isOpen, onClose, onSelect
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
   
+  const { contacts, searchUsers, deleteContact } = useContacts();
   const { 
-    contacts, 
-    pendingRequests, 
+    receivedRequests, 
     sentRequests, 
-    searchUsers, 
-    addContact, 
-    acceptContact, 
-    rejectContact 
-  } = useContacts();
+    sendFriendRequest, 
+    acceptFriendRequest, 
+    rejectFriendRequest 
+  } = useFriendRequests();
   const { toast } = useToast();
 
   const handleSearch = async () => {
@@ -50,7 +50,7 @@ const ContactSearch: React.FC<ContactSearchProps> = ({ isOpen, onClose, onSelect
 
   const handleAddContact = async (userId: string) => {
     try {
-      await addContact(userId);
+      await sendFriendRequest(userId);
       // Remove from search results after adding
       setSearchResults(prev => prev.filter(user => user.id !== userId));
     } catch (error) {
@@ -63,17 +63,17 @@ const ContactSearch: React.FC<ContactSearchProps> = ({ isOpen, onClose, onSelect
     onClose();
   };
 
-  const handleAcceptContact = async (contactId: string) => {
+  const handleAcceptContact = async (requestId: string) => {
     try {
-      await acceptContact(contactId);
+      await acceptFriendRequest(requestId);
     } catch (error) {
       console.error('Accept contact error:', error);
     }
   };
 
-  const handleRejectContact = async (contactId: string) => {
+  const handleRejectContact = async (requestId: string) => {
     try {
-      await rejectContact(contactId);
+      await rejectFriendRequest(requestId);
     } catch (error) {
       console.error('Reject contact error:', error);
     }
@@ -155,11 +155,11 @@ const ContactSearch: React.FC<ContactSearchProps> = ({ isOpen, onClose, onSelect
           )}
 
           {/* Received Pending Requests */}
-          {pendingRequests.length > 0 && (
+          {receivedRequests.length > 0 && (
             <div className="space-y-2">
               <h3 className="text-sm font-medium text-gray-300">Otrzymane zaproszenia:</h3>
               <div className="max-h-40 overflow-y-auto space-y-1">
-                {pendingRequests.map((request) => (
+                {receivedRequests.map((request) => (
                   <div
                     key={request.id}
                     className="flex items-center justify-between p-2 bg-gray-800 rounded-lg"
@@ -167,12 +167,12 @@ const ContactSearch: React.FC<ContactSearchProps> = ({ isOpen, onClose, onSelect
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center">
                         <span className="text-white text-sm font-bold">
-                          {request.profile.display_name?.charAt(0).toUpperCase() || '?'}
+                          {request.sender_profile?.display_name?.charAt(0).toUpperCase() || '?'}
                         </span>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-white">{request.profile.display_name}</p>
-                        <p className="text-xs text-gray-400">@{request.profile.username}</p>
+                        <p className="text-sm font-medium text-white">{request.sender_profile?.display_name}</p>
+                        <p className="text-xs text-gray-400">@{request.sender_profile?.username}</p>
                       </div>
                     </div>
                     <div className="flex space-x-1">
@@ -210,12 +210,12 @@ const ContactSearch: React.FC<ContactSearchProps> = ({ isOpen, onClose, onSelect
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-full flex items-center justify-center">
                         <span className="text-white text-sm font-bold">
-                          {request.profile.display_name?.charAt(0).toUpperCase() || '?'}
+                          {request.receiver_profile?.display_name?.charAt(0).toUpperCase() || '?'}
                         </span>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-white">{request.profile.display_name}</p>
-                        <p className="text-xs text-gray-400">@{request.profile.username}</p>
+                        <p className="text-sm font-medium text-white">{request.receiver_profile?.display_name}</p>
+                        <p className="text-xs text-gray-400">@{request.receiver_profile?.username}</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">

@@ -68,6 +68,10 @@ export const useFriendRequests = () => {
 
         const requestsWithProfiles = receivedData.map(req => ({
           ...req,
+          status: req.status as 'pending' | 'accepted' | 'rejected',
+          attempt_count: req.attempt_count || 1,
+          created_at: req.created_at || new Date().toISOString(),
+          updated_at: req.updated_at || new Date().toISOString(),
           sender_profile: senderProfiles?.find(p => p.id === req.sender_id)
         }));
 
@@ -86,6 +90,10 @@ export const useFriendRequests = () => {
 
         const sentWithProfiles = sentData.map(req => ({
           ...req,
+          status: req.status as 'pending' | 'accepted' | 'rejected',
+          attempt_count: req.attempt_count || 1,
+          created_at: req.created_at || new Date().toISOString(),
+          updated_at: req.updated_at || new Date().toISOString(),
           receiver_profile: receiverProfiles?.find(p => p.id === req.receiver_id)
         }));
 
