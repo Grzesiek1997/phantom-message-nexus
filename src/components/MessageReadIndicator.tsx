@@ -35,15 +35,21 @@ const MessageReadIndicator: React.FC<MessageReadIndicatorProps> = ({
 
   if (allRead) {
     return (
-      <CheckCheck className="w-4 h-4 text-blue-500" title="Przeczytane przez wszystkich" />
+      <div title="Przeczytane przez wszystkich">
+        <CheckCheck className="w-4 h-4 text-blue-500" />
+      </div>
     );
   } else if (someRead) {
     return (
-      <CheckCheck className="w-4 h-4 text-gray-400" title="Dostarczone" />
+      <div title="Dostarczone">
+        <CheckCheck className="w-4 h-4 text-gray-400" />
+      </div>
     );
   } else {
     return (
-      <Check className="w-4 h-4 text-gray-400" title="Wysłane" />
+      <div title="Wysłane">
+        <Check className="w-4 h-4 text-gray-400" />
+      </div>
     );
   }
 };
