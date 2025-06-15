@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useContacts } from '@/hooks/useContacts';
 import { useFriendRequests } from '@/hooks/useFriendRequests';
@@ -13,16 +13,25 @@ export const useContactsLogic = () => {
 
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { contacts, deleteContact, fetchContacts } = useContacts();
+  
+  // Inicjalizujemy dane z fallbackami
+  const { contacts = [], deleteContact, fetchContacts } = useContacts();
   const { 
-    receivedRequests, 
-    sentRequests, 
+    receivedRequests = [], 
+    sentRequests = [], 
     acceptFriendRequest, 
     rejectFriendRequest,
     deleteFriendRequest,
     fetchFriendRequests
   } = useFriendRequests();
   const { createConversation } = useMessages();
+
+  // Debug logging
+  useEffect(() => {
+    console.log('useContactsLogic - contacts:', contacts);
+    console.log('useContactsLogic - receivedRequests:', receivedRequests);
+    console.log('useContactsLogic - sentRequests:', sentRequests);
+  }, [contacts, receivedRequests, sentRequests]);
 
   const handleSelectContact = async (contactId: string) => {
     try {
@@ -100,6 +109,7 @@ export const useContactsLogic = () => {
 
   const handleAcceptRequest = async (requestId: string) => {
     try {
+      console.log('Accepting friend request:', requestId);
       await acceptFriendRequest(requestId);
       await fetchContacts();
       await fetchFriendRequests();
@@ -110,33 +120,71 @@ export const useContactsLogic = () => {
       });
     } catch (error) {
       console.error('Error accepting friend request:', error);
+      toast({
+        title: 'Błąd',
+        description: 'Nie udało się zaakceptować zaproszenia',
+        variant: 'destructive'
+      });
     }
   };
 
   const handleRejectRequest = async (requestId: string) => {
     try {
+      console.log('Rejecting friend request:', requestId);
       await rejectFriendRequest(requestId);
       await fetchFriendRequests();
+      
+      toast({
+        title: 'Zaproszenie odrzucone',
+        description: 'Zaproszenie zostało odrzucone'
+      });
     } catch (error) {
       console.error('Error rejecting friend request:', error);
+      toast({
+        title: 'Błąd',
+        description: 'Nie udało się odrzucić zaproszenia',
+        variant: 'destructive'
+      });
     }
   };
 
   const handleDeleteRequest = async (requestId: string) => {
     try {
+      console.log('Deleting friend request:', requestId);
       await deleteFriendRequest(requestId);
       await fetchFriendRequests();
+      
+      toast({
+        title: 'Zaproszenie usunięte',
+        description: 'Zaproszenie zostało usunięte'
+      });
     } catch (error) {
       console.error('Error deleting friend request:', error);
+      toast({
+        title: 'Błąd',
+        description: 'Nie udało się usunąć zaproszenia',
+        variant: 'destructive'
+      });
     }
   };
 
   const handleDeleteContact = async (contactId: string) => {
     try {
+      console.log('Deleting contact:', contactId);
       await deleteContact(contactId);
       await fetchContacts();
+      
+      toast({
+        title: 'Kontakt usunięty',
+        description: 'Kontakt został usunięty'
+      });
     } catch (error) {
       console.error('Error deleting contact:', error);
+      toast({
+        title: 'Błąd',
+        description: 'Nie udało się usunąć kontaktu',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -147,9 +195,9 @@ export const useContactsLogic = () => {
     setSearchQuery,
     showFriendSearchDialog,
     setShowFriendSearchDialog,
-    contacts,
-    receivedRequests,
-    sentRequests,
+    contacts: contacts || [],
+    receivedRequests: receivedRequests || [],
+    sentRequests: sentRequests || [],
     handleSelectContact,
     handleAcceptRequest,
     handleRejectRequest,

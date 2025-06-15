@@ -5,6 +5,8 @@ import ContactsMainContent from './contacts/ContactsMainContent';
 import ContactsActions from './contacts/ContactsActions';
 
 const ContactsScreenNew: React.FC = () => {
+  console.log('ContactsScreenNew component rendered');
+  
   const {
     activeTab,
     setActiveTab,
@@ -21,6 +23,12 @@ const ContactsScreenNew: React.FC = () => {
     handleDeleteRequest,
     handleDeleteContact
   } = useContactsLogic();
+
+  console.log('Contacts data:', { 
+    contacts: contacts.length, 
+    receivedRequests: receivedRequests.length, 
+    sentRequests: sentRequests.length 
+  });
 
   // Filtrowanie kontaktów na podstawie wyszukiwania
   const filteredContacts = contacts.filter(contact =>

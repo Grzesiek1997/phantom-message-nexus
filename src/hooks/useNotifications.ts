@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useFriendRequests } from './useFriendRequests';
 
 export interface Notification {
   id: string;
@@ -19,6 +20,7 @@ export const useNotifications = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const { receivedRequests } = useFriendRequests();
 
   const fetchNotifications = async () => {
     if (!user) return;
@@ -48,7 +50,18 @@ export const useNotifications = () => {
       }));
 
       setNotifications(mappedNotifications);
-      setUnreadCount(mappedNotifications.filter(n => !n.is_read).length);
+      
+      // Calculate unread count including pending friend requests
+      const unreadNotifications = mappedNotifications.filter(n => !n.is_read).length;
+      const pendingFriendRequests = receivedRequests.filter(r => r.status === 'pending').length;
+      setUnreadCount(unreadNotifications + pendingFriendRequests);
+      
+      console.log('Notifications fetched:', {
+        total: mappedNotifications.length,
+        unread: unreadNotifications,
+        pendingRequests: pendingFriendRequests,
+        totalUnread: unreadNotifications + pendingFriendRequests
+      });
     } catch (error) {
       console.error('Error in fetchNotifications:', error);
     } finally {
@@ -104,7 +117,7 @@ export const useNotifications = () => {
     if (user) {
       fetchNotifications();
     }
-  }, [user]);
+  }, [user, receivedRequests]);
 
   // Set up real-time subscription for notifications
   useEffect(() => {
@@ -121,6 +134,7 @@ export const useNotifications = () => {
           filter: `user_id=eq.${user.id}`
         },
         () => {
+          console.log('New notification received, refreshing...');
           fetchNotifications();
         }
       )
@@ -133,6 +147,7 @@ export const useNotifications = () => {
           filter: `receiver_id=eq.${user.id}`
         },
         () => {
+          console.log('New friend request received, refreshing notifications...');
           fetchNotifications();
         }
       )
