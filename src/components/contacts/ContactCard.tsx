@@ -1,20 +1,9 @@
 
 import React from 'react';
-import { MessageCircle, Phone, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 import StatusBadge from './StatusBadge';
 import type { Contact } from '@/hooks/useContacts';
+import ContactCardActions from './ContactCardActions';
+import DeleteContactDialog from './DeleteContactDialog';
 
 interface ContactCardProps {
   contact: Contact;
@@ -50,89 +39,17 @@ const ContactCard: React.FC<ContactCardProps> = ({
         </div>
         
         <div className="flex items-center space-x-2">
-          {contact.friend_request_status === 'pending' && contact.friend_request_id ? (
-            <>
-              <Button
-                size="sm"
-                onClick={() => onAcceptRequest(contact.friend_request_id!)}
-                className="bg-green-500 hover:bg-green-600"
-                title="Akceptuj zaproszenie"
-              >
-                Akceptuj
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => onRejectRequest(contact.friend_request_id!)}
-                className="bg-red-500 hover:bg-red-600"
-                title="Odrzuć zaproszenie"
-              >
-                Odrzuć
-              </Button>
-            </>
-          ) : contact.can_chat ? (
-            <>
-              <Button
-                size="sm"
-                onClick={() => onSelectContact(contact.contact_user_id)}
-                className="bg-blue-500 hover:bg-blue-600"
-                title="Rozpocznij czat"
-              >
-                <MessageCircle className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                title="Zadzwoń"
-              >
-                <Phone className="w-4 h-4" />
-              </Button>
-            </>
-          ) : (
-            <Button
-              size="sm"
-              variant="outline"
-              disabled
-              className="border-gray-600 text-gray-500 cursor-not-allowed"
-              title="Czekaj na akceptację zaproszenia"
-            >
-              <MessageCircle className="w-4 h-4" />
-            </Button>
-          )}
+          <ContactCardActions
+            contact={contact}
+            onSelectContact={onSelectContact}
+            onAcceptRequest={onAcceptRequest}
+            onRejectRequest={onRejectRequest}
+          />
           
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                size="sm"
-                variant="destructive"
-                className="bg-red-600 hover:bg-red-700"
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="bg-gray-900 border-gray-700">
-              <AlertDialogHeader>
-                <AlertDialogTitle className="text-white">
-                  Usuń znajomego
-                </AlertDialogTitle>
-                <AlertDialogDescription className="text-gray-300">
-                  Czy na pewno chcesz usunąć {contact.profile.display_name} z listy znajomych? 
-                  Tej operacji nie można cofnąć.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600">
-                  Anuluj
-                </AlertDialogCancel>
-                <AlertDialogAction 
-                  onClick={() => onDeleteContact(contact.id)}
-                  className="bg-red-600 hover:bg-red-700 text-white"
-                >
-                  Usuń
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <DeleteContactDialog
+            contact={contact}
+            onDeleteContact={onDeleteContact}
+          />
         </div>
       </div>
     </div>
