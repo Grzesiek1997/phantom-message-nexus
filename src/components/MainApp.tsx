@@ -73,12 +73,7 @@ const MainApp: React.FC = () => {
       <AppContent activeTab={activeTab} />
 
       {activeTab === 'chats' && (
-        <FloatingActionButton
-          onNewChat={handleNewChat}
-          onGroupChat={handleGroupChat}
-          onSearchChats={handleSearchChats}
-          onAddContacts={handleAddContacts}
-        />
+        <FloatingActionButton />
       )}
 
       <BottomNavigation
