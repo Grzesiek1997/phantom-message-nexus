@@ -267,7 +267,7 @@ const ChannelsList: React.FC<ChannelsListProps> = ({ className }) => {
                 </Button>
               </div>
             )
-          )}
+          ) : null}
         </div>
       </Card>
     </div>
