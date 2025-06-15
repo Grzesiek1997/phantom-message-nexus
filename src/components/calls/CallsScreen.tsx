@@ -1,16 +1,32 @@
 
 import React, { useState, useEffect } from 'react';
-import { Phone, PhoneCall, PhoneIncoming, PhoneOutgoing, PhoneMissed, Clock, User } from 'lucide-react';
+import { Phone, PhoneCall, PhoneIncoming, PhoneOutgoing, PhoneMissed, Clock, User, Video, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useContacts } from '@/hooks/useContacts';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
+interface CallData {
+  id: string;
+  caller_id: string;
+  conversation_id: string | null;
+  type: string;
+  status: string;
+  started_at: string;
+  ended_at?: string | null;
+  duration_seconds?: number;
+  caller_profile?: {
+    display_name: string;
+    username: string;
+    avatar_url?: string;
+  };
+}
+
 interface Call {
   id: string;
   caller_id: string;
-  conversation_id: string;
+  conversation_id: string | null;
   type: 'voice' | 'video';
   status: 'ringing' | 'connected' | 'ended' | 'missed' | 'declined';
   started_at: string;
@@ -37,7 +53,6 @@ const CallsScreen: React.FC = () => {
     try {
       setLoading(true);
       
-      // Pobierz połączenia użytkownika (jako dzwoniący lub odbierający)
       const { data: callsData, error } = await supabase
         .from('calls')
         .select(`
@@ -53,7 +68,6 @@ const CallsScreen: React.FC = () => {
         return;
       }
 
-      // Pobierz profile dla każdego połączenia
       if (callsData && callsData.length > 0) {
         const callerIds = [...new Set(callsData.map(call => call.caller_id))];
         const { data: profiles } = await supabase
@@ -61,12 +75,16 @@ const CallsScreen: React.FC = () => {
           .select('id, username, display_name, avatar_url')
           .in('id', callerIds);
 
-        const callsWithProfiles = callsData.map(call => ({
+        const transformedCalls: Call[] = callsData.map((call: CallData) => ({
           ...call,
+          type: (call.type === 'video' || call.type === 'voice') ? call.type : 'voice',
+          status: ['ringing', 'connected', 'ended', 'missed', 'declined'].includes(call.status) 
+            ? call.status as Call['status'] 
+            : 'ended',
           caller_profile: profiles?.find(p => p.id === call.caller_id)
         }));
 
-        setCalls(callsWithProfiles);
+        setCalls(transformedCalls);
       }
     } catch (error) {
       console.error('Error in fetchCalls:', error);
@@ -137,7 +155,6 @@ const CallsScreen: React.FC = () => {
 
   const initiateCall = async (contactId: string, type: 'voice' | 'video' = 'voice') => {
     try {
-      // Znajdź konwersację z kontaktem
       const contact = contacts.find(c => c.contact_user_id === contactId);
       if (!contact) {
         toast({
@@ -148,12 +165,11 @@ const CallsScreen: React.FC = () => {
         return;
       }
 
-      // Utwórz nowe połączenie
       const { data: newCall, error } = await supabase
         .from('calls')
         .insert({
           caller_id: user!.id,
-          conversation_id: null, // Można dodać logikę znajdowania konwersacji
+          conversation_id: null,
           type,
           status: 'ringing'
         })
@@ -170,7 +186,6 @@ const CallsScreen: React.FC = () => {
         return;
       }
 
-      // Dodaj uczestnika
       await supabase
         .from('call_participants')
         .insert({
@@ -182,8 +197,6 @@ const CallsScreen: React.FC = () => {
         title: 'Połączenie rozpoczęte',
         description: `Dzwonisz do ${contact.profile.display_name}`,
       });
-
-      // Tutaj można dodać logikę WebRTC
       
     } catch (error) {
       console.error('Error initiating call:', error);

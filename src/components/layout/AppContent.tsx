@@ -12,7 +12,14 @@ interface AppContentProps {
 const AppContent: React.FC<AppContentProps> = ({ activeTab }) => {
   switch (activeTab) {
     case 'chats':
-      return <ConversationList />;
+      return (
+        <div className="flex-1 bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
+          <div className="text-center py-8 text-white">
+            <h2 className="text-xl font-semibold mb-2">Czaty</h2>
+            <p className="text-gray-300">Funkcjonalność czatów będzie wkrótce dostępna</p>
+          </div>
+        </div>
+      );
     case 'calls':
       return <CallsScreen />;
     case 'contacts':
@@ -20,7 +27,14 @@ const AppContent: React.FC<AppContentProps> = ({ activeTab }) => {
     case 'settings':
       return <SettingsScreenNew />;
     default:
-      return <ConversationList />;
+      return (
+        <div className="flex-1 bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
+          <div className="text-center py-8 text-white">
+            <h2 className="text-xl font-semibold mb-2">Czaty</h2>
+            <p className="text-gray-300">Funkcjonalność czatów będzie wkrótce dostępna</p>
+          </div>
+        </div>
+      );
   }
 };
 
