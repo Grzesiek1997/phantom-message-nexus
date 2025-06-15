@@ -25,9 +25,13 @@ const Index = () => {
     );
   }
 
-  // If user is logged in, show the main app
+  // If user is logged in, show the main app wrapped with Layout
   if (user) {
-    return <MainApp />;
+    return (
+      <Layout>
+        <MainApp />
+      </Layout>
+    );
   }
 
   // If user is not logged in, show landing page
