@@ -111,3 +111,4 @@ const ContactsScreenNew: React.FC = () => {
   );
 };
 
+export default ContactsScreenNew;
