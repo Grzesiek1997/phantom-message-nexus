@@ -1,10 +1,12 @@
-
 import React, { useState } from 'react';
-import { Plus, Search, Users, UserPlus, QrCode, Link, Share, MoreVertical, MessageCircle, Phone, Video, Info } from 'lucide-react';
+import { Plus, Search, Users, UserPlus, QrCode, Link, Share, MoreVertical, MessageCircle, Phone, Video, Info, Bell } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContacts } from '@/hooks/useContacts';
+import { useNotifications } from '@/hooks/useNotifications';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import FriendSearch from './FriendSearch';
+import NotificationPanel from './NotificationPanel';
 
 interface Group {
   id: string;
@@ -17,8 +19,11 @@ interface Group {
 const ContactsScreenNew: React.FC = () => {
   const { t } = useTranslation();
   const { contacts } = useContacts();
+  const { unreadCount } = useNotifications();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'contacts' | 'groups'>('contacts');
+  const [showFriendSearch, setShowFriendSearch] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   // Mock groups data
   const [groups] = useState<Group[]>([
@@ -57,8 +62,7 @@ const ContactsScreenNew: React.FC = () => {
   };
 
   const handleInviteFriends = () => {
-    console.log('Invite friends');
-    // Implement invite functionality
+    setShowFriendSearch(true);
   };
 
   const formatLastActivity = (date: Date): string => {
@@ -77,13 +81,31 @@ const ContactsScreenNew: React.FC = () => {
       <div className="p-6 border-b border-white/10">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-white">{t('contacts')}</h1>
-          <Button
-            onClick={handleInviteFriends}
-            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-          >
-            <UserPlus className="w-4 h-4 mr-2" />
-            {t('inviteFriends')}
-          </Button>
+          <div className="flex items-center space-x-2">
+            {/* Notifications Button */}
+            <Button
+              onClick={() => setShowNotifications(true)}
+              variant="ghost"
+              size="icon"
+              className="relative text-gray-400 hover:text-white"
+            >
+              <Bell className="w-5 h-5" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </Button>
+            
+            {/* Search Friends Button */}
+            <Button
+              onClick={handleInviteFriends}
+              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              Znajdź znajomych
+            </Button>
+          </div>
         </div>
 
         {/* Search */}
@@ -246,6 +268,17 @@ const ContactsScreenNew: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Modals */}
+      <FriendSearch
+        isOpen={showFriendSearch}
+        onClose={() => setShowFriendSearch(false)}
+      />
+
+      <NotificationPanel
+        isOpen={showNotifications}
+        onClose={() => setShowNotifications(false)}
+      />
     </div>
   );
 };

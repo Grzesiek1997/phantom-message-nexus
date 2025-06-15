@@ -273,6 +273,36 @@ export type Database = {
         }
         Relationships: []
       }
+      friend_requests: {
+        Row: {
+          attempt_count: number | null
+          created_at: string | null
+          id: string
+          receiver_id: string
+          sender_id: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          attempt_count?: number | null
+          created_at?: string | null
+          id?: string
+          receiver_id: string
+          sender_id: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          attempt_count?: number | null
+          created_at?: string | null
+          id?: string
+          receiver_id?: string
+          sender_id?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       group_chat_members: {
         Row: {
           group_chat_id: string | null
@@ -649,6 +679,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_friend_request: {
+        Args: { request_id: string }
+        Returns: undefined
+      }
       cleanup_expired_messages: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -673,6 +707,10 @@ export type Database = {
         Args:
           | Record<PropertyKey, never>
           | { username: string; password: string; display_name?: string }
+        Returns: undefined
+      }
+      reject_friend_request: {
+        Args: { request_id: string }
         Returns: undefined
       }
       send_message: {
