@@ -29,6 +29,7 @@ interface ConversationListProps {
   onShowContactSearch: () => void;
   onShowAIAssistant: () => void;
   onShowGroupManagement: () => void;
+  onSearchChats: () => void;
 }
 
 const ConversationList: React.FC<ConversationListProps> = ({
@@ -40,7 +41,8 @@ const ConversationList: React.FC<ConversationListProps> = ({
   onSelectConversation,
   onShowContactSearch,
   onShowAIAssistant,
-  onShowGroupManagement
+  onShowGroupManagement,
+  onSearchChats
 }) => {
   return (
     <div className={`${
@@ -87,6 +89,8 @@ const ConversationList: React.FC<ConversationListProps> = ({
           <Input
             placeholder="Szukaj czatów..."
             className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+            onClick={onSearchChats}
+            readOnly
           />
         </div>
       </div>
