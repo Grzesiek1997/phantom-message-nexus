@@ -77,7 +77,8 @@ const RealTimeChatInterface: React.FC = () => {
         {selectedConversationId ? (
           <ChatInterface
             conversationId={selectedConversationId}
-            onBack={handleBackToList}
+            onSendMessage={() => {}}
+            disabled={false}
           />
         ) : (
           <ConversationList
@@ -85,12 +86,12 @@ const RealTimeChatInterface: React.FC = () => {
             selectedConversationId={selectedConversationId}
             currentUserId={user?.id || ''}
             loading={loading}
-            onConversationSelect={handleConversationSelect}
-            onDeleteConversation={() => {}}
-            onPinConversation={() => {}}
-            onMuteConversation={() => {}}
-            onMarkAsRead={() => {}}
-            onArchiveConversation={() => {}}
+            isVisible={true}
+            onSelectConversation={handleConversationSelect}
+            onShowContactSearch={() => {}}
+            onShowAIAssistant={() => {}}
+            onShowGroupManagement={() => {}}
+            onSearchChats={() => {}}
           />
         )}
       </div>
@@ -106,19 +107,20 @@ const RealTimeChatInterface: React.FC = () => {
           selectedConversationId={selectedConversationId}
           currentUserId={user?.id || ''}
           loading={loading}
-          onConversationSelect={handleConversationSelect}
-          onDeleteConversation={() => {}}
-          onPinConversation={() => {}}
-          onMuteConversation={() => {}}
-          onMarkAsRead={() => {}}
-          onArchiveConversation={() => {}}
+          isVisible={true}
+          onSelectConversation={handleConversationSelect}
+          onShowContactSearch={() => {}}
+          onShowAIAssistant={() => {}}
+          onShowGroupManagement={() => {}}
+          onSearchChats={() => {}}
         />
       </div>
       <div className="flex-1">
         {selectedConversationId ? (
           <ChatInterface
             conversationId={selectedConversationId}
-            onBack={handleBackToList}
+            onSendMessage={() => {}}
+            disabled={false}
           />
         ) : (
           <div className="h-full flex items-center justify-center">
