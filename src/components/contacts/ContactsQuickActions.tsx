@@ -1,26 +1,24 @@
+
 import React from 'react';
-import { UserPlus, QrCode, Link, Search } from 'lucide-react';
+import { UserPlus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import FriendSearchDialog from "./FriendSearchDialog";
 
 interface ContactsQuickActionsProps {
   onAddContact?: () => void;
 }
 
 const ContactsQuickActions: React.FC<ContactsQuickActionsProps> = ({ onAddContact }) => {
-  const [showAddFriend, setShowAddFriend] = React.useState(false);
-
   return (
     <div className="px-6 py-4 border-t border-white/10">
       <div className="flex flex-col space-y-3">
         {/* Główny przycisk wyszukiwania kontaktów */}
         <Button
-          onClick={() => setShowAddFriend(true)}
+          onClick={onAddContact}
           className="bg-blue-500 hover:bg-blue-600 text-white py-4 text-lg font-semibold"
           size="lg"
         >
           <UserPlus className="w-5 h-5 mr-3" />
-          Dodaj znajomego
+          Wyszukaj znajomego
         </Button>
         
         {/* Dodatkowe akcje */}
@@ -36,11 +34,8 @@ const ContactsQuickActions: React.FC<ContactsQuickActionsProps> = ({ onAddContac
           </Button>
         </div>
       </div>
-      {/* MODAL */}
-      {showAddFriend && (
-        <FriendSearchDialog isOpen={showAddFriend} onClose={() => setShowAddFriend(false)} />
-      )}
     </div>
   );
 };
+
 export default ContactsQuickActions;

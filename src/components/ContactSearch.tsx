@@ -1,10 +1,11 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, UserPlus, X, Check, UserX, Clock } from 'lucide-react';
 import { useContacts } from '@/hooks/useContacts';
-import { useFriendRequests } from '@/hooks/friends/useFriendRequests';
+import { useFriendRequests } from '@/hooks/useFriendRequests';
 import { useToast } from '@/hooks/use-toast';
 
 interface ContactSearchProps {
@@ -50,17 +51,10 @@ const ContactSearch: React.FC<ContactSearchProps> = ({ isOpen, onClose, onSelect
   const handleAddContact = async (userId: string) => {
     try {
       await sendFriendRequest(userId);
+      // Remove from search results after adding
       setSearchResults(prev => prev.filter(user => user.id !== userId));
-      toast({
-        title: "Prośba wysłana!",
-        description: "Wysłano zaproszenie do znajomych.",
-      });
     } catch (error) {
-      toast({
-        title: "Błąd",
-        description: "Nie udało się wysłać zaproszenia.",
-        variant: "destructive"
-      });
+      console.error('Add contact error:', error);
     }
   };
 
@@ -72,26 +66,16 @@ const ContactSearch: React.FC<ContactSearchProps> = ({ isOpen, onClose, onSelect
   const handleAcceptContact = async (requestId: string) => {
     try {
       await acceptFriendRequest(requestId);
-      toast({ title: "Zaakceptowano!", description: "Masz nowego znajomego." });
     } catch (error) {
-      toast({
-        title: "Błąd",
-        description: "Nie udało się zaakceptować zaproszenia.",
-        variant: "destructive"
-      });
+      console.error('Accept contact error:', error);
     }
   };
 
   const handleRejectContact = async (requestId: string) => {
     try {
       await rejectFriendRequest(requestId);
-      toast({ title: "Odrzucono", description: "Zaproszenie zostało odrzucone." });
     } catch (error) {
-      toast({
-        title: "Błąd",
-        description: "Nie udało się odrzucić zaproszenia.",
-        variant: "destructive"
-      });
+      console.error('Reject contact error:', error);
     }
   };
 

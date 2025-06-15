@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { UserX, Clock, Check, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import type { FriendRequest } from '@/hooks/friends/useFriendRequests';
+import type { FriendRequest } from '@/hooks/useFriendRequests';
 
 interface RequestsTabProps {
   type: 'received' | 'sent';

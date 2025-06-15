@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { useFriendRequests } from './friends/useFriendRequests';
 
 export interface Notification {
   id: string;
@@ -20,7 +19,6 @@ export const useNotifications = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  const { receivedRequests } = useFriendRequests();
 
   const fetchNotifications = async () => {
     if (!user) return;
@@ -37,6 +35,7 @@ export const useNotifications = () => {
         return;
       }
 
+      // Map database fields to interface fields with proper type casting
       const mappedNotifications: Notification[] = (data || []).map(item => ({
         id: item.id,
         user_id: item.user_id,
@@ -48,21 +47,8 @@ export const useNotifications = () => {
         created_at: item.created_at || new Date().toISOString()
       }));
 
-      // Dodaj zaproszenia do znajomych jako powiadomienia
-      const friendRequestNotifications: Notification[] = receivedRequests.map(request => ({
-        id: `friend_request_${request.id}`,
-        user_id: user.id,
-        type: 'friend_request' as const,
-        title: 'Nowe zaproszenie do znajomych',
-        message: `${request.sender_profile?.display_name || 'Ktoś'} chce dodać Cię do znajomych`,
-        data: { friend_request_id: request.id },
-        is_read: false,
-        created_at: request.created_at
-      }));
-
-      const allNotifications = [...mappedNotifications, ...friendRequestNotifications];
-      setNotifications(allNotifications);
-      setUnreadCount(allNotifications.filter(n => !n.is_read).length);
+      setNotifications(mappedNotifications);
+      setUnreadCount(mappedNotifications.filter(n => !n.is_read).length);
     } catch (error) {
       console.error('Error in fetchNotifications:', error);
     } finally {
@@ -72,6 +58,7 @@ export const useNotifications = () => {
 
   const markAsRead = async (notificationId: string) => {
     try {
+      // Skip marking friend request notifications as read (they're handled differently)
       if (notificationId.startsWith('friend_request_')) {
         return;
       }
@@ -117,8 +104,9 @@ export const useNotifications = () => {
     if (user) {
       fetchNotifications();
     }
-  }, [user, receivedRequests]);
+  }, [user]);
 
+  // Set up real-time subscription for notifications
   useEffect(() => {
     if (!user) return;
 
