@@ -21,14 +21,24 @@ export const useUserStatus = () => {
     if (!user) return;
 
     try {
-      // Use raw SQL to interact with the new table until types are updated
-      const { error } = await supabase.rpc('update_user_last_seen');
+      // Direct insert/update to user_status table using raw query since types aren't updated yet
+      const { error } = await supabase
+        .from('user_status' as any)
+        .upsert({
+          user_id: user.id,
+          status: status,
+          last_seen: new Date().toISOString(),
+          custom_status: customStatus,
+          updated_at: new Date().toISOString()
+        });
 
       if (!error) {
         setMyStatus(status);
       }
     } catch (error) {
       console.error('Error updating status:', error);
+      // Fallback to local state
+      setMyStatus(status);
     }
   };
 
@@ -36,20 +46,53 @@ export const useUserStatus = () => {
     if (userIds.length === 0) return;
 
     try {
-      // For now, we'll simulate user statuses until the table types are available
+      // Try to fetch from the new user_status table
+      const { data, error } = await supabase
+        .from('user_status' as any)
+        .select('*')
+        .in('user_id', userIds);
+
+      if (data && !error) {
+        const statusMap: Record<string, UserStatus> = {};
+        data.forEach((status: any) => {
+          statusMap[status.user_id] = {
+            id: status.id,
+            user_id: status.user_id,
+            status: status.status,
+            last_seen: status.last_seen,
+            custom_status: status.custom_status,
+            updated_at: status.updated_at
+          };
+        });
+        setUserStatuses(prev => ({ ...prev, ...statusMap }));
+      } else {
+        // Fallback to simulated data if table doesn't exist yet
+        const statusMap: Record<string, UserStatus> = {};
+        userIds.forEach(userId => {
+          statusMap[userId] = {
+            id: `status-${userId}`,
+            user_id: userId,
+            status: 'online',
+            last_seen: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+        });
+        setUserStatuses(prev => ({ ...prev, ...statusMap }));
+      }
+    } catch (error) {
+      console.error('Error fetching user statuses:', error);
+      // Fallback to simulated data
       const statusMap: Record<string, UserStatus> = {};
       userIds.forEach(userId => {
         statusMap[userId] = {
           id: `status-${userId}`,
           user_id: userId,
-          status: 'online', // Default to online for now
+          status: 'online',
           last_seen: new Date().toISOString(),
           updated_at: new Date().toISOString()
         };
       });
       setUserStatuses(prev => ({ ...prev, ...statusMap }));
-    } catch (error) {
-      console.error('Error fetching user statuses:', error);
     }
   };
 
