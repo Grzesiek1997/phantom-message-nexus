@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useMessages } from '@/hooks/useMessages';
 import { useAuth } from '@/hooks/useAuth';
@@ -31,21 +30,18 @@ const RealTimeChatInterface: React.FC = () => {
 
   const selectedConversation = conversations.find(c => c.id === selectedConversationId);
 
-  // Auto-select first conversation if available
   useEffect(() => {
     if (!selectedConversationId && conversations.length > 0) {
       setSelectedConversationId(conversations[0].id);
     }
   }, [conversations, selectedConversationId]);
 
-  // Fetch messages when conversation changes
   useEffect(() => {
     if (selectedConversationId) {
       fetchMessages(selectedConversationId);
     }
   }, [selectedConversationId, fetchMessages]);
 
-  // Fetch user statuses for conversation participants
   useEffect(() => {
     if (selectedConversation) {
       const participantIds = selectedConversation.participants?.map(p => p.user_id) || [];
@@ -55,7 +51,6 @@ const RealTimeChatInterface: React.FC = () => {
     }
   }, [selectedConversation, fetchUserStatuses]);
 
-  // Fetch read statuses for current messages
   useEffect(() => {
     if (messages.length > 0) {
       const messageIds = messages.map(m => m.id);
@@ -68,7 +63,6 @@ const RealTimeChatInterface: React.FC = () => {
       try {
         let content = messageInput.trim();
         
-        // Add reply context if replying
         if (replyingTo && replyingToMessage) {
           content = `↩️ Odpowiedź na: "${replyingToMessage.content.substring(0, 50)}..."\n\n${content}`;
         }
@@ -93,7 +87,6 @@ const RealTimeChatInterface: React.FC = () => {
 
   const handleReact = async (messageId: string, emoji: string) => {
     console.log('React to message:', messageId, emoji);
-    // Reactions are handled by MessageBubble component
   };
 
   const handleCancelReply = () => {
@@ -111,20 +104,6 @@ const RealTimeChatInterface: React.FC = () => {
     return otherParticipant?.profiles?.display_name || 'Nieznany użytkownik';
   };
 
-  // Get participant profiles for typing indicator
-  const getParticipantProfiles = () => {
-    if (!selectedConversation) return {};
-    
-    const profiles: Record<string, { display_name: string; username: string }> = {};
-    selectedConversation.participants?.forEach(p => {
-      profiles[p.user_id] = {
-        display_name: p.profiles.display_name,
-        username: p.profiles.username
-      };
-    });
-    return profiles;
-  };
-
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -140,7 +119,6 @@ const RealTimeChatInterface: React.FC = () => {
 
   return (
     <div className="flex h-full">
-      {/* Conversations Sidebar */}
       <ConversationList
         conversations={conversations}
         selectedConversationId={selectedConversationId}
@@ -154,7 +132,6 @@ const RealTimeChatInterface: React.FC = () => {
         onSearchChats={() => console.log('Search chats')}
       />
 
-      {/* Chat Area */}
       <div className="flex-1 flex flex-col">
         {selectedConversation ? (
           <>
@@ -165,7 +142,6 @@ const RealTimeChatInterface: React.FC = () => {
               onBack={() => {}}
             />
             
-            {/* Messages Area */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {messages.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-center text-gray-400">
@@ -188,16 +164,11 @@ const RealTimeChatInterface: React.FC = () => {
                 ))
               )}
               
-              {/* Typing Indicator */}
               {selectedConversationId && (
-                <TypingIndicator 
-                  conversationId={selectedConversationId}
-                  userProfiles={getParticipantProfiles()}
-                />
+                <TypingIndicator conversationId={selectedConversationId} />
               )}
             </div>
 
-            {/* Message Input */}
             <MessageInput
               messageInput={messageInput}
               replyingTo={replyingTo}

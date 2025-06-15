@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -56,11 +55,10 @@ export const useEnhancedProfiles = () => {
 
       if (error) throw error;
       
-      // Transform the data to match our EnhancedProfile interface
       const transformedProfile: EnhancedProfile = {
         ...data,
         status: (data.status as 'available' | 'away' | 'busy' | 'invisible') || 'available',
-        privacy_settings: typeof data.privacy_settings === 'object' && data.privacy_settings !== null
+        privacy_settings: (data.privacy_settings && typeof data.privacy_settings === 'object' && !Array.isArray(data.privacy_settings))
           ? data.privacy_settings as PrivacySettings
           : {
               read_receipts: true,
@@ -84,13 +82,11 @@ export const useEnhancedProfiles = () => {
     if (!user) return;
 
     try {
-      // Prepare the update data with proper type conversion
       const updateData: any = {
         ...updates,
         updated_at: new Date().toISOString()
       };
 
-      // Convert privacy_settings to proper JSON format if it exists
       if (updates.privacy_settings) {
         updateData.privacy_settings = JSON.parse(JSON.stringify(updates.privacy_settings));
       }
@@ -107,7 +103,7 @@ export const useEnhancedProfiles = () => {
       const transformedProfile: EnhancedProfile = {
         ...data,
         status: (data.status as 'available' | 'away' | 'busy' | 'invisible') || 'available',
-        privacy_settings: typeof data.privacy_settings === 'object' && data.privacy_settings !== null
+        privacy_settings: (data.privacy_settings && typeof data.privacy_settings === 'object' && !Array.isArray(data.privacy_settings))
           ? data.privacy_settings as PrivacySettings
           : {
               read_receipts: true,
@@ -164,8 +160,6 @@ export const useEnhancedProfiles = () => {
     if (!user) return;
 
     try {
-      // In a real implementation, you would generate proper encryption keys
-      // For now, we'll generate placeholder keys
       const identityKey = crypto.randomUUID();
       const signedPrekey = crypto.randomUUID();
       const prekeySignature = crypto.randomUUID();
@@ -193,14 +187,13 @@ export const useEnhancedProfiles = () => {
     fetchProfile();
   }, [user]);
 
-  // Update online status when component mounts/unmounts
   useEffect(() => {
     if (profile) {
       updateOnlineStatus(true);
 
       const interval = setInterval(() => {
         updateOnlineStatus(true);
-      }, 30000); // Update every 30 seconds
+      }, 30000);
 
       return () => {
         clearInterval(interval);

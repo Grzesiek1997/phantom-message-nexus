@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -160,11 +159,8 @@ export const useChannels = () => {
 
       if (error) throw error;
 
-      // Update subscriber count
-      await supabase
-        .from('channels')
-        .update({ subscriber_count: supabase.sql`subscriber_count + 1` })
-        .eq('id', channelId);
+      // Use RPC function to update subscriber count
+      await supabase.rpc('increment_subscriber_count', { channel_id: channelId });
 
       await fetchSubscribedChannels();
       await fetchPublicChannels();
@@ -195,11 +191,8 @@ export const useChannels = () => {
 
       if (error) throw error;
 
-      // Update subscriber count
-      await supabase
-        .from('channels')
-        .update({ subscriber_count: supabase.sql`subscriber_count - 1` })
-        .eq('id', channelId);
+      // Use RPC function to update subscriber count
+      await supabase.rpc('decrement_subscriber_count', { channel_id: channelId });
 
       setSubscribedChannels(prev => prev.filter(ch => ch.id !== channelId));
       await fetchPublicChannels();
@@ -309,7 +302,6 @@ export const useChannels = () => {
 
     loadChannels();
 
-    // Set up real-time subscription for channel updates
     const channel = supabase
       .channel('channels-changes')
       .on('postgres_changes', 

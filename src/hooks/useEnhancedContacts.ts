@@ -67,12 +67,11 @@ export const useEnhancedContacts = () => {
 
       if (error) throw error;
 
-      // Filter and process contacts with valid profile data
       const processedContacts = (data || [])
-        .filter(contact => contact.contact_profile && typeof contact.contact_profile === 'object')
+        .filter(contact => contact.contact_profile !== null)
         .map(contact => ({
           ...contact,
-          contact_profile: contact.contact_profile && typeof contact.contact_profile === 'object' && !('error' in contact.contact_profile)
+          contact_profile: contact.contact_profile
             ? contact.contact_profile as EnhancedContact['contact_profile']
             : {
                 username: 'Unknown',

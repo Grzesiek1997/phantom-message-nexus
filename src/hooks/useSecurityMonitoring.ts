@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -48,6 +47,7 @@ export const useSecurityMonitoring = () => {
 
       const processedEvents = (data || []).map(event => ({
         ...event,
+        severity: (event.severity as 'low' | 'medium' | 'high' | 'critical') || 'medium',
         metadata: typeof event.metadata === 'object' && event.metadata !== null 
           ? event.metadata as Record<string, any>
           : {}
@@ -74,6 +74,7 @@ export const useSecurityMonitoring = () => {
 
       const processedFailures = (data || []).map(failure => ({
         ...failure,
+        ip_address: typeof failure.ip_address === 'string' ? failure.ip_address : undefined,
         device_info: typeof failure.device_info === 'object' && failure.device_info !== null 
           ? failure.device_info as Record<string, any>
           : {}
@@ -111,6 +112,7 @@ export const useSecurityMonitoring = () => {
 
       const processedEvent: SecurityEvent = {
         ...data,
+        severity: data.severity as 'low' | 'medium' | 'high' | 'critical',
         metadata: typeof data.metadata === 'object' && data.metadata !== null 
           ? data.metadata as Record<string, any>
           : {}
@@ -148,6 +150,7 @@ export const useSecurityMonitoring = () => {
 
       const processedFailure: DecryptionFailure = {
         ...data,
+        ip_address: typeof data.ip_address === 'string' ? data.ip_address : undefined,
         device_info: typeof data.device_info === 'object' && data.device_info !== null 
           ? data.device_info as Record<string, any>
           : {}

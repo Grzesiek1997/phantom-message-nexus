@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -49,17 +48,19 @@ export const usePolls = () => {
         `);
 
       if (conversationId) {
-        // Filter by conversation through messages
-        query = query.in('message_id', 
-          supabase
-            .from('messages')
-            .select('id')
-            .eq('conversation_id', conversationId)
-        );
+        // Get message IDs from the conversation first
+        const { data: messageIds } = await supabase
+          .from('messages')
+          .select('id')
+          .eq('conversation_id', conversationId);
+        
+        if (messageIds && messageIds.length > 0) {
+          const ids = messageIds.map(m => m.id);
+          query = query.in('message_id', ids);
+        }
       }
 
-      const { data, error } = await query
-        .order('created_at', { ascending: false });
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
 
@@ -74,6 +75,7 @@ export const usePolls = () => {
 
         return {
           ...poll,
+          poll_type: poll.poll_type as 'single' | 'multiple' | 'quiz',
           options,
           user_votes: userVotes,
           total_votes: totalVotes
@@ -103,7 +105,6 @@ export const usePolls = () => {
     if (!user) return;
 
     try {
-      // Create the poll
       const { data: pollData, error: pollError } = await supabase
         .from('polls')
         .insert({
@@ -115,7 +116,7 @@ export const usePolls = () => {
           allows_multiple_answers: settings.allowsMultipleAnswers || false,
           expires_at: settings.expiresAt,
           correct_option_id: settings.correctOptionIndex !== undefined 
-            ? undefined // Will be set after creating options
+            ? undefined
             : undefined
         })
         .select()
@@ -123,7 +124,6 @@ export const usePolls = () => {
 
       if (pollError) throw pollError;
 
-      // Create poll options
       const optionsData = options.map((text, index) => ({
         poll_id: pollData.id,
         text,
@@ -137,7 +137,6 @@ export const usePolls = () => {
 
       if (optionsError) throw optionsError;
 
-      // Update poll with correct option if it's a quiz
       if (pollType === 'quiz' && settings.correctOptionIndex !== undefined) {
         const correctOption = createdOptions[settings.correctOptionIndex];
         if (correctOption) {
@@ -150,6 +149,7 @@ export const usePolls = () => {
 
       const newPoll: Poll = {
         ...pollData,
+        poll_type: pollData.poll_type as 'single' | 'multiple' | 'quiz',
         options: createdOptions,
         user_votes: [],
         total_votes: 0
@@ -180,7 +180,6 @@ export const usePolls = () => {
       const poll = polls.find(p => p.id === pollId);
       if (!poll) return;
 
-      // Check if poll is closed or expired
       if (poll.is_closed || (poll.expires_at && new Date(poll.expires_at) < new Date())) {
         toast({
           title: 'Błąd',
@@ -190,7 +189,6 @@ export const usePolls = () => {
         return;
       }
 
-      // Remove existing votes if needed
       if (!poll.allows_multiple_answers) {
         await supabase
           .from('poll_votes')
@@ -199,7 +197,6 @@ export const usePolls = () => {
           .eq('voter_id', user.id);
       }
 
-      // Add new votes
       const votesData = optionIds.map(optionId => ({
         poll_id: pollId,
         option_id: optionId,
@@ -212,15 +209,10 @@ export const usePolls = () => {
 
       if (error) throw error;
 
-      // Update vote counts
       for (const optionId of optionIds) {
-        await supabase
-          .from('poll_options')
-          .update({ vote_count: supabase.sql`vote_count + 1` })
-          .eq('id', optionId);
+        await supabase.rpc('increment_vote_count', { option_id: optionId });
       }
 
-      // Refresh polls to get updated data
       await fetchPolls();
 
       toast({
@@ -288,7 +280,6 @@ export const usePolls = () => {
   useEffect(() => {
     fetchPolls();
 
-    // Set up real-time subscription for poll updates
     const channel = supabase
       .channel('polls-changes')
       .on('postgres_changes', 

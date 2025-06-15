@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -47,7 +46,6 @@ export const useStories = () => {
     if (!user) return;
 
     try {
-      // Fetch stories from contacts and public stories
       const { data, error } = await supabase
         .from('user_stories')
         .select(`
@@ -63,7 +61,9 @@ export const useStories = () => {
 
       const processedStories = (data || []).map(story => ({
         ...story,
-        author: story.author && typeof story.author === 'object' && !('error' in story.author)
+        content_type: story.content_type as 'text' | 'image' | 'video',
+        visibility: story.visibility as 'public' | 'contacts' | 'close_friends' | 'custom',
+        author: story.author && typeof story.author === 'object' && !Array.isArray(story.author)
           ? story.author as UserStory['author']
           : { username: 'Unknown', display_name: 'Unknown User', avatar_url: '' },
         viewed_by_user: Array.isArray(story.story_views) && story.story_views.some((view: any) => view.viewer_id === user.id)
@@ -87,7 +87,14 @@ export const useStories = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setUserStories(data || []);
+      
+      const processedStories = (data || []).map(story => ({
+        ...story,
+        content_type: story.content_type as 'text' | 'image' | 'video',
+        visibility: story.visibility as 'public' | 'contacts' | 'close_friends' | 'custom'
+      })) as UserStory[];
+      
+      setUserStories(processedStories);
     } catch (error) {
       console.error('Error fetching user stories:', error);
     }
@@ -122,20 +129,26 @@ export const useStories = () => {
           allowed_viewers: options.allowedViewers,
           allow_replies: options.allowReplies !== false,
           allow_reactions: options.allowReactions !== false,
-          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
+          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      setUserStories(prev => [data, ...prev]);
+      const processedStory = {
+        ...data,
+        content_type: data.content_type as 'text' | 'image' | 'video',
+        visibility: data.visibility as 'public' | 'contacts' | 'close_friends' | 'custom'
+      } as UserStory;
+
+      setUserStories(prev => [processedStory, ...prev]);
       toast({
         title: 'Sukces',
         description: 'Historia została dodana'
       });
 
-      return data;
+      return processedStory;
     } catch (error) {
       console.error('Error creating story:', error);
       toast({
@@ -160,13 +173,8 @@ export const useStories = () => {
 
       if (error) throw error;
 
-      // Update view count
-      await supabase
-        .from('user_stories')
-        .update({ view_count: supabase.sql`view_count + 1` })
-        .eq('id', storyId);
+      await supabase.rpc('increment_story_view_count', { story_id: storyId });
 
-      // Update local state
       setStories(prev => prev.map(story => 
         story.id === storyId 
           ? { ...story, viewed_by_user: true, view_count: story.view_count + 1 }
@@ -232,7 +240,6 @@ export const useStories = () => {
 
     loadStories();
 
-    // Set up real-time subscription for new stories
     const channel = supabase
       .channel('stories-changes')
       .on('postgres_changes', 

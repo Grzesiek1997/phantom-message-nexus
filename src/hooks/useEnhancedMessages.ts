@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -44,14 +43,14 @@ export interface EnhancedMessage {
   read_by: string[];
 }
 
-export const useEnhancedMessages = () => {
+export const useEnhancedMessages = (conversationId?: string) => {
   const [messages, setMessages] = useState<EnhancedMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const fetchMessages = async (conversationId: string, limit = 50, offset = 0) => {
-    if (!user || !conversationId) return;
+  const fetchMessages = useCallback(async (convId?: string, limit = 50, offset = 0) => {
+    if (!user || !convId) return;
 
     try {
       const { data, error } = await supabase
@@ -62,24 +61,39 @@ export const useEnhancedMessages = () => {
           attachments:message_attachments(*),
           reactions:message_reactions(*)
         `)
-        .eq('conversation_id', conversationId)
+        .eq('conversation_id', convId)
         .eq('is_deleted', false)
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
 
       if (error) throw error;
 
-      const processedMessages = (data || []).map(msg => ({
-        ...msg,
-        delivery_status: 'delivered' as const,
-        sender: msg.sender && typeof msg.sender === 'object' && !('error' in msg.sender)
-          ? msg.sender as EnhancedMessage['sender']
-          : { username: 'Unknown', display_name: 'Unknown User', avatar_url: '' },
-        attachments: msg.attachments || [],
-        reactions: msg.reactions || [],
-        read_by: [],
-        edit_history: Array.isArray(msg.edit_history) ? msg.edit_history : []
-      })) as EnhancedMessage[];
+      const processedMessages = (data || []).map(msg => {
+        const attachments = (msg.attachments || []).map((att: any) => ({
+          id: att.id,
+          file_name: att.file_name,
+          file_url: att.file_url,
+          file_type: att.file_type,
+          file_size: att.file_size || 0,
+          duration: att.duration || undefined,
+          dimensions: att.dimensions && typeof att.dimensions === 'object' && !Array.isArray(att.dimensions)
+            ? att.dimensions as { width: number; height: number }
+            : undefined,
+          thumbnail_url: att.thumbnail_path || undefined
+        }));
+
+        return {
+          ...msg,
+          delivery_status: 'delivered' as const,
+          sender: msg.sender && typeof msg.sender === 'object' && !Array.isArray(msg.sender)
+            ? msg.sender as EnhancedMessage['sender']
+            : { username: 'Unknown', display_name: 'Unknown User', avatar_url: '' },
+          attachments,
+          reactions: msg.reactions || [],
+          read_by: [],
+          edit_history: Array.isArray(msg.edit_history) ? msg.edit_history : []
+        };
+      }) as EnhancedMessage[];
 
       if (offset === 0) {
         setMessages(processedMessages);
@@ -91,27 +105,27 @@ export const useEnhancedMessages = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   const sendMessage = async (
-    conversationId: string,
     content: string,
-    messageType = 'text',
-    replyToId?: string,
-    attachments?: File[]
+    options: {
+      replyToId?: string;
+      autoDeleteAfter?: number;
+    } = {}
   ) => {
-    if (!user) return;
+    if (!user || !conversationId) return;
 
     try {
-      // Insert the message
       const { data, error } = await supabase
         .from('messages')
         .insert({
           conversation_id: conversationId,
           sender_id: user.id,
           content,
-          message_type: messageType,
-          reply_to_id: replyToId,
+          message_type: 'text',
+          reply_to_id: options.replyToId,
+          auto_delete_after: options.autoDeleteAfter,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
@@ -123,29 +137,19 @@ export const useEnhancedMessages = () => {
 
       if (error) throw error;
 
-      // Process attachments if any
-      let processedAttachments: MessageAttachment[] = [];
-      if (attachments && attachments.length > 0) {
-        // Handle file uploads here
-        console.log('Processing attachments:', attachments);
-      }
-
-      // Create enhanced message object
       const enhancedMessage: EnhancedMessage = {
         ...data,
         delivery_status: 'sent',
-        sender: data.sender && typeof data.sender === 'object' && !('error' in data.sender)
+        sender: data.sender && typeof data.sender === 'object' && !Array.isArray(data.sender)
           ? data.sender as EnhancedMessage['sender']
           : { username: user.email || 'Unknown', display_name: 'Unknown User', avatar_url: '' },
-        attachments: processedAttachments,
+        attachments: [],
         reactions: [],
         read_by: [],
         edit_history: []
       };
 
-      // Add to messages list
       setMessages(prev => [enhancedMessage, ...prev]);
-
       return enhancedMessage;
     } catch (error) {
       console.error('Error sending message:', error);
@@ -161,7 +165,6 @@ export const useEnhancedMessages = () => {
     if (!user) return;
 
     try {
-      // Get current message for edit history
       const currentMessage = messages.find(m => m.id === messageId);
       if (!currentMessage) return;
 
@@ -182,7 +185,6 @@ export const useEnhancedMessages = () => {
 
       if (error) throw error;
 
-      // Update local state
       setMessages(prev => prev.map(msg => 
         msg.id === messageId 
           ? { ...msg, content: newContent, is_edited: true, edit_history: editHistory }
@@ -216,7 +218,6 @@ export const useEnhancedMessages = () => {
 
         if (error) throw error;
       } else {
-        // Delete for user only
         const currentMessage = messages.find(m => m.id === messageId);
         if (!currentMessage) return;
 
@@ -230,7 +231,6 @@ export const useEnhancedMessages = () => {
         if (error) throw error;
       }
 
-      // Remove from local state
       setMessages(prev => prev.filter(msg => msg.id !== messageId));
 
       toast({
@@ -287,6 +287,12 @@ export const useEnhancedMessages = () => {
       console.error('Error marking message as read:', error);
     }
   };
+
+  useEffect(() => {
+    if (conversationId) {
+      fetchMessages(conversationId);
+    }
+  }, [conversationId, fetchMessages]);
 
   return {
     messages,
