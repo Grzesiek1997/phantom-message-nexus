@@ -47,25 +47,10 @@ export const useStories = () => {
     if (!user) return;
 
     try {
-      // First check if user_stories table exists
-      const { data: tableCheck } = await supabase
-        .from('user_stories' as any)
-        .select('id')
-        .limit(1);
-
-      if (!tableCheck) {
-        console.log('User stories table not found');
-        setStories([]);
-        return;
-      }
-
+      // Simplified query without complex joins for now
       const { data, error } = await supabase
         .from('user_stories' as any)
-        .select(`
-          *,
-          author:profiles!user_stories_user_id_fkey(username, display_name, avatar_url),
-          story_views!inner(viewer_id)
-        `)
+        .select('*')
         .gt('expires_at', new Date().toISOString())
         .in('visibility', ['public', 'contacts'])
         .order('created_at', { ascending: false });
@@ -75,15 +60,46 @@ export const useStories = () => {
         return;
       }
 
-      const processedStories = (data || []).map(story => ({
-        ...story,
-        content_type: (story.content_type as 'text' | 'image' | 'video') || 'text',
-        visibility: (story.visibility as 'public' | 'contacts' | 'close_friends' | 'custom') || 'contacts',
-        author: story.author && typeof story.author === 'object' && !Array.isArray(story.author)
-          ? story.author as UserStory['author']
-          : { username: 'Unknown', display_name: 'Unknown User', avatar_url: '' },
-        viewed_by_user: Array.isArray(story.story_views) && story.story_views.some((view: any) => view.viewer_id === user.id)
-      })) as UserStory[];
+      if (!data) {
+        setStories([]);
+        return;
+      }
+
+      // Get author profiles separately
+      const authorIds = [...new Set(data.map((story: any) => story.user_id))];
+      const { data: authors } = await supabase
+        .from('profiles')
+        .select('id, username, display_name, avatar_url')
+        .in('id', authorIds);
+
+      // Get story views for current user
+      const storyIds = data.map((story: any) => story.id);
+      const { data: views } = await supabase
+        .from('story_views' as any)
+        .select('story_id')
+        .in('story_id', storyIds)
+        .eq('viewer_id', user.id);
+
+      const viewedStoryIds = new Set(views?.map(v => v.story_id) || []);
+
+      const processedStories: UserStory[] = data.map((story: any) => {
+        const author = authors?.find(a => a.id === story.user_id);
+        return {
+          ...story,
+          content_type: (story.content_type as 'text' | 'image' | 'video') || 'text',
+          visibility: (story.visibility as 'public' | 'contacts' | 'close_friends' | 'custom') || 'contacts',
+          author: author ? {
+            username: author.username,
+            display_name: author.display_name || author.username,
+            avatar_url: author.avatar_url || ''
+          } : { 
+            username: 'Unknown', 
+            display_name: 'Unknown User', 
+            avatar_url: '' 
+          },
+          viewed_by_user: viewedStoryIds.has(story.id)
+        };
+      });
 
       setStories(processedStories);
     } catch (error) {
@@ -107,11 +123,11 @@ export const useStories = () => {
         return;
       }
       
-      const processedStories = (data || []).map(story => ({
+      const processedStories: UserStory[] = (data || []).map((story: any) => ({
         ...story,
         content_type: (story.content_type as 'text' | 'image' | 'video') || 'text',
         visibility: (story.visibility as 'public' | 'contacts' | 'close_friends' | 'custom') || 'contacts'
-      })) as UserStory[];
+      }));
       
       setUserStories(processedStories);
     } catch (error) {
@@ -155,11 +171,11 @@ export const useStories = () => {
 
       if (error) throw error;
 
-      const processedStory = {
+      const processedStory: UserStory = {
         ...data,
         content_type: data.content_type as 'text' | 'image' | 'video',
         visibility: data.visibility as 'public' | 'contacts' | 'close_friends' | 'custom'
-      } as UserStory;
+      };
 
       setUserStories(prev => [processedStory, ...prev]);
       toast({

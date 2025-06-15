@@ -1,4 +1,3 @@
-
 export interface Message {
   id: string;
   conversation_id: string;
@@ -16,6 +15,11 @@ export interface Message {
   reactions?: MessageReaction[];
   delivery_status?: 'sent' | 'delivered' | 'read';
   edit_history?: any[];
+  sender?: {
+    username: string;
+    display_name?: string;
+    avatar_url?: string;
+  };
 }
 
 export interface MessageAttachment {

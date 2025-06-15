@@ -17,6 +17,14 @@ export interface UserDevice {
   push_token?: string;
 }
 
+interface RegisterDeviceParams {
+  device_id: string;
+  device_name: string;
+  platform: 'ios' | 'android' | 'desktop' | 'web';
+  device_key?: string;
+  push_token?: string;
+}
+
 export const useUserDevices = () => {
   const [devices, setDevices] = useState<UserDevice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,25 +59,21 @@ export const useUserDevices = () => {
     }
   };
 
-  const registerDevice = async (
-    deviceId: string,
-    deviceName: string,
-    platform: 'ios' | 'android' | 'desktop' | 'web',
-    deviceKey: string,
-    pushToken?: string
-  ) => {
+  const registerDevice = async (params: RegisterDeviceParams) => {
     if (!user) return;
 
     try {
+      const deviceKey = params.device_key || `key-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
       const { data, error } = await supabase
         .from('user_devices')
         .upsert({
           user_id: user.id,
-          device_id: deviceId,
-          device_name: deviceName,
-          platform: platform,
+          device_id: params.device_id,
+          device_name: params.device_name,
+          platform: params.platform,
           device_key: deviceKey,
-          push_token: pushToken,
+          push_token: params.push_token,
           last_active: new Date().toISOString(),
           is_primary: devices.length === 0 // First device is primary
         })
@@ -86,7 +90,7 @@ export const useUserDevices = () => {
       };
 
       setDevices(prev => {
-        const existingIndex = prev.findIndex(d => d.device_id === deviceId);
+        const existingIndex = prev.findIndex(d => d.device_id === params.device_id);
         if (existingIndex >= 0) {
           const updated = [...prev];
           updated[existingIndex] = processedDevice;

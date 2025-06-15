@@ -60,14 +60,15 @@ export const useEnhancedProfiles = () => {
         // Safely parse privacy_settings with proper type checking
         let privacySettings: PrivacySettings;
         try {
-          if (data.privacy_settings && typeof data.privacy_settings === 'object') {
+          if (data.privacy_settings && typeof data.privacy_settings === 'object' && !Array.isArray(data.privacy_settings)) {
+            const settings = data.privacy_settings as Record<string, any>;
             privacySettings = {
-              read_receipts: Boolean(data.privacy_settings.read_receipts ?? true),
-              last_seen: (data.privacy_settings.last_seen as 'everyone' | 'contacts' | 'nobody') || 'contacts',
-              profile_photo: (data.privacy_settings.profile_photo as 'everyone' | 'contacts' | 'nobody') || 'contacts',
-              disappearing_messages: Boolean(data.privacy_settings.disappearing_messages ?? false),
-              screen_lock: Boolean(data.privacy_settings.screen_lock ?? false),
-              incognito_keyboard: Boolean(data.privacy_settings.incognito_keyboard ?? false)
+              read_receipts: Boolean(settings.read_receipts ?? true),
+              last_seen: (settings.last_seen as 'everyone' | 'contacts' | 'nobody') || 'contacts',
+              profile_photo: (settings.profile_photo as 'everyone' | 'contacts' | 'nobody') || 'contacts',
+              disappearing_messages: Boolean(settings.disappearing_messages ?? false),
+              screen_lock: Boolean(settings.screen_lock ?? false),
+              incognito_keyboard: Boolean(settings.incognito_keyboard ?? false)
             };
           } else {
             // Default privacy settings
@@ -118,10 +119,16 @@ export const useEnhancedProfiles = () => {
     if (!user || !profile) return;
 
     try {
+      // Convert privacy_settings to JSON if included in updates
+      const dbUpdates: any = { ...updates };
+      if (updates.privacy_settings) {
+        dbUpdates.privacy_settings = updates.privacy_settings;
+      }
+
       const { error } = await supabase
         .from('profiles')
         .update({
-          ...updates,
+          ...dbUpdates,
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id);
@@ -293,6 +300,51 @@ export const useEnhancedProfiles = () => {
     }
   };
 
+  const generateEncryptionKeys = async () => {
+    if (!user) return;
+
+    try {
+      // Generate mock encryption keys for demo
+      const identityKey = btoa(Math.random().toString(36));
+      const signedPrekey = btoa(Math.random().toString(36));
+      const prekeySignature = btoa(Math.random().toString(36));
+      const oneTimePrekeys = Array.from({ length: 10 }, () => btoa(Math.random().toString(36)));
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          identity_key: identityKey,
+          signed_prekey: signedPrekey,
+          prekey_signature: prekeySignature,
+          one_time_prekeys: oneTimePrekeys,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setProfile(prev => prev ? {
+        ...prev,
+        identity_key: identityKey,
+        signed_prekey: signedPrekey,
+        prekey_signature: prekeySignature,
+        one_time_prekeys: oneTimePrekeys
+      } : null);
+
+      toast({
+        title: 'Sukces',
+        description: 'Klucze szyfrowania zostały wygenerowane'
+      });
+    } catch (error) {
+      console.error('Error generating encryption keys:', error);
+      toast({
+        title: 'Błąd',
+        description: 'Nie udało się wygenerować kluczy szyfrowania',
+        variant: 'destructive'
+      });
+    }
+  };
+
   const enable2FA = async (secret: string) => {
     if (!user) return;
 
@@ -372,6 +424,7 @@ export const useEnhancedProfiles = () => {
     uploadAvatar,
     generateBackupPhrase,
     setBackupPhrase,
+    generateEncryptionKeys,
     enable2FA,
     disable2FA,
     refetch: fetchProfile

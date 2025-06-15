@@ -70,8 +70,10 @@ const DeviceManagement: React.FC = () => {
     const deviceId = `${newDevice.platform}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     await registerDevice({
-      ...newDevice,
-      device_id: deviceId
+      device_id: deviceId,
+      device_name: newDevice.device_name,
+      platform: newDevice.platform,
+      push_token: newDevice.push_token
     });
 
     setNewDevice({

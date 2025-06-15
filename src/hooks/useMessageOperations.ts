@@ -54,11 +54,12 @@ export const useMessageOperations = (conversationId?: string) => {
         console.error('Error fetching sender profiles:', senderProfilesError);
       }
 
-      const formattedMessages = messagesData.map(msg => {
+      const formattedMessages: Message[] = messagesData.map(msg => {
         const senderProfile = senderProfiles?.find(p => p.id === msg.sender_id);
         return {
           ...msg,
-          message_type: msg.message_type as 'text' | 'file' | 'image',
+          message_type: msg.message_type as 'text' | 'file' | 'image' | 'voice' | 'location' | 'poll' | 'sticker',
+          edit_history: Array.isArray(msg.edit_history) ? msg.edit_history : [],
           sender: senderProfile ? {
             username: senderProfile.username,
             display_name: senderProfile.display_name || senderProfile.username
@@ -134,9 +135,10 @@ export const useMessageOperations = (conversationId?: string) => {
       // Optionally add the message to local state immediately for better UX
       // The realtime subscription will also add it, but this provides instant feedback
       if (data) {
-        const newMessage = {
+        const newMessage: Message = {
           ...data,
-          message_type: data.message_type as 'text' | 'file' | 'image',
+          message_type: data.message_type as 'text' | 'file' | 'image' | 'voice' | 'location' | 'poll' | 'sticker',
+          edit_history: [],
           sender: {
             username: user.user_metadata?.username || 'You',
             display_name: user.user_metadata?.display_name || user.user_metadata?.username || 'You'
