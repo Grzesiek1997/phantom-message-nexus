@@ -46,9 +46,16 @@ const ContactsScreenNew: React.FC = () => {
         return;
       }
 
-      // Sprawdź czy można rozmawiać z tym kontaktem
-      if (!contact.can_chat) {
-        console.log('Cannot chat with contact - not accepted yet:', contact);
+      console.log('Found contact:', contact);
+
+      // Sprawdź czy kontakt jest zaakceptowany
+      if (contact.status !== 'accepted' || !contact.can_chat) {
+        console.log('Cannot chat with contact - not accepted yet:', {
+          status: contact.status,
+          can_chat: contact.can_chat,
+          friend_request_status: contact.friend_request_status
+        });
+        
         toast({
           title: 'Nie można rozpocząć czatu',
           description: 'Poczekaj, aż użytkownik zaakceptuje zaproszenie do znajomych',
@@ -57,15 +64,15 @@ const ContactsScreenNew: React.FC = () => {
         return;
       }
 
-      console.log('Creating conversation with contact:', contactId);
+      console.log('Creating conversation with accepted contact:', contactId);
       
-      // Utwórz konwersację
+      // Utwórz lub znajdź konwersację
       const conversationId = await createConversation([contactId]);
       
       if (conversationId) {
-        console.log('Conversation created successfully:', conversationId);
+        console.log('Conversation created/found successfully:', conversationId);
         toast({
-          title: 'Czat utworzony',
+          title: 'Czat gotowy',
           description: 'Przekierowuję do czatu...'
         });
         
@@ -77,13 +84,26 @@ const ContactsScreenNew: React.FC = () => {
           } 
         });
       } else {
-        throw new Error('Failed to create conversation - no ID returned');
+        throw new Error('No conversation ID returned');
       }
     } catch (error) {
       console.error('Error creating conversation:', error);
+      
+      let errorMessage = 'Nie udało się utworzyć czatu. Spróbuj ponownie.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('User not authenticated')) {
+          errorMessage = 'Musisz być zalogowany aby utworzyć czat.';
+        } else if (error.message.includes('Failed to create conversation')) {
+          errorMessage = 'Błąd podczas tworzenia konwersacji. Sprawdź połączenie z internetem.';
+        } else if (error.message.includes('Failed to add participants')) {
+          errorMessage = 'Nie udało się dodać uczestników do czatu.';
+        }
+      }
+      
       toast({
-        title: 'Błąd',
-        description: 'Nie udało się utworzyć czatu. Spróbuj ponownie.',
+        title: 'Błąd tworzenia czatu',
+        description: errorMessage,
         variant: 'destructive'
       });
     }

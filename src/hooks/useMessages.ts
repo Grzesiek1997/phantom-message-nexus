@@ -9,12 +9,24 @@ export const useMessages = (conversationId?: string) => {
   
   useRealtimeSubscriptions(conversationId, setMessages, fetchConversations);
 
+  const createConversationWithErrorHandling = async (participantIds: string[], type: 'direct' | 'group' = 'direct', name?: string) => {
+    try {
+      console.log('Creating conversation with error handling for participants:', participantIds);
+      const result = await createConversation(participantIds, type, name);
+      console.log('Conversation created successfully:', result);
+      return result;
+    } catch (error) {
+      console.error('Error in createConversationWithErrorHandling:', error);
+      throw error;
+    }
+  };
+
   return {
     messages,
     conversations,
     loading,
     sendMessage,
-    createConversation,
+    createConversation: createConversationWithErrorHandling,
     fetchConversations,
     fetchMessages
   };

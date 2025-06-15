@@ -46,9 +46,15 @@ const RealTimeChatInterface: React.FC = () => {
       // Clear the navigation state to prevent issues on refresh
       if (state.fromContacts) {
         window.history.replaceState({}, document.title);
+        
+        // Pokazuj powiadomienie o powodzeniu
+        toast({
+          title: 'Czat otwarty',
+          description: 'Możesz teraz wysyłać wiadomości',
+        });
       }
     }
-  }, [location.state]);
+  }, [location.state, toast]);
 
   // Monitor conversations to ensure selected conversation exists
   useEffect(() => {
@@ -120,6 +126,18 @@ const RealTimeChatInterface: React.FC = () => {
   const handleCreateConversation = async (contactId: string) => {
     try {
       console.log('Creating conversation with contact:', contactId);
+      
+      // Sprawdź czy kontakt istnieje i jest zaakceptowany
+      const contact = contacts.find(c => c.contact_user_id === contactId);
+      if (!contact || !contact.can_chat) {
+        toast({
+          title: 'Nie można utworzyć czatu',
+          description: 'Ten kontakt nie zaakceptował jeszcze zaproszenia do znajomych',
+          variant: 'destructive'
+        });
+        return;
+      }
+      
       const conversationId = await createConversation([contactId]);
       if (conversationId) {
         console.log('Conversation created, selecting:', conversationId);
@@ -136,8 +154,8 @@ const RealTimeChatInterface: React.FC = () => {
     } catch (error) {
       console.error('Error creating conversation:', error);
       toast({
-        title: 'Błąd',
-        description: 'Nie udało się utworzyć czatu',
+        title: 'Błąd tworzenia czatu',
+        description: 'Nie udało się utworzyć czatu. Sprawdź połączenie z internetem.',
         variant: 'destructive'
       });
     }
@@ -159,6 +177,11 @@ const RealTimeChatInterface: React.FC = () => {
       }
     } catch (error) {
       console.error('Error creating group:', error);
+      toast({
+        title: 'Błąd tworzenia grupy',
+        description: 'Nie udało się utworzyć grupy. Spróbuj ponownie.',
+        variant: 'destructive'
+      });
     }
   };
 

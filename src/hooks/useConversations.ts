@@ -111,7 +111,7 @@ export const useConversations = () => {
   const createConversation = async (participantIds: string[], type: 'direct' | 'group' = 'direct', name?: string) => {
     if (!user) {
       console.error('No user found when creating conversation');
-      return;
+      throw new Error('User not authenticated');
     }
 
     try {
@@ -121,36 +121,57 @@ export const useConversations = () => {
       if (type === 'direct' && participantIds.length === 1) {
         const otherUserId = participantIds[0];
         
-        // Check if direct conversation already exists
-        const { data: existingParticipants, error: checkError } = await supabase
+        console.log('Checking for existing direct conversation with:', otherUserId);
+        
+        // Get current user's conversations
+        const { data: myParticipants, error: myError } = await supabase
           .from('conversation_participants')
-          .select('conversation_id, conversations!inner(type)')
-          .in('user_id', [user.id, otherUserId]);
+          .select('conversation_id')
+          .eq('user_id', user.id);
 
-        if (checkError) {
-          console.error('Error checking existing conversations:', checkError);
-        } else if (existingParticipants) {
-          // Find conversations that have both users and are direct
-          const conversationCounts = existingParticipants.reduce((acc, p) => {
-            if (p.conversations?.type === 'direct') {
-              acc[p.conversation_id] = (acc[p.conversation_id] || 0) + 1;
+        if (myError) {
+          console.error('Error checking my conversations:', myError);
+        }
+
+        // Get other user's conversations
+        const { data: otherParticipants, error: otherError } = await supabase
+          .from('conversation_participants')
+          .select('conversation_id')
+          .eq('user_id', otherUserId);
+
+        if (otherError) {
+          console.error('Error checking other user conversations:', otherError);
+        }
+
+        if (myParticipants && otherParticipants) {
+          // Find common conversations
+          const myConvIds = new Set(myParticipants.map(p => p.conversation_id));
+          const commonConvIds = otherParticipants
+            .map(p => p.conversation_id)
+            .filter(id => myConvIds.has(id));
+
+          if (commonConvIds.length > 0) {
+            // Check if any of these is a direct conversation
+            const { data: existingConversations, error: checkError } = await supabase
+              .from('conversations')
+              .select('*')
+              .in('id', commonConvIds)
+              .eq('type', 'direct');
+
+            if (checkError) {
+              console.error('Error checking existing conversations:', checkError);
+            } else if (existingConversations && existingConversations.length > 0) {
+              const existingConversationId = existingConversations[0].id;
+              console.log('Direct conversation already exists:', existingConversationId);
+              await fetchConversations();
+              return existingConversationId;
             }
-            return acc;
-          }, {} as Record<string, number>);
-
-          const existingConversationId = Object.keys(conversationCounts).find(
-            id => conversationCounts[id] === 2
-          );
-
-          if (existingConversationId) {
-            console.log('Direct conversation already exists:', existingConversationId);
-            await fetchConversations();
-            return existingConversationId;
           }
         }
       }
 
       // Create new conversation
+      console.log('Creating new conversation...');
       const { data: conversation, error } = await supabase
         .from('conversations')
         .insert({
@@ -163,12 +184,7 @@ export const useConversations = () => {
 
       if (error) {
         console.error('Error creating conversation:', error);
-        toast({
-          title: 'Błąd tworzenia konwersacji',
-          description: error.message,
-          variant: 'destructive'
-        });
-        throw error;
+        throw new Error(`Failed to create conversation: ${error.message}`);
       }
 
       console.log('Conversation created:', conversation);
@@ -180,6 +196,8 @@ export const useConversations = () => {
         role: userId === user.id ? 'admin' : 'member'
       }));
 
+      console.log('Adding participants:', participants);
+
       const { error: participantError } = await supabase
         .from('conversation_participants')
         .insert(participants);
@@ -187,19 +205,10 @@ export const useConversations = () => {
       if (participantError) {
         console.error('Error adding participants:', participantError);
         
-        // If constraint violation (conversation already exists), just return the existing one
-        if (participantError.code === '23505') {
-          console.log('Conversation participants already exist, fetching conversations...');
-          await fetchConversations();
-          return conversation.id;
-        }
+        // Try to clean up the conversation if participants couldn't be added
+        await supabase.from('conversations').delete().eq('id', conversation.id);
         
-        toast({
-          title: 'Błąd dodawania uczestników',
-          description: participantError.message,
-          variant: 'destructive'
-        });
-        throw participantError;
+        throw new Error(`Failed to add participants: ${participantError.message}`);
       }
 
       console.log('Participants added successfully');
@@ -210,11 +219,6 @@ export const useConversations = () => {
       return conversation.id;
     } catch (error) {
       console.error('Error in createConversation:', error);
-      toast({
-        title: 'Błąd',
-        description: 'Nie udało się utworzyć konwersacji',
-        variant: 'destructive'
-      });
       throw error;
     }
   };
