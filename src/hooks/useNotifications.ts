@@ -35,11 +35,11 @@ export const useNotifications = () => {
         return;
       }
 
-      // Map database fields to interface fields
-      const mappedNotifications = (data || []).map(item => ({
+      // Map database fields to interface fields with proper type casting
+      const mappedNotifications: Notification[] = (data || []).map(item => ({
         id: item.id,
         user_id: item.user_id,
-        type: item.type || 'message',
+        type: (item.type as 'friend_request' | 'friend_accepted' | 'message' | 'call') || 'message',
         title: item.title || 'Powiadomienie',
         message: item.message || 'Masz nowe powiadomienie',
         data: item.data,
