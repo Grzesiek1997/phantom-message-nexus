@@ -19,43 +19,56 @@ export const useMessageOperations = (conversationId?: string) => {
       setLoading(true);
       console.log('Fetching messages for conversation:', targetConversationId);
 
-      const { data, error } = await supabase
+      // Pobierz wiadomości
+      const { data: messagesData, error: messagesError } = await supabase
         .from('messages')
-        .select(`
-          *,
-          sender:profiles!messages_sender_id_fkey(
-            username,
-            display_name,
-            avatar_url
-          )
-        `)
+        .select('*')
         .eq('conversation_id', targetConversationId)
         .order('created_at', { ascending: true });
 
-      if (error) {
-        console.error('Error fetching messages:', error);
+      if (messagesError) {
+        console.error('Error fetching messages:', messagesError);
         return;
       }
 
-      const formattedMessages: Message[] = (data || []).map(msg => ({
-        id: msg.id,
-        conversation_id: msg.conversation_id,
-        sender_id: msg.sender_id,
-        content: msg.content,
-        message_type: msg.message_type as 'text' | 'file' | 'image' | 'voice' | 'location' | 'poll' | 'sticker',
-        created_at: msg.created_at,
-        updated_at: msg.updated_at,
-        reply_to_id: msg.reply_to_id,
-        thread_root_id: msg.thread_root_id,
-        is_edited: msg.is_edited,
-        is_deleted: msg.is_deleted,
-        expires_at: msg.expires_at,
-        sender: msg.sender ? {
-          username: msg.sender.username,
-          display_name: msg.sender.display_name,
-          avatar_url: msg.sender.avatar_url
-        } : undefined
-      }));
+      if (!messagesData || messagesData.length === 0) {
+        setMessages([]);
+        return;
+      }
+
+      // Pobierz profile nadawców
+      const senderIds = [...new Set(messagesData.map(msg => msg.sender_id))];
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, display_name, avatar_url')
+        .in('id', senderIds);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+      }
+
+      const formattedMessages: Message[] = messagesData.map(msg => {
+        const senderProfile = profiles?.find(p => p.id === msg.sender_id);
+        return {
+          id: msg.id,
+          conversation_id: msg.conversation_id,
+          sender_id: msg.sender_id,
+          content: msg.content,
+          message_type: msg.message_type as 'text' | 'file' | 'image' | 'voice' | 'location' | 'poll' | 'sticker',
+          created_at: msg.created_at,
+          updated_at: msg.updated_at,
+          reply_to_id: msg.reply_to_id,
+          thread_root_id: msg.thread_root_id,
+          is_edited: msg.is_edited,
+          is_deleted: msg.is_deleted,
+          expires_at: msg.expires_at,
+          sender: senderProfile ? {
+            username: senderProfile.username,
+            display_name: senderProfile.display_name,
+            avatar_url: senderProfile.avatar_url
+          } : undefined
+        };
+      });
 
       setMessages(formattedMessages);
     } catch (error) {
@@ -81,14 +94,7 @@ export const useMessageOperations = (conversationId?: string) => {
           message_type: messageType,
           reply_to_id: replyToId || null
         })
-        .select(`
-          *,
-          sender:profiles!messages_sender_id_fkey(
-            username,
-            display_name,
-            avatar_url
-          )
-        `)
+        .select()
         .single();
 
       if (error) {
@@ -102,6 +108,13 @@ export const useMessageOperations = (conversationId?: string) => {
       }
 
       console.log('Message sent successfully:', data);
+
+      // Pobierz profil nadawcy
+      const { data: senderProfile } = await supabase
+        .from('profiles')
+        .select('username, display_name, avatar_url')
+        .eq('id', user.id)
+        .single();
 
       // Dodaj wiadomość do lokalnego stanu
       const newMessage: Message = {
@@ -117,10 +130,10 @@ export const useMessageOperations = (conversationId?: string) => {
         is_edited: data.is_edited,
         is_deleted: data.is_deleted,
         expires_at: data.expires_at,
-        sender: data.sender ? {
-          username: data.sender.username,
-          display_name: data.sender.display_name,
-          avatar_url: data.sender.avatar_url
+        sender: senderProfile ? {
+          username: senderProfile.username,
+          display_name: senderProfile.display_name,
+          avatar_url: senderProfile.avatar_url
         } : undefined
       };
 
