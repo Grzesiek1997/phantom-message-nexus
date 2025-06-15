@@ -36,6 +36,7 @@ const MainApp: React.FC = () => {
   };
 
   const handleAddContacts = () => {
+    console.log('Switching to contacts tab');
     setActiveTab('contacts');
   };
 
@@ -73,7 +74,12 @@ const MainApp: React.FC = () => {
       <AppContent activeTab={activeTab} />
 
       {activeTab === 'chats' && (
-        <FloatingActionButton />
+        <FloatingActionButton
+          onNewChat={handleNewChat}
+          onGroupChat={handleGroupChat}
+          onSearchChats={handleSearchChats}
+          onAddContacts={handleAddContacts}
+        />
       )}
 
       <BottomNavigation
