@@ -21,32 +21,17 @@ export const useConversations = () => {
     try {
       console.log('Fetching conversations for user:', user.id);
 
-      // Get conversations where user participates
-      const { data: userParticipants, error: participantsError } = await supabase
-        .from('conversation_participants')
-        .select('conversation_id')
-        .eq('user_id', user.id);
-
-      if (participantsError) {
-        console.error('Error fetching participants:', participantsError);
-        setLoading(false);
-        return;
-      }
-
-      if (!userParticipants || userParticipants.length === 0) {
-        console.log('No conversations found for user');
-        setConversations([]);
-        setLoading(false);
-        return;
-      }
-
-      const conversationIds = userParticipants.map(p => p.conversation_id);
-
-      // Get conversations data
+      // Get conversations where user participates directly through a join
       const { data: conversationsData, error: conversationsError } = await supabase
         .from('conversations')
-        .select('*')
-        .in('id', conversationIds)
+        .select(`
+          *,
+          conversation_participants!inner (
+            user_id,
+            role
+          )
+        `)
+        .eq('conversation_participants.user_id', user.id)
         .order('updated_at', { ascending: false });
 
       if (conversationsError) {
@@ -54,6 +39,15 @@ export const useConversations = () => {
         setLoading(false);
         return;
       }
+
+      if (!conversationsData || conversationsData.length === 0) {
+        console.log('No conversations found for user');
+        setConversations([]);
+        setLoading(false);
+        return;
+      }
+
+      const conversationIds = conversationsData.map(conv => conv.id);
 
       // Get all participants for these conversations
       const { data: allParticipants, error: allParticipantsError } = await supabase
@@ -80,11 +74,20 @@ export const useConversations = () => {
         return;
       }
 
+      // Get last messages for conversations
+      const { data: lastMessages, error: lastMessagesError } = await supabase
+        .from('messages')
+        .select('*')
+        .in('conversation_id', conversationIds)
+        .order('created_at', { ascending: false });
+
+      if (lastMessagesError) {
+        console.error('Error fetching last messages:', lastMessagesError);
+      }
+
       // Combine the data
-      const formattedConversations = conversationsData?.map(conv => ({
-        ...conv,
-        type: conv.type as 'direct' | 'group',
-        participants: allParticipants
+      const formattedConversations = conversationsData.map(conv => {
+        const participants = allParticipants
           ?.filter(p => p.conversation_id === conv.id)
           .map(p => {
             const profile = profiles?.find(prof => prof.id === p.user_id);
@@ -96,8 +99,17 @@ export const useConversations = () => {
                 display_name: profile?.display_name || profile?.username || 'Unknown'
               }
             };
-          }) || []
-      })) || [];
+          }) || [];
+
+        const lastMessage = lastMessages?.find(msg => msg.conversation_id === conv.id);
+
+        return {
+          ...conv,
+          type: conv.type as 'direct' | 'group',
+          participants,
+          last_message: lastMessage
+        };
+      });
 
       console.log('Formatted conversations:', formattedConversations);
       setConversations(formattedConversations);
@@ -128,18 +140,29 @@ export const useConversations = () => {
         
         console.log('Checking friendship status with:', otherUserId);
         
-        const { data: friendshipData, error: friendshipError } = await supabase
-          .rpc('are_users_friends', {
-            user1_id: user.id,
-            user2_id: otherUserId
-          });
+        // Sprawdź bezpośrednio w tabeli contacts
+        const { data: friendship1, error: error1 } = await supabase
+          .from('contacts')
+          .select('status')
+          .eq('user_id', user.id)
+          .eq('contact_user_id', otherUserId)
+          .eq('status', 'accepted')
+          .maybeSingle();
 
-        if (friendshipError) {
-          console.error('Error checking friendship:', friendshipError);
+        const { data: friendship2, error: error2 } = await supabase
+          .from('contacts')
+          .select('status')
+          .eq('user_id', otherUserId)
+          .eq('contact_user_id', user.id)
+          .eq('status', 'accepted')
+          .maybeSingle();
+
+        if (error1 || error2) {
+          console.error('Error checking friendship:', error1 || error2);
           throw new Error('Nie można sprawdzić statusu znajomości');
         }
 
-        if (!friendshipData) {
+        if (!friendship1 || !friendship2) {
           console.log('Users are not friends');
           throw new Error('Nie możesz rozpocząć czatu z osobą, która nie jest Twoim znajomym');
         }
@@ -147,44 +170,26 @@ export const useConversations = () => {
         console.log('Users are friends, checking for existing conversation');
         
         // Sprawdź czy istnieje już konwersacja bezpośrednia
-        const { data: myParticipants, error: myError } = await supabase
-          .from('conversation_participants')
-          .select('conversation_id')
-          .eq('user_id', user.id);
+        const { data: existingConversations, error: checkError } = await supabase
+          .from('conversations')
+          .select(`
+            id,
+            conversation_participants!inner (user_id)
+          `)
+          .eq('type', 'direct');
 
-        if (myError) {
-          console.error('Error checking my conversations:', myError);
-        }
-
-        const { data: otherParticipants, error: otherError } = await supabase
-          .from('conversation_participants')
-          .select('conversation_id')
-          .eq('user_id', otherUserId);
-
-        if (otherError) {
-          console.error('Error checking other user conversations:', otherError);
-        }
-
-        if (myParticipants && otherParticipants) {
-          const myConvIds = new Set(myParticipants.map(p => p.conversation_id));
-          const commonConvIds = otherParticipants
-            .map(p => p.conversation_id)
-            .filter(id => myConvIds.has(id));
-
-          if (commonConvIds.length > 0) {
-            const { data: existingConversations, error: checkError } = await supabase
-              .from('conversations')
-              .select('*')
-              .in('id', commonConvIds)
-              .eq('type', 'direct');
-
-            if (checkError) {
-              console.error('Error checking existing conversations:', checkError);
-            } else if (existingConversations && existingConversations.length > 0) {
-              const existingConversationId = existingConversations[0].id;
-              console.log('Direct conversation already exists:', existingConversationId);
+        if (checkError) {
+          console.error('Error checking existing conversations:', checkError);
+        } else if (existingConversations) {
+          // Znajdź konwersację z dokładnie tymi dwoma użytkownikami
+          for (const conv of existingConversations) {
+            const participantUserIds = conv.conversation_participants?.map(p => p.user_id) || [];
+            if (participantUserIds.length === 2 && 
+                participantUserIds.includes(user.id) && 
+                participantUserIds.includes(otherUserId)) {
+              console.log('Direct conversation already exists:', conv.id);
               await fetchConversations();
-              return existingConversationId;
+              return conv.id;
             }
           }
         }

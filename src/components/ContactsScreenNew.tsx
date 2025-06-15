@@ -72,13 +72,14 @@ const ContactsScreenNew: React.FC = () => {
       if (conversationId) {
         console.log('Conversation created/found successfully:', conversationId);
         
-        // Przekieruj do głównej aplikacji z wybraną konwersacją
-        navigate('/', { 
-          state: { 
-            selectedConversationId: conversationId,
-            fromContacts: true 
-          } 
+        // Przełącz na zakładkę czatów i pokaż konwersację
+        toast({
+          title: 'Czat utworzony',
+          description: 'Możesz teraz rozpocząć rozmowę'
         });
+        
+        // Przeładuj stronę lub przełącz widok na czaty
+        window.location.reload();
       } else {
         throw new Error('No conversation ID returned');
       }

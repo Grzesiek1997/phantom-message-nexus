@@ -1,227 +1,153 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+
+import React, { useState, useEffect } from 'react';
 import { useMessages } from '@/hooks/useMessages';
 import { useAuth } from '@/hooks/useAuth';
-import { useContacts } from '@/hooks/useContacts';
-import { ArrowLeft, Phone, Video, MoreVertical, MessageCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import ConversationList from './ConversationList';
 import MessageBubble from './MessageBubble';
-import ChatInterface from './messaging/ChatInterface';
+import MessageInput from './MessageInput';
+import ChatHeader from './ChatHeader';
+import { Card } from '@/components/ui/card';
+import { Users, MessageCircle } from 'lucide-react';
 
 const RealTimeChatInterface: React.FC = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
+  const [selectedConversationId, setSelectedConversationId] = useState<string | undefined>();
   const { user } = useAuth();
-  const { contacts } = useContacts();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  // Pobierz conversationId ze state lub jako domyślny
-  const selectedConversationId = location.state?.selectedConversationId;
-  
   const { 
     messages, 
     conversations, 
     loading, 
-    sendMessage, 
+    sendMessage,
     fetchMessages 
   } = useMessages(selectedConversationId);
-  
-  const [currentConversationId, setCurrentConversationId] = useState<string | undefined>(selectedConversationId);
 
-  // Znajdź aktualną konwersację
-  const currentConversation = conversations.find(conv => conv.id === currentConversationId);
-  
-  // Znajdź drugiego użytkownika w konwersacji bezpośredniej
-  const otherParticipant = currentConversation?.type === 'direct' 
-    ? currentConversation.participants.find(p => p.user_id !== user?.id)
-    : null;
+  const selectedConversation = conversations.find(c => c.id === selectedConversationId);
 
-  // Znajdź kontakt na podstawie drugiego uczestnika
-  const contact = otherParticipant 
-    ? contacts.find(c => c.contact_user_id === otherParticipant.user_id)
-    : null;
+  // Auto-select first conversation if available
+  useEffect(() => {
+    if (!selectedConversationId && conversations.length > 0) {
+      setSelectedConversationId(conversations[0].id);
+    }
+  }, [conversations, selectedConversationId]);
 
-  const conversationName = currentConversation?.name || 
-    (otherParticipant?.profiles?.display_name || otherParticipant?.profiles?.username || 'Nieznany użytkownik');
-
+  // Fetch messages when conversation changes
   useEffect(() => {
     if (selectedConversationId) {
-      setCurrentConversationId(selectedConversationId);
+      fetchMessages(selectedConversationId);
     }
-  }, [selectedConversationId]);
+  }, [selectedConversationId, fetchMessages]);
 
-  useEffect(() => {
-    if (currentConversationId && user) {
-      fetchMessages(currentConversationId);
+  const handleSendMessage = async (content: string, expiresInHours?: number) => {
+    if (selectedConversationId && content.trim()) {
+      try {
+        await sendMessage(content, selectedConversationId, expiresInHours);
+      } catch (error) {
+        console.error('Error sending message:', error);
+      }
     }
-  }, [currentConversationId, user, fetchMessages]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleSendMessage = async (content: string) => {
-    if (!currentConversationId) return;
+  const getConversationDisplayName = (conversation: any) => {
+    if (conversation.name) return conversation.name;
+    if (conversation.type === 'group') return 'Grupa';
     
-    try {
-      await sendMessage(content, currentConversationId);
-    } catch (error) {
-      console.error('Error sending message:', error);
-    }
-  };
-
-  const handleReply = (messageId: string) => {
-    const message = messages.find(m => m.id === messageId);
-    if (message) {
-      const replyPrefix = `↩️ Odpowiedź na: "${message.content.substring(0, 50)}${message.content.length > 50 ? '...' : ''}"\n\n`;
-      // Tutaj możesz dodać logikę do ustawienia tekstu w input
-      console.log('Reply to message:', messageId, replyPrefix);
-    }
-  };
-
-  const handleReact = (messageId: string, emoji: string) => {
-    console.log('React to message:', messageId, 'with emoji:', emoji);
-    // Tutaj możesz dodać logikę do dodawania reakcji
-  };
-
-  const handleBack = () => {
-    if (location.state?.fromContacts) {
-      navigate('/contacts');
-    } else if (location.state?.fromCalls) {
-      navigate('/calls');
-    } else {
-      navigate('/');
-    }
+    const otherParticipant = conversation.participants?.find(
+      (p: any) => p.user_id !== user?.id
+    );
+    return otherParticipant?.profiles?.display_name || 'Nieznany użytkownik';
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
-        <div className="text-white">Ładowanie...</div>
-      </div>
-    );
-  }
-
-  if (!currentConversationId || !currentConversation) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
-        <MessageCircle className="w-16 h-16 text-gray-400 mb-4 opacity-50" />
-        <h3 className="text-lg font-medium text-white mb-2">Wybierz konwersację</h3>
-        <p className="text-gray-400 text-center px-4">
-          Wybierz kontakt z listy znajomych aby rozpocząć czat
-        </p>
-        <Button
-          onClick={handleBack}
-          className="mt-4 bg-blue-500 hover:bg-blue-600"
-        >
-          Powrót
-        </Button>
+      <div className="flex h-full items-center justify-center">
+        <div className="text-white text-center">
+          <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center animate-pulse mx-auto mb-4">
+            <MessageCircle className="w-8 h-8 text-white" />
+          </div>
+          <p className="text-xl">Ładowanie czatów...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-gray-800/50 backdrop-blur-sm">
-        <div className="flex items-center space-x-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleBack}
-            className="text-white hover:bg-white/10"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          
-          {/* Avatar */}
-          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-            <span className="text-white font-bold">
-              {conversationName.charAt(0).toUpperCase()}
-            </span>
-          </div>
-          
-          <div>
-            <h1 className="text-lg font-semibold text-white">{conversationName}</h1>
-            {contact && (
-              <p className="text-sm text-gray-400">
-                {contact.can_chat ? 'Online' : 'Oczekuje zaproszenia'}
-              </p>
-            )}
-          </div>
+    <div className="flex h-full">
+      {/* Conversations Sidebar */}
+      <div className="w-80 border-r border-white/10 bg-black/20 backdrop-blur-sm">
+        <div className="p-4 border-b border-white/10">
+          <h2 className="text-lg font-semibold text-white flex items-center">
+            <MessageCircle className="w-5 h-5 mr-2" />
+            Konwersacje
+          </h2>
         </div>
-
-        <div className="flex items-center space-x-2">
-          {contact?.can_chat && (
-            <>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-white hover:bg-white/10"
-                title="Połączenie głosowe"
-              >
-                <Phone className="w-5 h-5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-white hover:bg-white/10"
-                title="Połączenie wideo"
-              >
-                <Video className="w-5 h-5" />
-              </Button>
-            </>
+        
+        <div className="flex-1 overflow-y-auto">
+          {conversations.length === 0 ? (
+            <div className="p-4 text-center text-gray-400">
+              <MessageCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>Brak konwersacji</p>
+              <p className="text-sm mt-2">Dodaj znajomych aby rozpocząć czat</p>
+            </div>
+          ) : (
+            <ConversationList
+              conversations={conversations}
+              selectedConversationId={selectedConversationId}
+              onSelectConversation={setSelectedConversationId}
+              currentUserId={user?.id || ''}
+            />
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white hover:bg-white/10"
-          >
-            <MoreVertical className="w-5 h-5" />
-          </Button>
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center">
-            <MessageCircle className="w-16 h-16 text-gray-400 mb-4 opacity-50" />
-            <h3 className="text-lg font-medium text-white mb-2">Brak wiadomości</h3>
-            <p className="text-gray-400">
-              {contact?.can_chat 
-                ? 'Rozpocznij konwersację wysyłając pierwszą wiadomość'
-                : 'Oczekuje na zaakceptowanie zaproszenia do znajomych'
-              }
-            </p>
-          </div>
-        ) : (
+      {/* Chat Area */}
+      <div className="flex-1 flex flex-col">
+        {selectedConversation ? (
           <>
-            {messages.map((message) => (
-              <MessageBubble
-                key={message.id}
-                message={message}
-                currentUserId={user?.id || ''}
-                onReply={handleReply}
-                onReact={handleReact}
-              />
-            ))}
-            <div ref={messagesEndRef} />
+            <ChatHeader 
+              conversation={selectedConversation}
+              currentUserId={user?.id || ''}
+            />
+            
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {messages.length === 0 ? (
+                <div className="flex items-center justify-center h-full text-center text-gray-400">
+                  <div>
+                    <MessageCircle className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg">Rozpocznij konwersację</p>
+                    <p className="text-sm">Wyślij pierwszą wiadomość do {getConversationDisplayName(selectedConversation)}</p>
+                  </div>
+                </div>
+              ) : (
+                messages.map((message) => (
+                  <MessageBubble
+                    key={message.id}
+                    message={message}
+                    isOwn={message.sender_id === user?.id}
+                    currentUserId={user?.id || ''}
+                  />
+                ))
+              )}
+            </div>
+
+            {/* Message Input */}
+            <div className="border-t border-white/10 p-4">
+              <MessageInput onSendMessage={handleSendMessage} />
+            </div>
           </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <Card className="glass border-white/20 p-8 text-center">
+              <MessageCircle className="w-16 h-16 mx-auto mb-4 text-blue-400" />
+              <h3 className="text-xl font-semibold text-white mb-2">
+                Wybierz konwersację
+              </h3>
+              <p className="text-gray-400">
+                Wybierz konwersację z listy po lewej stronie aby rozpocząć czat
+              </p>
+            </Card>
+          </div>
         )}
       </div>
-
-      {/* Chat Input */}
-      <ChatInterface
-        conversationId={currentConversationId}
-        otherUserId={otherParticipant?.user_id}
-        onSendMessage={handleSendMessage}
-        disabled={loading}
-      />
     </div>
   );
 };

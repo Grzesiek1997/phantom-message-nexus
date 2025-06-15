@@ -39,21 +39,38 @@ export const useContacts = () => {
       setLoading(true);
       console.log('Fetching contacts for user:', user.id);
       
-      // Pobierz wszystkie kontakty (zaakceptowane i oczekujące)
+      // Pobierz wszystkie kontakty bezpośrednio z joinami
       const { data: contactsData, error: contactsError } = await supabase
         .from('contacts')
-        .select('*')
+        .select(`
+          *,
+          profiles!contacts_contact_user_id_fkey (
+            id,
+            username,
+            display_name,
+            avatar_url
+          )
+        `)
         .eq('user_id', user.id);
 
       if (contactsError) {
         console.error('Error fetching contacts:', contactsError);
+        setContacts([]);
         return;
       }
 
-      // Pobierz wysłane zaproszenia (pending/rejected)
+      // Pobierz wysłane zaproszenia
       const { data: sentRequestsData, error: sentRequestsError } = await supabase
         .from('friend_requests')
-        .select('*')
+        .select(`
+          *,
+          profiles!friend_requests_receiver_id_fkey (
+            id,
+            username,
+            display_name,
+            avatar_url
+          )
+        `)
         .eq('sender_id', user.id)
         .in('status', ['pending', 'rejected']);
 
@@ -61,34 +78,38 @@ export const useContacts = () => {
         console.error('Error fetching sent requests:', sentRequestsError);
       }
 
-      // Zbierz wszystkich użytkowników
-      const allUserIds = new Set([
-        ...(contactsData || []).map(contact => contact.contact_user_id),
-        ...(sentRequestsData || []).map(request => request.receiver_id)
-      ]);
+      // Formatuj kontakty
+      const formattedContacts = (contactsData || []).map(contact => {
+        const profile = contact.profiles;
+        const isAccepted = contact.status === 'accepted';
+        
+        return {
+          ...contact,
+          status: contact.status as 'pending' | 'accepted' | 'blocked',
+          profile: profile ? {
+            username: profile.username,
+            display_name: profile.display_name || profile.username,
+            avatar_url: profile.avatar_url
+          } : {
+            username: 'Unknown',
+            display_name: 'Unknown User'
+          },
+          friend_request_status: isAccepted ? 'accepted' as const : contact.status as 'pending' | 'accepted' | 'rejected',
+          can_chat: isAccepted
+        };
+      });
 
-      if (allUserIds.size > 0) {
-        // Pobierz profile wszystkich użytkowników
-        const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, username, display_name, avatar_url')
-          .in('id', Array.from(allUserIds));
-
-        if (profilesError) {
-          console.error('Error fetching profiles:', profilesError);
-          return;
-        }
-
-        // Formatuj kontakty z RZECZYWISTYM statusem
-        const formattedContacts = (contactsData || []).map(contact => {
-          const profile = profilesData?.find(p => p.id === contact.contact_user_id);
-          
-          // Sprawdź czy kontakt jest rzeczywiście zaakceptowany
-          const isAccepted = contact.status === 'accepted';
-          
+      // Formatuj wysłane zaproszenia (pending/rejected)
+      const formattedRequests = (sentRequestsData || [])
+        .filter(request => !contactsData?.some(contact => contact.contact_user_id === request.receiver_id))
+        .map(request => {
+          const profile = request.profiles;
           return {
-            ...contact,
-            status: contact.status as 'pending' | 'accepted' | 'blocked',
+            id: request.id,
+            user_id: user.id,
+            contact_user_id: request.receiver_id,
+            status: 'pending' as const,
+            created_at: request.created_at || new Date().toISOString(),
             profile: profile ? {
               username: profile.username,
               display_name: profile.display_name || profile.username,
@@ -97,39 +118,12 @@ export const useContacts = () => {
               username: 'Unknown',
               display_name: 'Unknown User'
             },
-            friend_request_status: isAccepted ? 'accepted' as const : contact.status as 'pending' | 'accepted' | 'rejected',
-            can_chat: isAccepted // Tylko zaakceptowani znajomi mogą czatować
+            friend_request_status: request.status as 'pending' | 'accepted' | 'rejected',
+            can_chat: false
           };
         });
 
-        // Formatuj wysłane zaproszenia (pending/rejected) - tylko te, które nie są jeszcze kontaktami
-        const formattedRequests = (sentRequestsData || [])
-          .filter(request => !contactsData?.some(contact => contact.contact_user_id === request.receiver_id))
-          .map(request => {
-            const profile = profilesData?.find(p => p.id === request.receiver_id);
-            return {
-              id: request.id,
-              user_id: user.id,
-              contact_user_id: request.receiver_id,
-              status: 'pending' as const,
-              created_at: request.created_at || new Date().toISOString(),
-              profile: profile ? {
-                username: profile.username,
-                display_name: profile.display_name || profile.username,
-                avatar_url: profile.avatar_url
-              } : {
-                username: 'Unknown',
-                display_name: 'Unknown User'
-              },
-              friend_request_status: request.status as 'pending' | 'accepted' | 'rejected',
-              can_chat: false // Wysłane zaproszenia nie mogą czatować
-            };
-          });
-
-        setContacts([...formattedContacts, ...formattedRequests]);
-      } else {
-        setContacts([]);
-      }
+      setContacts([...formattedContacts, ...formattedRequests]);
     } catch (error) {
       console.error('Error in fetchContacts:', error);
       toast({
