@@ -11,7 +11,11 @@ import AboutSettings from './settings/AboutSettings';
 
 type SettingsView = 'main' | 'profile' | 'privacy' | 'notifications' | 'two-factor' | 'about';
 
-const SettingsScreenNew: React.FC = () => {
+interface SettingsScreenNewProps {
+  onGoBack?: () => void;
+}
+
+const SettingsScreenNew: React.FC<SettingsScreenNewProps> = ({ onGoBack }) => {
   const [currentView, setCurrentView] = useState<SettingsView>('main');
   const { signOut, user } = useAuth();
 
@@ -20,6 +24,14 @@ const SettingsScreenNew: React.FC = () => {
       await signOut();
     } catch (error) {
       console.error('Error signing out:', error);
+    }
+  };
+
+  const handleGoBack = () => {
+    if (currentView !== 'main') {
+      setCurrentView('main');
+    } else if (onGoBack) {
+      onGoBack();
     }
   };
 
@@ -144,16 +156,14 @@ const SettingsScreenNew: React.FC = () => {
     <div className="flex flex-col h-full bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
       {/* Header */}
       <div className="flex items-center p-6 border-b border-white/10">
-        {currentView !== 'main' && (
-          <Button
-            onClick={() => setCurrentView('main')}
-            variant="ghost"
-            size="icon"
-            className="mr-3 text-gray-400 hover:text-white"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-        )}
+        <Button
+          onClick={handleGoBack}
+          variant="ghost"
+          size="icon"
+          className="mr-3 text-gray-400 hover:text-white"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
         <h1 className="text-2xl font-bold text-white">
           {currentView === 'main' ? 'Ustawienia' : 
            currentView === 'profile' ? 'Profil' :

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { MessageCircle, Phone, Video, Info } from 'lucide-react';
+import { MessageCircle, Phone, Video, Info, Trash2 } from 'lucide-react';
 
 interface Contact {
   id: string;
@@ -13,9 +13,10 @@ interface Contact {
 interface ContactCardProps {
   contact: Contact;
   onQuickAction: (action: string, contact: Contact) => void;
+  onDeleteContact?: (contactId: string) => void;
 }
 
-const ContactCard: React.FC<ContactCardProps> = ({ contact, onQuickAction }) => {
+const ContactCard: React.FC<ContactCardProps> = ({ contact, onQuickAction, onDeleteContact }) => {
   return (
     <div className="flex items-center p-4 hover:bg-white/5 transition-colors">
       {/* Avatar */}
@@ -62,6 +63,14 @@ const ContactCard: React.FC<ContactCardProps> = ({ contact, onQuickAction }) => 
         >
           <Info className="w-4 h-4" />
         </button>
+        {onDeleteContact && (
+          <button
+            onClick={() => onDeleteContact(contact.id)}
+            className="p-2 bg-red-500/20 text-red-400 rounded-full hover:bg-red-500/30 transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        )}
       </div>
     </div>
   );

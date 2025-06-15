@@ -21,7 +21,11 @@ interface Group {
   lastActivity: Date;
 }
 
-const ContactsScreenNew: React.FC = () => {
+interface ContactsScreenNewProps {
+  onGoBack?: () => void;
+}
+
+const ContactsScreenNew: React.FC<ContactsScreenNewProps> = ({ onGoBack }) => {
   console.log('ContactsScreenNew: Component rendering started');
   
   const { t } = useTranslation();
@@ -41,7 +45,7 @@ const ContactsScreenNew: React.FC = () => {
   const [showContactSearch, setShowContactSearch] = useState(false);
 
   // Mock groups data
-  const [groups] = useState<Group[]>([
+  const [groups, setGroups] = useState<Group[]>([
     {
       id: '1',
       name: 'Rodzina',
@@ -81,6 +85,21 @@ const ContactsScreenNew: React.FC = () => {
     // Implement quick actions
   };
 
+  const handleDeleteContact = (contactId: string) => {
+    console.log('Deleting contact:', contactId);
+    // TODO: Implement contact deletion
+  };
+
+  const handleDeleteRequest = (requestId: string) => {
+    console.log('Deleting request:', requestId);
+    // TODO: Implement request deletion
+  };
+
+  const handleDeleteGroup = (groupId: string) => {
+    console.log('Deleting group:', groupId);
+    setGroups(prev => prev.filter(group => group.id !== groupId));
+  };
+
   const formatLastActivity = (date: Date): string => {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
@@ -118,6 +137,8 @@ const ContactsScreenNew: React.FC = () => {
             unreadCount={unreadCount || 0}
             onAddContact={() => setShowContactSearch(true)}
             onShowNotifications={() => setShowNotifications(true)}
+            onGoBack={onGoBack}
+            showBackButton={!!onGoBack}
           />
 
           {/* Search */}
@@ -154,6 +175,9 @@ const ContactsScreenNew: React.FC = () => {
           onQuickAction={handleQuickAction}
           onAcceptRequest={handleAcceptRequest}
           onRejectRequest={handleRejectRequest}
+          onDeleteContact={handleDeleteContact}
+          onDeleteRequest={handleDeleteRequest}
+          onDeleteGroup={handleDeleteGroup}
           formatLastActivity={formatLastActivity}
         />
 

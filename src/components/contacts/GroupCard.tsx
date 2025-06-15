@@ -1,6 +1,8 @@
 
 import React from 'react';
-import { Users, MoreVertical } from 'lucide-react';
+import { Users, MoreVertical, Trash2 } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 
 interface Group {
   id: string;
@@ -12,9 +14,10 @@ interface Group {
 interface GroupCardProps {
   group: Group;
   formatLastActivity: (date: Date) => string;
+  onDeleteGroup?: (groupId: string) => void;
 }
 
-const GroupCard: React.FC<GroupCardProps> = ({ group, formatLastActivity }) => {
+const GroupCard: React.FC<GroupCardProps> = ({ group, formatLastActivity, onDeleteGroup }) => {
   return (
     <div className="flex items-center p-4 hover:bg-white/5 transition-colors cursor-pointer">
       {/* Group Avatar */}
@@ -33,9 +36,34 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, formatLastActivity }) => {
       </div>
 
       {/* Actions */}
-      <button className="p-2 text-gray-400 hover:text-white transition-colors">
-        <MoreVertical className="w-4 h-4" />
-      </button>
+      <div className="flex items-center space-x-2">
+        {onDeleteGroup && (
+          <button
+            onClick={() => onDeleteGroup(group.id)}
+            className="p-2 bg-red-500/20 text-red-400 rounded-full hover:bg-red-500/30 transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        )}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm" variant="ghost" className="p-2 text-gray-400 hover:text-white">
+              <MoreVertical className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="bg-gray-800 border-gray-600">
+            <DropdownMenuItem className="text-white hover:bg-gray-700">
+              Zobacz szczegóły
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-white hover:bg-gray-700">
+              Ustawienia grupy
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-white hover:bg-gray-700">
+              Opuść grupę
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </div>
   );
 };

@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { Trash2 } from 'lucide-react';
 
 interface FriendRequest {
   id: string;
@@ -14,12 +15,14 @@ interface FriendRequestCardProps {
   request: FriendRequest;
   onAccept: (requestId: string) => void;
   onReject: (requestId: string) => void;
+  onDelete?: (requestId: string) => void;
 }
 
 const FriendRequestCard: React.FC<FriendRequestCardProps> = ({
   request,
   onAccept,
-  onReject
+  onReject,
+  onDelete
 }) => {
   return (
     <div className="flex items-center p-4 hover:bg-white/5 transition-colors">
@@ -55,6 +58,14 @@ const FriendRequestCard: React.FC<FriendRequestCardProps> = ({
         >
           Odrzuć
         </Button>
+        {onDelete && (
+          <button
+            onClick={() => onDelete(request.id)}
+            className="p-2 bg-red-500/20 text-red-400 rounded-full hover:bg-red-500/30 transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        )}
       </div>
     </div>
   );

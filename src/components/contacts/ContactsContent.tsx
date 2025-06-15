@@ -38,6 +38,9 @@ interface ContactsContentProps {
   onQuickAction: (action: string, contact: Contact) => void;
   onAcceptRequest: (requestId: string) => void;
   onRejectRequest: (requestId: string) => void;
+  onDeleteContact?: (contactId: string) => void;
+  onDeleteRequest?: (requestId: string) => void;
+  onDeleteGroup?: (groupId: string) => void;
   formatLastActivity: (date: Date) => string;
 }
 
@@ -50,6 +53,9 @@ const ContactsContent: React.FC<ContactsContentProps> = ({
   onQuickAction,
   onAcceptRequest,
   onRejectRequest,
+  onDeleteContact,
+  onDeleteRequest,
+  onDeleteGroup,
   formatLastActivity
 }) => {
   console.log('ContactsContent: Rendering with activeTab:', activeTab);
@@ -83,6 +89,7 @@ const ContactsContent: React.FC<ContactsContentProps> = ({
                   key={contact.id}
                   contact={contact}
                   onQuickAction={onQuickAction}
+                  onDeleteContact={onDeleteContact}
                 />
               ))
             )}
@@ -104,6 +111,7 @@ const ContactsContent: React.FC<ContactsContentProps> = ({
                   request={request}
                   onAccept={onAcceptRequest}
                   onReject={onRejectRequest}
+                  onDelete={onDeleteRequest}
                 />
               ))
             )}
@@ -124,6 +132,7 @@ const ContactsContent: React.FC<ContactsContentProps> = ({
                   key={group.id}
                   group={group}
                   formatLastActivity={formatLastActivity}
+                  onDeleteGroup={onDeleteGroup}
                 />
               ))
             )}

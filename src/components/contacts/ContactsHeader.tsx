@@ -1,65 +1,65 @@
 
 import React from 'react';
-import { Bell, UserPlus, Share, QrCode } from 'lucide-react';
+import { UserPlus, Bell, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 interface ContactsHeaderProps {
   unreadCount: number;
   onAddContact: () => void;
   onShowNotifications: () => void;
+  onGoBack?: () => void;
+  showBackButton?: boolean;
 }
 
 const ContactsHeader: React.FC<ContactsHeaderProps> = ({
   unreadCount,
   onAddContact,
-  onShowNotifications
+  onShowNotifications,
+  onGoBack,
+  showBackButton = true
 }) => {
   return (
-    <div className="flex items-center justify-between mb-6">
-      <h1 className="text-2xl font-bold text-white">Kontakty</h1>
-      <div className="flex items-center space-x-2">
-        {/* Add Contact Button */}
+    <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center">
+        {showBackButton && onGoBack && (
+          <Button
+            onClick={onGoBack}
+            variant="ghost"
+            size="icon"
+            className="mr-3 text-gray-400 hover:text-white"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+        )}
+        <h1 className="text-2xl font-bold text-white">Kontakty</h1>
+      </div>
+      
+      <div className="flex items-center space-x-3">
         <Button
           onClick={onAddContact}
-          variant="ghost"
-          size="icon"
-          className="text-gray-400 hover:text-white"
+          className="bg-blue-500 hover:bg-blue-600 text-white"
+          size="sm"
         >
-          <UserPlus className="w-5 h-5" />
+          <UserPlus className="w-4 h-4 mr-2" />
+          Dodaj
         </Button>
-
-        {/* Share Profile Button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-gray-400 hover:text-white"
-        >
-          <Share className="w-5 h-5" />
-        </Button>
-
-        {/* QR Code Button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-gray-400 hover:text-white"
-        >
-          <QrCode className="w-5 h-5" />
-        </Button>
-
-        {/* Notifications Button */}
-        <Button
-          onClick={onShowNotifications}
-          variant="ghost"
-          size="icon"
-          className="relative text-gray-400 hover:text-white"
-        >
-          <Bell className="w-5 h-5" />
+        
+        <div className="relative">
+          <Button
+            onClick={onShowNotifications}
+            variant="outline"
+            size="icon"
+            className="border-white/20 text-white hover:bg-white/10"
+          >
+            <Bell className="w-4 h-4" />
+          </Button>
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
+            <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1 min-w-[20px] h-5 flex items-center justify-center rounded-full">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </Badge>
           )}
-        </Button>
+        </div>
       </div>
     </div>
   );
