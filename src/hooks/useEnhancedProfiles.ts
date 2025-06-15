@@ -57,10 +57,19 @@ export const useEnhancedProfiles = () => {
       if (error) throw error;
       
       // Transform the data to match our EnhancedProfile interface
-      const transformedProfile = {
+      const transformedProfile: EnhancedProfile = {
         ...data,
-        status: data.status as 'available' | 'away' | 'busy' | 'invisible',
-        privacy_settings: data.privacy_settings as PrivacySettings
+        status: (data.status as 'available' | 'away' | 'busy' | 'invisible') || 'available',
+        privacy_settings: typeof data.privacy_settings === 'object' && data.privacy_settings !== null
+          ? data.privacy_settings as PrivacySettings
+          : {
+              read_receipts: true,
+              last_seen: 'contacts',
+              profile_photo: 'contacts',
+              disappearing_messages: false,
+              screen_lock: false,
+              incognito_keyboard: false
+            }
       };
       
       setProfile(transformedProfile);
@@ -75,22 +84,39 @@ export const useEnhancedProfiles = () => {
     if (!user) return;
 
     try {
+      // Prepare the update data with proper type conversion
+      const updateData: any = {
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
+
+      // Convert privacy_settings to proper JSON format if it exists
+      if (updates.privacy_settings) {
+        updateData.privacy_settings = JSON.parse(JSON.stringify(updates.privacy_settings));
+      }
+
       const { data, error } = await supabase
         .from('profiles')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', user.id)
         .select()
         .single();
 
       if (error) throw error;
 
-      const transformedProfile = {
+      const transformedProfile: EnhancedProfile = {
         ...data,
-        status: data.status as 'available' | 'away' | 'busy' | 'invisible',
-        privacy_settings: data.privacy_settings as PrivacySettings
+        status: (data.status as 'available' | 'away' | 'busy' | 'invisible') || 'available',
+        privacy_settings: typeof data.privacy_settings === 'object' && data.privacy_settings !== null
+          ? data.privacy_settings as PrivacySettings
+          : {
+              read_receipts: true,
+              last_seen: 'contacts',
+              profile_photo: 'contacts',
+              disappearing_messages: false,
+              screen_lock: false,
+              incognito_keyboard: false
+            }
       };
 
       setProfile(transformedProfile);

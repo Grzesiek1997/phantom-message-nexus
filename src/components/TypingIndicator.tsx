@@ -37,9 +37,10 @@ const TypingIndicator: React.FC<TypingIndicatorProps> = ({ conversationId }) => 
             .neq('user_id', user?.id || '');
 
           if (data) {
-            const usernames = data.map(item => 
-              (item.profiles as any)?.display_name || (item.profiles as any)?.username || 'Unknown'
-            );
+            const usernames = data.map(item => {
+              const profile = item.profiles as any;
+              return profile?.display_name || profile?.username || 'Unknown';
+            });
             setTypingUsers(usernames);
           }
         }

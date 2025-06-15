@@ -149,6 +149,158 @@ export type Database = {
           },
         ]
       }
+      bot_commands: {
+        Row: {
+          bot_id: string | null
+          command: string
+          created_at: string | null
+          description: string
+          id: string
+          scope: string | null
+          usage_example: string | null
+        }
+        Insert: {
+          bot_id?: string | null
+          command: string
+          created_at?: string | null
+          description: string
+          id?: string
+          scope?: string | null
+          usage_example?: string | null
+        }
+        Update: {
+          bot_id?: string | null
+          command?: string
+          created_at?: string | null
+          description?: string
+          id?: string
+          scope?: string | null
+          usage_example?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bot_commands_bot_id_fkey"
+            columns: ["bot_id"]
+            isOneToOne: false
+            referencedRelation: "bots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bot_interactions: {
+        Row: {
+          bot_id: string | null
+          command: string | null
+          conversation_id: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          input_text: string | null
+          response_text: string | null
+          success: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          bot_id?: string | null
+          command?: string | null
+          conversation_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          input_text?: string | null
+          response_text?: string | null
+          success?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          bot_id?: string | null
+          command?: string | null
+          conversation_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          input_text?: string | null
+          response_text?: string | null
+          success?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bot_interactions_bot_id_fkey"
+            columns: ["bot_id"]
+            isOneToOne: false
+            referencedRelation: "bots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bot_interactions_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bots: {
+        Row: {
+          active_chats: number | null
+          api_token: string | null
+          avatar_url: string | null
+          can_join_groups: boolean | null
+          can_read_all_messages: boolean | null
+          created_at: string | null
+          description: string | null
+          id: string
+          inline_mode: boolean | null
+          is_verified: boolean | null
+          name: string
+          owner_id: string
+          total_interactions: number | null
+          updated_at: string | null
+          username: string
+          webhook_secret: string | null
+          webhook_url: string | null
+        }
+        Insert: {
+          active_chats?: number | null
+          api_token?: string | null
+          avatar_url?: string | null
+          can_join_groups?: boolean | null
+          can_read_all_messages?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          inline_mode?: boolean | null
+          is_verified?: boolean | null
+          name: string
+          owner_id: string
+          total_interactions?: number | null
+          updated_at?: string | null
+          username: string
+          webhook_secret?: string | null
+          webhook_url?: string | null
+        }
+        Update: {
+          active_chats?: number | null
+          api_token?: string | null
+          avatar_url?: string | null
+          can_join_groups?: boolean | null
+          can_read_all_messages?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          inline_mode?: boolean | null
+          is_verified?: boolean | null
+          name?: string
+          owner_id?: string
+          total_interactions?: number | null
+          updated_at?: string | null
+          username?: string
+          webhook_secret?: string | null
+          webhook_url?: string | null
+        }
+        Relationships: []
+      }
       call_participants: {
         Row: {
           call_id: string | null
@@ -242,6 +394,136 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      channel_admins: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string | null
+          channel_id: string | null
+          id: string
+          permissions: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          channel_id?: string | null
+          id?: string
+          permissions?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          channel_id?: string | null
+          id?: string
+          permissions?: Json | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channel_admins_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      channel_subscribers: {
+        Row: {
+          channel_id: string | null
+          id: string
+          is_premium_subscriber: boolean | null
+          notifications_enabled: boolean | null
+          premium_expires_at: string | null
+          subscribed_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          channel_id?: string | null
+          id?: string
+          is_premium_subscriber?: boolean | null
+          notifications_enabled?: boolean | null
+          premium_expires_at?: string | null
+          subscribed_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          channel_id?: string | null
+          id?: string
+          is_premium_subscriber?: boolean | null
+          notifications_enabled?: boolean | null
+          premium_expires_at?: string | null
+          subscribed_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channel_subscribers_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      channels: {
+        Row: {
+          auto_delete_messages: boolean | null
+          avatar_url: string | null
+          category: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_premium: boolean | null
+          is_public: boolean | null
+          is_verified: boolean | null
+          message_ttl: number | null
+          name: string
+          owner_id: string
+          subscriber_count: number | null
+          subscription_price: number | null
+          updated_at: string | null
+          username: string | null
+        }
+        Insert: {
+          auto_delete_messages?: boolean | null
+          avatar_url?: string | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_premium?: boolean | null
+          is_public?: boolean | null
+          is_verified?: boolean | null
+          message_ttl?: number | null
+          name: string
+          owner_id: string
+          subscriber_count?: number | null
+          subscription_price?: number | null
+          updated_at?: string | null
+          username?: string | null
+        }
+        Update: {
+          auto_delete_messages?: boolean | null
+          avatar_url?: string | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_premium?: boolean | null
+          is_public?: boolean | null
+          is_verified?: boolean | null
+          message_ttl?: number | null
+          name?: string
+          owner_id?: string
+          subscriber_count?: number | null
+          subscription_price?: number | null
+          updated_at?: string | null
+          username?: string | null
+        }
+        Relationships: []
       }
       cities: {
         Row: {
@@ -337,6 +619,56 @@ export type Database = {
           verified_safety_number?: string | null
         }
         Relationships: []
+      }
+      conversation_analytics: {
+        Row: {
+          active_members: number | null
+          conversation_id: string | null
+          created_at: string | null
+          date: string
+          id: string
+          left_members: number | null
+          media_messages: number | null
+          new_members: number | null
+          text_messages: number | null
+          total_messages: number | null
+          voice_messages: number | null
+        }
+        Insert: {
+          active_members?: number | null
+          conversation_id?: string | null
+          created_at?: string | null
+          date: string
+          id?: string
+          left_members?: number | null
+          media_messages?: number | null
+          new_members?: number | null
+          text_messages?: number | null
+          total_messages?: number | null
+          voice_messages?: number | null
+        }
+        Update: {
+          active_members?: number | null
+          conversation_id?: string | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          left_members?: number | null
+          media_messages?: number | null
+          new_members?: number | null
+          text_messages?: number | null
+          total_messages?: number | null
+          voice_messages?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_analytics_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       conversation_participants: {
         Row: {
@@ -704,6 +1036,100 @@ export type Database = {
         }
         Relationships: []
       }
+      live_location_updates: {
+        Row: {
+          accuracy: number | null
+          heading: number | null
+          id: string
+          latitude: number
+          location_share_id: string | null
+          longitude: number
+          speed: number | null
+          timestamp: string | null
+        }
+        Insert: {
+          accuracy?: number | null
+          heading?: number | null
+          id?: string
+          latitude: number
+          location_share_id?: string | null
+          longitude: number
+          speed?: number | null
+          timestamp?: string | null
+        }
+        Update: {
+          accuracy?: number | null
+          heading?: number | null
+          id?: string
+          latitude?: number
+          location_share_id?: string | null
+          longitude?: number
+          speed?: number | null
+          timestamp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_location_updates_location_share_id_fkey"
+            columns: ["location_share_id"]
+            isOneToOne: false
+            referencedRelation: "location_shares"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      location_shares: {
+        Row: {
+          accuracy: number | null
+          altitude: number | null
+          conversation_id: string | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          is_live: boolean | null
+          latitude: number
+          longitude: number
+          shared_with: string[] | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          accuracy?: number | null
+          altitude?: number | null
+          conversation_id?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_live?: boolean | null
+          latitude: number
+          longitude: number
+          shared_with?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          accuracy?: number | null
+          altitude?: number | null
+          conversation_id?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_live?: boolean | null
+          latitude?: number
+          longitude?: number
+          shared_with?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_shares_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_attachments: {
         Row: {
           dimensions: Json | null
@@ -790,6 +1216,54 @@ export type Database = {
           {
             foreignKeyName: "message_delivery_message_id_fkey"
             columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_drafts: {
+        Row: {
+          attachments: Json | null
+          content_encrypted: string
+          conversation_id: string | null
+          created_at: string | null
+          id: string
+          reply_to_id: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          attachments?: Json | null
+          content_encrypted: string
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          reply_to_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          attachments?: Json | null
+          content_encrypted?: string
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          reply_to_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_drafts_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_drafts_reply_to_id_fkey"
+            columns: ["reply_to_id"]
             isOneToOne: false
             referencedRelation: "messages"
             referencedColumns: ["id"]
@@ -1131,6 +1605,130 @@ export type Database = {
           },
         ]
       }
+      poll_options: {
+        Row: {
+          created_at: string | null
+          id: string
+          option_order: number
+          poll_id: string | null
+          text: string
+          vote_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          option_order: number
+          poll_id?: string | null
+          text: string
+          vote_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          option_order?: number
+          poll_id?: string | null
+          text?: string
+          vote_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poll_options_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "polls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      poll_votes: {
+        Row: {
+          id: string
+          option_id: string | null
+          poll_id: string | null
+          voted_at: string | null
+          voter_id: string | null
+        }
+        Insert: {
+          id?: string
+          option_id?: string | null
+          poll_id?: string | null
+          voted_at?: string | null
+          voter_id?: string | null
+        }
+        Update: {
+          id?: string
+          option_id?: string | null
+          poll_id?: string | null
+          voted_at?: string | null
+          voter_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poll_votes_option_id_fkey"
+            columns: ["option_id"]
+            isOneToOne: false
+            referencedRelation: "poll_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "poll_votes_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "polls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      polls: {
+        Row: {
+          allows_multiple_answers: boolean | null
+          correct_option_id: string | null
+          created_at: string | null
+          creator_id: string
+          expires_at: string | null
+          id: string
+          is_anonymous: boolean | null
+          is_closed: boolean | null
+          message_id: string | null
+          poll_type: string | null
+          question: string
+        }
+        Insert: {
+          allows_multiple_answers?: boolean | null
+          correct_option_id?: string | null
+          created_at?: string | null
+          creator_id: string
+          expires_at?: string | null
+          id?: string
+          is_anonymous?: boolean | null
+          is_closed?: boolean | null
+          message_id?: string | null
+          poll_type?: string | null
+          question: string
+        }
+        Update: {
+          allows_multiple_answers?: boolean | null
+          correct_option_id?: string | null
+          created_at?: string | null
+          creator_id?: string
+          expires_at?: string | null
+          id?: string
+          is_anonymous?: boolean | null
+          is_closed?: boolean | null
+          message_id?: string | null
+          poll_type?: string | null
+          question?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "polls_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       privacy_actions: {
         Row: {
           action: string
@@ -1260,6 +1858,66 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_messages: {
+        Row: {
+          attachments: Json | null
+          content_encrypted: string
+          conversation_id: string | null
+          created_at: string | null
+          id: string
+          message_type: string | null
+          scheduled_for: string
+          sent_at: string | null
+          sent_message_id: string | null
+          status: string | null
+          timezone: string | null
+          user_id: string | null
+        }
+        Insert: {
+          attachments?: Json | null
+          content_encrypted: string
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          message_type?: string | null
+          scheduled_for: string
+          sent_at?: string | null
+          sent_message_id?: string | null
+          status?: string | null
+          timezone?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          attachments?: Json | null
+          content_encrypted?: string
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          message_type?: string | null
+          scheduled_for?: string
+          sent_at?: string | null
+          sent_message_id?: string | null
+          status?: string | null
+          timezone?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_messages_sent_message_id_fkey"
+            columns: ["sent_message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       security_events: {
         Row: {
           created_at: string | null
@@ -1307,6 +1965,159 @@ export type Database = {
           },
         ]
       }
+      sticker_packs: {
+        Row: {
+          created_at: string | null
+          creator_id: string | null
+          description: string | null
+          download_count: number | null
+          id: string
+          is_animated: boolean | null
+          is_free: boolean | null
+          is_official: boolean | null
+          name: string
+          price: number | null
+          rating: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          creator_id?: string | null
+          description?: string | null
+          download_count?: number | null
+          id?: string
+          is_animated?: boolean | null
+          is_free?: boolean | null
+          is_official?: boolean | null
+          name: string
+          price?: number | null
+          rating?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          creator_id?: string | null
+          description?: string | null
+          download_count?: number | null
+          id?: string
+          is_animated?: boolean | null
+          is_free?: boolean | null
+          is_official?: boolean | null
+          name?: string
+          price?: number | null
+          rating?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      stickers: {
+        Row: {
+          created_at: string | null
+          emoji_tags: string[] | null
+          file_size: number | null
+          file_url: string
+          height: number | null
+          id: string
+          pack_id: string | null
+          thumbnail_url: string | null
+          width: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          emoji_tags?: string[] | null
+          file_size?: number | null
+          file_url: string
+          height?: number | null
+          id?: string
+          pack_id?: string | null
+          thumbnail_url?: string | null
+          width?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          emoji_tags?: string[] | null
+          file_size?: number | null
+          file_url?: string
+          height?: number | null
+          id?: string
+          pack_id?: string | null
+          thumbnail_url?: string | null
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stickers_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "sticker_packs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_replies: {
+        Row: {
+          content_encrypted: string
+          created_at: string | null
+          id: string
+          replier_id: string | null
+          story_id: string | null
+        }
+        Insert: {
+          content_encrypted: string
+          created_at?: string | null
+          id?: string
+          replier_id?: string | null
+          story_id?: string | null
+        }
+        Update: {
+          content_encrypted?: string
+          created_at?: string | null
+          id?: string
+          replier_id?: string | null
+          story_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_replies_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "user_stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_views: {
+        Row: {
+          id: string
+          story_id: string | null
+          viewed_at: string | null
+          viewer_id: string | null
+        }
+        Insert: {
+          id?: string
+          story_id?: string | null
+          viewed_at?: string | null
+          viewer_id?: string | null
+        }
+        Update: {
+          id?: string
+          story_id?: string | null
+          viewed_at?: string | null
+          viewer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_views_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "user_stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tabelaAdmin: {
         Row: {
           created_at: string
@@ -1319,6 +2130,51 @@ export type Database = {
         Update: {
           created_at?: string
           id?: number
+        }
+        Relationships: []
+      }
+      themes: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          display_name: string
+          download_count: number | null
+          id: string
+          is_official: boolean | null
+          is_premium: boolean | null
+          name: string
+          preview_url: string | null
+          rating: number | null
+          theme_data: Json
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          display_name: string
+          download_count?: number | null
+          id?: string
+          is_official?: boolean | null
+          is_premium?: boolean | null
+          name: string
+          preview_url?: string | null
+          rating?: number | null
+          theme_data: Json
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          display_name?: string
+          download_count?: number | null
+          id?: string
+          is_official?: boolean | null
+          is_premium?: boolean | null
+          name?: string
+          preview_url?: string | null
+          rating?: number | null
+          theme_data?: Json
         }
         Relationships: []
       }
@@ -1353,6 +2209,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      usage_analytics: {
+        Row: {
+          active_conversations: number | null
+          calls_made: number | null
+          calls_received: number | null
+          created_at: string | null
+          date: string
+          features_used: Json | null
+          id: string
+          messages_received: number | null
+          messages_sent: number | null
+          stories_posted: number | null
+          stories_viewed: number | null
+          time_spent_minutes: number | null
+          user_id: string | null
+          voice_messages_sent: number | null
+        }
+        Insert: {
+          active_conversations?: number | null
+          calls_made?: number | null
+          calls_received?: number | null
+          created_at?: string | null
+          date: string
+          features_used?: Json | null
+          id?: string
+          messages_received?: number | null
+          messages_sent?: number | null
+          stories_posted?: number | null
+          stories_viewed?: number | null
+          time_spent_minutes?: number | null
+          user_id?: string | null
+          voice_messages_sent?: number | null
+        }
+        Update: {
+          active_conversations?: number | null
+          calls_made?: number | null
+          calls_received?: number | null
+          created_at?: string | null
+          date?: string
+          features_used?: Json | null
+          id?: string
+          messages_received?: number | null
+          messages_sent?: number | null
+          stories_posted?: number | null
+          stories_viewed?: number | null
+          time_spent_minutes?: number | null
+          user_id?: string | null
+          voice_messages_sent?: number | null
+        }
+        Relationships: []
       }
       user_devices: {
         Row: {
@@ -1539,6 +2446,127 @@ export type Database = {
         }
         Relationships: []
       }
+      user_sticker_packs: {
+        Row: {
+          id: string
+          installed_at: string | null
+          pack_id: string | null
+          usage_count: number | null
+          user_id: string | null
+        }
+        Insert: {
+          id?: string
+          installed_at?: string | null
+          pack_id?: string | null
+          usage_count?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          id?: string
+          installed_at?: string | null
+          pack_id?: string | null
+          usage_count?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_sticker_packs_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "sticker_packs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_stories: {
+        Row: {
+          allow_reactions: boolean | null
+          allow_replies: boolean | null
+          allowed_viewers: string[] | null
+          background_color: string | null
+          blocked_viewers: string[] | null
+          content_encrypted: string
+          content_type: string | null
+          created_at: string | null
+          duration: number | null
+          expires_at: string | null
+          id: string
+          media_thumbnail: string | null
+          media_url: string | null
+          user_id: string | null
+          view_count: number | null
+          visibility: string | null
+        }
+        Insert: {
+          allow_reactions?: boolean | null
+          allow_replies?: boolean | null
+          allowed_viewers?: string[] | null
+          background_color?: string | null
+          blocked_viewers?: string[] | null
+          content_encrypted: string
+          content_type?: string | null
+          created_at?: string | null
+          duration?: number | null
+          expires_at?: string | null
+          id?: string
+          media_thumbnail?: string | null
+          media_url?: string | null
+          user_id?: string | null
+          view_count?: number | null
+          visibility?: string | null
+        }
+        Update: {
+          allow_reactions?: boolean | null
+          allow_replies?: boolean | null
+          allowed_viewers?: string[] | null
+          background_color?: string | null
+          blocked_viewers?: string[] | null
+          content_encrypted?: string
+          content_type?: string | null
+          created_at?: string | null
+          duration?: number | null
+          expires_at?: string | null
+          id?: string
+          media_thumbnail?: string | null
+          media_url?: string | null
+          user_id?: string | null
+          view_count?: number | null
+          visibility?: string | null
+        }
+        Relationships: []
+      }
+      user_themes: {
+        Row: {
+          id: string
+          installed_at: string | null
+          is_active: boolean | null
+          theme_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          id?: string
+          installed_at?: string | null
+          is_active?: boolean | null
+          theme_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          id?: string
+          installed_at?: string | null
+          is_active?: boolean | null
+          theme_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_themes_theme_id_fkey"
+            columns: ["theme_id"]
+            isOneToOne: false
+            referencedRelation: "themes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           id: string
@@ -1553,6 +2581,123 @@ export type Database = {
           public_key?: string | null
         }
         Relationships: []
+      }
+      voice_messages: {
+        Row: {
+          created_at: string | null
+          duration_seconds: number
+          file_size: number
+          file_url: string
+          id: string
+          is_transcribed: boolean | null
+          message_id: string | null
+          play_count: number | null
+          transcript: string | null
+          waveform_data: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          duration_seconds: number
+          file_size: number
+          file_url: string
+          id?: string
+          is_transcribed?: boolean | null
+          message_id?: string | null
+          play_count?: number | null
+          transcript?: string | null
+          waveform_data?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          duration_seconds?: number
+          file_size?: number
+          file_url?: string
+          id?: string
+          is_transcribed?: boolean | null
+          message_id?: string | null
+          play_count?: number | null
+          transcript?: string | null
+          waveform_data?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_messages_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      voice_playbacks: {
+        Row: {
+          id: string
+          play_duration: number | null
+          played_at: string | null
+          user_id: string | null
+          voice_message_id: string | null
+        }
+        Insert: {
+          id?: string
+          play_duration?: number | null
+          played_at?: string | null
+          user_id?: string | null
+          voice_message_id?: string | null
+        }
+        Update: {
+          id?: string
+          play_duration?: number | null
+          played_at?: string | null
+          user_id?: string | null
+          voice_message_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_playbacks_voice_message_id_fkey"
+            columns: ["voice_message_id"]
+            isOneToOne: false
+            referencedRelation: "voice_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wallpapers: {
+        Row: {
+          blur_level: number | null
+          brightness: number | null
+          conversation_id: string | null
+          created_at: string | null
+          id: string
+          image_url: string
+          user_id: string | null
+        }
+        Insert: {
+          blur_level?: number | null
+          brightness?: number | null
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          image_url: string
+          user_id?: string | null
+        }
+        Update: {
+          blur_level?: number | null
+          brightness?: number | null
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          image_url?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallpapers_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -1578,6 +2723,10 @@ export type Database = {
       cleanup_expired_sessions: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      cleanup_expired_stories: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       cleanup_typing_indicators: {
         Args: Record<PropertyKey, never>
@@ -1630,6 +2779,10 @@ export type Database = {
       login_user: {
         Args: { login_or_email: string; password: string }
         Returns: undefined
+      }
+      process_scheduled_messages: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       register_user: {
         Args:

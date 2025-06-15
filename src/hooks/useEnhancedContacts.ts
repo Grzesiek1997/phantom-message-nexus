@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -68,16 +67,27 @@ export const useEnhancedContacts = () => {
 
       if (error) throw error;
 
-      // Filter out any contacts with invalid profile data
-      const validContacts = (data || []).filter(contact => 
-        contact.contact_profile && 
-        typeof contact.contact_profile === 'object' && 
-        'username' in contact.contact_profile
-      ) as EnhancedContact[];
+      // Filter and process contacts with valid profile data
+      const processedContacts = (data || [])
+        .filter(contact => contact.contact_profile && typeof contact.contact_profile === 'object')
+        .map(contact => ({
+          ...contact,
+          contact_profile: contact.contact_profile && typeof contact.contact_profile === 'object' && !('error' in contact.contact_profile)
+            ? contact.contact_profile as EnhancedContact['contact_profile']
+            : {
+                username: 'Unknown',
+                display_name: 'Unknown User',
+                avatar_url: '',
+                is_online: false,
+                last_seen: new Date().toISOString(),
+                status: 'offline',
+                is_verified: false
+              }
+        })) as EnhancedContact[];
 
-      setContacts(validContacts.filter(c => !c.is_blocked));
-      setBlockedContacts(validContacts.filter(c => c.is_blocked));
-      setFavoriteContacts(validContacts.filter(c => c.is_favorite && !c.is_blocked));
+      setContacts(processedContacts.filter(c => !c.is_blocked));
+      setBlockedContacts(processedContacts.filter(c => c.is_blocked));
+      setFavoriteContacts(processedContacts.filter(c => c.is_favorite && !c.is_blocked));
     } catch (error) {
       console.error('Error fetching enhanced contacts:', error);
     } finally {

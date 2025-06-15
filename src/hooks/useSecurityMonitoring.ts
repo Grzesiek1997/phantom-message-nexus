@@ -2,27 +2,26 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { useToast } from './use-toast';
 
 export interface SecurityEvent {
   id: string;
   user_id: string;
   event_type: string;
-  description?: string;
-  metadata: Record<string, any>;
+  description: string;
   severity: 'low' | 'medium' | 'high' | 'critical';
   ip_address?: string;
   user_agent?: string;
   device_id?: string;
+  metadata: Record<string, any>;
   created_at: string;
 }
 
 export interface DecryptionFailure {
   id: string;
-  user_id?: string;
-  conversation_id?: string;
-  message_id?: string;
-  failure_type?: string;
+  user_id: string;
+  conversation_id: string;
+  message_id: string;
+  failure_type: string;
   device_info: Record<string, any>;
   ip_address?: string;
   created_at: string;
@@ -33,7 +32,6 @@ export const useSecurityMonitoring = () => {
   const [decryptionFailures, setDecryptionFailures] = useState<DecryptionFailure[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  const { toast } = useToast();
 
   const fetchSecurityEvents = async () => {
     if (!user) return;
@@ -47,7 +45,15 @@ export const useSecurityMonitoring = () => {
         .limit(100);
 
       if (error) throw error;
-      setSecurityEvents(data || []);
+
+      const processedEvents = (data || []).map(event => ({
+        ...event,
+        metadata: typeof event.metadata === 'object' && event.metadata !== null 
+          ? event.metadata as Record<string, any>
+          : {}
+      })) as SecurityEvent[];
+
+      setSecurityEvents(processedEvents);
     } catch (error) {
       console.error('Error fetching security events:', error);
     }
@@ -65,7 +71,15 @@ export const useSecurityMonitoring = () => {
         .limit(50);
 
       if (error) throw error;
-      setDecryptionFailures(data || []);
+
+      const processedFailures = (data || []).map(failure => ({
+        ...failure,
+        device_info: typeof failure.device_info === 'object' && failure.device_info !== null 
+          ? failure.device_info as Record<string, any>
+          : {}
+      })) as DecryptionFailure[];
+
+      setDecryptionFailures(processedFailures);
     } catch (error) {
       console.error('Error fetching decryption failures:', error);
     }
@@ -87,27 +101,22 @@ export const useSecurityMonitoring = () => {
           event_type: eventType,
           description,
           severity,
-          metadata,
-          ip_address: await getUserIP(),
-          user_agent: navigator.userAgent
+          metadata: JSON.parse(JSON.stringify(metadata)),
+          created_at: new Date().toISOString()
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      setSecurityEvents(prev => [data, ...prev]);
+      const processedEvent: SecurityEvent = {
+        ...data,
+        metadata: typeof data.metadata === 'object' && data.metadata !== null 
+          ? data.metadata as Record<string, any>
+          : {}
+      };
 
-      // Show toast for high/critical events
-      if (severity === 'high' || severity === 'critical') {
-        toast({
-          title: 'Ostrzeżenie bezpieczeństwa',
-          description: description,
-          variant: 'destructive'
-        });
-      }
-
-      return data;
+      setSecurityEvents(prev => [processedEvent, ...prev]);
     } catch (error) {
       console.error('Error logging security event:', error);
     }
@@ -129,111 +138,34 @@ export const useSecurityMonitoring = () => {
           conversation_id: conversationId,
           message_id: messageId,
           failure_type: failureType,
-          device_info: {
-            ...deviceInfo,
-            user_agent: navigator.userAgent,
-            timestamp: new Date().toISOString()
-          },
-          ip_address: await getUserIP()
+          device_info: JSON.parse(JSON.stringify(deviceInfo)),
+          created_at: new Date().toISOString()
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      setDecryptionFailures(prev => [data, ...prev]);
+      const processedFailure: DecryptionFailure = {
+        ...data,
+        device_info: typeof data.device_info === 'object' && data.device_info !== null 
+          ? data.device_info as Record<string, any>
+          : {}
+      };
 
-      // Log as security event too
-      await logSecurityEvent(
-        'decryption_failure',
-        `Decryption failed: ${failureType}`,
-        'high',
-        { conversationId, messageId, failureType }
-      );
-
-      return data;
+      setDecryptionFailures(prev => [processedFailure, ...prev]);
     } catch (error) {
       console.error('Error logging decryption failure:', error);
     }
   };
 
-  const getUserIP = async (): Promise<string | undefined> => {
-    try {
-      const response = await fetch('https://api.ipify.org?format=json');
-      const data = await response.json();
-      return data.ip;
-    } catch (error) {
-      console.error('Error getting user IP:', error);
-      return undefined;
-    }
-  };
-
-  const clearOldEvents = async (daysToKeep: number = 90) => {
-    if (!user) return;
-
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
-
-    try {
-      const { error } = await supabase
-        .from('security_events')
-        .delete()
-        .eq('user_id', user.id)
-        .lt('created_at', cutoffDate.toISOString());
-
-      if (error) throw error;
-
-      await fetchSecurityEvents();
-      
-      toast({
-        title: 'Sukces',
-        description: 'Stare zdarzenia bezpieczeństwa zostały usunięte'
-      });
-    } catch (error) {
-      console.error('Error clearing old events:', error);
-      toast({
-        title: 'Błąd',
-        description: 'Nie udało się usunąć starych zdarzeń',
-        variant: 'destructive'
-      });
-    }
-  };
-
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      await Promise.all([
-        fetchSecurityEvents(),
-        fetchDecryptionFailures()
-      ]);
+    const loadData = async () => {
+      await Promise.all([fetchSecurityEvents(), fetchDecryptionFailures()]);
       setLoading(false);
     };
 
-    fetchData();
-  }, [user]);
-
-  // Subscribe to new security events
-  useEffect(() => {
-    if (!user) return;
-
-    const subscription = supabase
-      .channel('security_events')
-      .on('postgres_changes',
-        { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'security_events',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          setSecurityEvents(prev => [payload.new as SecurityEvent, ...prev]);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(subscription);
-    };
+    loadData();
   }, [user]);
 
   return {
@@ -242,7 +174,6 @@ export const useSecurityMonitoring = () => {
     loading,
     logSecurityEvent,
     logDecryptionFailure,
-    clearOldEvents,
     refetch: () => Promise.all([fetchSecurityEvents(), fetchDecryptionFailures()])
   };
 };
