@@ -13,18 +13,45 @@ interface NotificationPanelProps {
 }
 
 const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, onClose }) => {
-  const { notifications, markAsRead, markAllAsRead } = useNotifications();
-  const { acceptFriendRequest, rejectFriendRequest } = useFriendRequests();
+  const { notifications, markAsRead, markAllAsRead, fetchNotifications } = useNotifications();
+  const { acceptFriendRequest, rejectFriendRequest, receivedRequests } = useFriendRequests();
 
   const handleAcceptFriendRequest = async (requestId: string, notificationId: string) => {
-    await acceptFriendRequest(requestId);
-    await markAsRead(notificationId);
+    try {
+      await acceptFriendRequest(requestId);
+      await markAsRead(notificationId);
+      await fetchNotifications();
+    } catch (error) {
+      console.error('Error accepting friend request:', error);
+    }
   };
 
   const handleRejectFriendRequest = async (requestId: string, notificationId: string) => {
-    await rejectFriendRequest(requestId);
-    await markAsRead(notificationId);
+    try {
+      await rejectFriendRequest(requestId);
+      await markAsRead(notificationId);
+      await fetchNotifications();
+    } catch (error) {
+      console.error('Error rejecting friend request:', error);
+    }
   };
+
+  // Create notifications for pending friend requests
+  const friendRequestNotifications = receivedRequests.map(request => ({
+    id: `friend_request_${request.id}`,
+    user_id: request.receiver_id,
+    type: 'friend_request' as const,
+    title: 'Nowe zaproszenie do znajomych',
+    message: `${request.sender_profile?.display_name || request.sender_profile?.username || 'Użytkownik'} chce dodać Cię do znajomych`,
+    data: { friend_request_id: request.id, sender_id: request.sender_id },
+    is_read: false,
+    created_at: request.created_at || new Date().toISOString()
+  }));
+
+  // Combine regular notifications with friend request notifications
+  const allNotifications = [...notifications, ...friendRequestNotifications].sort((a, b) => 
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
 
   if (!isOpen) return null;
 
@@ -38,7 +65,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, onClose }
             <h2 className="text-xl font-bold text-white">Powiadomienia</h2>
           </div>
           <div className="flex items-center space-x-2">
-            {notifications.some(n => !n.is_read) && (
+            {allNotifications.some(n => !n.is_read) && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -61,7 +88,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, onClose }
 
         {/* Notifications */}
         <div className="flex-1 overflow-y-auto max-h-96">
-          {notifications.length === 0 ? (
+          {allNotifications.length === 0 ? (
             <div className="flex items-center justify-center p-8">
               <div className="text-center text-gray-400">
                 <Bell className="w-12 h-12 mx-auto mb-2 opacity-50" />
@@ -70,7 +97,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, onClose }
             </div>
           ) : (
             <div className="space-y-2 p-4">
-              {notifications.map((notification) => (
+              {allNotifications.map((notification) => (
                 <div
                   key={notification.id}
                   className={`p-4 rounded-lg border transition-colors ${
@@ -89,7 +116,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, onClose }
                           {notification.title}
                         </h3>
                         {!notification.is_read && (
-                          <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
                         )}
                       </div>
                       <p className="text-gray-300 text-sm mb-2">

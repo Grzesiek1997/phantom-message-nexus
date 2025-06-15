@@ -35,19 +35,17 @@ export const useNotifications = () => {
         return;
       }
 
-      // Map database fields to interface fields - handle the actual database schema
-      const mappedNotifications = (data || []).map(item => {
-        return {
-          id: item.id,
-          user_id: item.user_id,
-          type: 'message' as 'friend_request' | 'friend_accepted' | 'message' | 'call',
-          title: 'Powiadomienie',
-          message: 'Masz nowe powiadomienie',
-          data: null,
-          is_read: item.is_read || false,
-          created_at: item.created_at || ''
-        };
-      });
+      // Map database fields to interface fields
+      const mappedNotifications = (data || []).map(item => ({
+        id: item.id,
+        user_id: item.user_id,
+        type: item.type || 'message',
+        title: item.title || 'Powiadomienie',
+        message: item.message || 'Masz nowe powiadomienie',
+        data: item.data,
+        is_read: item.is_read || false,
+        created_at: item.created_at || new Date().toISOString()
+      }));
 
       setNotifications(mappedNotifications);
       setUnreadCount(mappedNotifications.filter(n => !n.is_read).length);
@@ -60,6 +58,11 @@ export const useNotifications = () => {
 
   const markAsRead = async (notificationId: string) => {
     try {
+      // Skip marking friend request notifications as read (they're handled differently)
+      if (notificationId.startsWith('friend_request_')) {
+        return;
+      }
+
       const { error } = await supabase
         .from('notifications')
         .update({ is_read: true })
@@ -116,6 +119,18 @@ export const useNotifications = () => {
           schema: 'public',
           table: 'notifications',
           filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          fetchNotifications();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'friend_requests',
+          filter: `receiver_id=eq.${user.id}`
         },
         () => {
           fetchNotifications();

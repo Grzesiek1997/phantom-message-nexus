@@ -1,11 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { MessageCircle, Bell } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 import { useMessages } from '@/hooks/useMessages';
 import { useContacts } from '@/hooks/useContacts';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { useNotifications } from '@/hooks/useNotifications';
 import ContactSearch from './ContactSearch';
 import AIAssistant from './AIAssistant';
 import GroupManagement from './GroupManagement';
@@ -13,9 +13,7 @@ import MessageBubble from './MessageBubble';
 import ConversationList from './ConversationList';
 import ChatHeader from './ChatHeader';
 import MessageInput from './MessageInput';
-import NotificationPanel from './NotificationPanel';
 import SearchOverlay from './search/SearchOverlay';
-import { Button } from '@/components/ui/button';
 
 const RealTimeChatInterface: React.FC = () => {
   const location = useLocation();
@@ -24,7 +22,6 @@ const RealTimeChatInterface: React.FC = () => {
   const [showContactSearch, setShowContactSearch] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [showGroupManagement, setShowGroupManagement] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
   const [showSearchOverlay, setShowSearchOverlay] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isMobile, setIsMobile] = useState(false);
@@ -35,7 +32,6 @@ const RealTimeChatInterface: React.FC = () => {
   const { messages, conversations, loading, sendMessage, createConversation } = useMessages(selectedConversationId || undefined);
   const { contacts } = useContacts();
   const { toast } = useToast();
-  const { unreadCount } = useNotifications();
 
   // Handle initial conversation selection from navigation state
   useEffect(() => {
@@ -193,25 +189,6 @@ const RealTimeChatInterface: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
-      {/* Header with notifications - tylko gdy lista konwersacji jest widoczna */}
-      {(isMobile ? showConversationList : true) && (
-        <div className="absolute top-4 right-4 z-50">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowNotifications(true)}
-            className="text-white hover:bg-white/10 relative"
-          >
-            <Bell className="w-5 h-5" />
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                {unreadCount > 99 ? '99+' : unreadCount}
-              </span>
-            )}
-          </Button>
-        </div>
-      )}
-
       {/* Conversations List */}
       <ConversationList
         conversations={conversations}
@@ -306,13 +283,6 @@ const RealTimeChatInterface: React.FC = () => {
           onClose={() => setShowGroupManagement(false)}
           onCreateGroup={handleCreateGroup}
           contacts={contacts}
-        />
-      )}
-
-      {showNotifications && (
-        <NotificationPanel
-          isOpen={showNotifications}
-          onClose={() => setShowNotifications(false)}
         />
       )}
     </div>

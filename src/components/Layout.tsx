@@ -1,15 +1,24 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Settings, HelpCircle, LogOut } from 'lucide-react';
+import { Settings, HelpCircle, LogOut, Bell } from 'lucide-react';
 import SettingsPanel from './SettingsPanel';
 import NavigationHelp from './NavigationHelp';
+import NotificationPanel from './NotificationPanel';
 import { useAuth } from '@/hooks/useAuth';
+import { useNotifications } from '@/hooks/useNotifications';
+import { useFriendRequests } from '@/hooks/useFriendRequests';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [showSettings, setShowSettings] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const { signOut, user } = useAuth();
+  const { unreadCount } = useNotifications();
+  const { receivedRequests } = useFriendRequests();
+
+  // Calculate total unread notifications including friend requests
+  const totalUnreadCount = unreadCount + receivedRequests.length;
 
   // Add keyboard shortcut for help
   React.useEffect(() => {
@@ -32,6 +41,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }
   };
 
+  const handleNotificationClick = () => {
+    setShowNotifications(true);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
       {/* Header */}
@@ -50,6 +63,24 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </div>
           
           <div className="flex items-center space-x-2">
+            {/* Notification Bell */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleNotificationClick}
+              className={`text-white hover:bg-white/10 relative ${
+                totalUnreadCount > 0 ? 'animate-pulse' : ''
+              }`}
+              title="Powiadomienia"
+            >
+              <Bell className={`w-4 h-4 ${totalUnreadCount > 0 ? 'text-red-400' : 'text-white'}`} />
+              {totalUnreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
+                  {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+                </span>
+              )}
+            </Button>
+            
             <Button
               variant="ghost"
               size="sm"
@@ -89,6 +120,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       {/* Modals */}
       <SettingsPanel isOpen={showSettings} onClose={() => setShowSettings(false)} />
       <NavigationHelp isOpen={showHelp} onClose={() => setShowHelp(false)} />
+      <NotificationPanel isOpen={showNotifications} onClose={() => setShowNotifications(false)} />
     </div>
   );
 };
