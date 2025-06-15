@@ -49,7 +49,16 @@ export const useCalls = () => {
         .limit(50);
 
       if (error) throw error;
-      setCalls(data || []);
+      
+      // Transform the data to match our Call interface
+      const transformedCalls = (data || []).map(call => ({
+        ...call,
+        type: call.type as 'voice' | 'video' | 'group_voice' | 'group_video',
+        status: call.status as 'ringing' | 'connecting' | 'connected' | 'ended' | 'missed' | 'rejected' | 'failed',
+        metadata: call.metadata as Record<string, any>
+      }));
+      
+      setCalls(transformedCalls);
     } catch (error) {
       console.error('Error fetching calls:', error);
     } finally {
@@ -88,15 +97,22 @@ export const useCalls = () => {
 
       if (error) throw error;
 
-      setActiveCall(data);
-      setCalls(prev => [data, ...prev]);
+      const transformedCall = {
+        ...data,
+        type: data.type as 'voice' | 'video' | 'group_voice' | 'group_video',
+        status: data.status as 'ringing' | 'connecting' | 'connected' | 'ended' | 'missed' | 'rejected' | 'failed',
+        metadata: data.metadata as Record<string, any>
+      };
+
+      setActiveCall(transformedCall);
+      setCalls(prev => [transformedCall, ...prev]);
 
       toast({
         title: 'Połączenie',
         description: 'Nawiązywanie połączenia...'
       });
 
-      return data;
+      return transformedCall;
     } catch (error) {
       console.error('Error starting call:', error);
       toast({
@@ -213,7 +229,14 @@ export const useCalls = () => {
         { event: '*', schema: 'public', table: 'calls' },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            setCalls(prev => [payload.new as Call, ...prev]);
+            const transformedCall = {
+              ...payload.new,
+              type: payload.new.type as 'voice' | 'video' | 'group_voice' | 'group_video',
+              status: payload.new.status as 'ringing' | 'connecting' | 'connected' | 'ended' | 'missed' | 'rejected' | 'failed',
+              metadata: payload.new.metadata as Record<string, any>
+            } as Call;
+            
+            setCalls(prev => [transformedCall, ...prev]);
             
             // If this is an incoming call for the current user
             if (payload.new.caller_id !== user?.id) {
@@ -223,12 +246,19 @@ export const useCalls = () => {
               });
             }
           } else if (payload.eventType === 'UPDATE') {
+            const transformedCall = {
+              ...payload.new,
+              type: payload.new.type as 'voice' | 'video' | 'group_voice' | 'group_video',
+              status: payload.new.status as 'ringing' | 'connecting' | 'connected' | 'ended' | 'missed' | 'rejected' | 'failed',
+              metadata: payload.new.metadata as Record<string, any>
+            } as Call;
+            
             setCalls(prev => prev.map(c => 
-              c.id === payload.new.id ? payload.new as Call : c
+              c.id === transformedCall.id ? transformedCall : c
             ));
             
-            if (activeCall?.id === payload.new.id) {
-              setActiveCall(payload.new as Call);
+            if (activeCall?.id === transformedCall.id) {
+              setActiveCall(transformedCall);
             }
           }
         }

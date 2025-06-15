@@ -11,18 +11,22 @@ import { Shield, AlertTriangle, CheckCircle, XCircle, Activity, Bug, Scan, Lock 
 
 const SecurityDashboard: React.FC = () => {
   const {
-    threats,
-    alerts,
-    complianceStatus,
-    generateComplianceReport
+    securityEvents,
+    decryptionFailures,
+    loading,
+    logSecurityEvent
   } = useSecurityMonitoring();
   
   const {
     lastScanResults,
     isScanning,
+    threats,
+    alerts,
+    complianceStatus,
     runSASTScan,
     checkDependencies,
-    runOWASPZAP
+    runOWASPZAP,
+    generateComplianceReport
   } = useSecurityTesting();
 
   const [vulnerabilities, setVulnerabilities] = useState<any[]>([]);

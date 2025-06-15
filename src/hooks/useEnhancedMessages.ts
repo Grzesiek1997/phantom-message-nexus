@@ -65,12 +65,18 @@ export const useEnhancedMessages = (conversationId?: string) => {
 
       if (error) throw error;
 
-      const enhancedMessages = (data || []).map(msg => ({
+      // Filter out messages with invalid sender data and transform them
+      const validMessages = (data || []).filter(msg => 
+        msg.sender && 
+        typeof msg.sender === 'object' && 
+        'username' in msg.sender
+      ).map(msg => ({
         ...msg,
-        delivery_status: 'delivered' as const // We'll enhance this with real delivery tracking
+        delivery_status: 'delivered' as const,
+        edit_history: Array.isArray(msg.edit_history) ? msg.edit_history : []
       })) as EnhancedMessage[];
 
-      setMessages(enhancedMessages);
+      setMessages(validMessages);
     } catch (error) {
       console.error('Error fetching enhanced messages:', error);
       toast({
@@ -138,14 +144,18 @@ export const useEnhancedMessages = (conversationId?: string) => {
         { conversationId, messageType: options.messageType || 'text' }
       );
 
-      const enhancedMessage = {
-        ...data,
-        delivery_status: 'sent' as const,
-        attachments: []
-      } as EnhancedMessage;
+      // Ensure sender data is valid before creating enhanced message
+      if (data.sender && typeof data.sender === 'object' && 'username' in data.sender) {
+        const enhancedMessage = {
+          ...data,
+          delivery_status: 'sent' as const,
+          attachments: [],
+          edit_history: Array.isArray(data.edit_history) ? data.edit_history : []
+        } as EnhancedMessage;
 
-      setMessages(prev => [...prev, enhancedMessage]);
-      return enhancedMessage;
+        setMessages(prev => [...prev, enhancedMessage]);
+        return enhancedMessage;
+      }
     } catch (error) {
       console.error('Error sending enhanced message:', error);
       toast({
@@ -170,8 +180,9 @@ export const useEnhancedMessages = (conversationId?: string) => {
 
       if (!currentMessage) throw new Error('Message not found');
 
+      const currentEditHistory = Array.isArray(currentMessage.edit_history) ? currentMessage.edit_history : [];
       const newEditHistory = [
-        ...currentMessage.edit_history,
+        ...currentEditHistory,
         {
           content: currentMessage.content,
           edited_at: new Date().toISOString(),
@@ -234,7 +245,7 @@ export const useEnhancedMessages = (conversationId?: string) => {
           .eq('id', messageId)
           .single();
 
-        const deletedForUsers = currentMessage?.deleted_for_users || [];
+        const deletedForUsers = Array.isArray(currentMessage?.deleted_for_users) ? currentMessage.deleted_for_users : [];
         if (!deletedForUsers.includes(user.id)) {
           deletedForUsers.push(user.id);
         }
@@ -318,18 +329,21 @@ export const useEnhancedMessages = (conversationId?: string) => {
             .eq('id', newMessage.sender_id)
             .single();
 
-          const enhancedMessage = {
-            ...newMessage,
-            sender: senderData,
-            delivery_status: 'delivered' as const,
-            attachments: []
-          } as EnhancedMessage;
+          if (senderData) {
+            const enhancedMessage = {
+              ...newMessage,
+              sender: senderData,
+              delivery_status: 'delivered' as const,
+              attachments: [],
+              edit_history: Array.isArray(newMessage.edit_history) ? newMessage.edit_history : []
+            } as EnhancedMessage;
 
-          setMessages(prev => [...prev, enhancedMessage]);
+            setMessages(prev => [...prev, enhancedMessage]);
 
-          // Mark as read if not sent by current user
-          if (newMessage.sender_id !== user?.id) {
-            await markAsRead(newMessage.id);
+            // Mark as read if not sent by current user
+            if (newMessage.sender_id !== user?.id) {
+              await markAsRead(newMessage.id);
+            }
           }
         }
       )

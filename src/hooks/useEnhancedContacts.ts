@@ -68,10 +68,16 @@ export const useEnhancedContacts = () => {
 
       if (error) throw error;
 
-      const allContacts = (data || []) as EnhancedContact[];
-      setContacts(allContacts.filter(c => !c.is_blocked));
-      setBlockedContacts(allContacts.filter(c => c.is_blocked));
-      setFavoriteContacts(allContacts.filter(c => c.is_favorite && !c.is_blocked));
+      // Filter out any contacts with invalid profile data
+      const validContacts = (data || []).filter(contact => 
+        contact.contact_profile && 
+        typeof contact.contact_profile === 'object' && 
+        'username' in contact.contact_profile
+      ) as EnhancedContact[];
+
+      setContacts(validContacts.filter(c => !c.is_blocked));
+      setBlockedContacts(validContacts.filter(c => c.is_blocked));
+      setFavoriteContacts(validContacts.filter(c => c.is_favorite && !c.is_blocked));
     } catch (error) {
       console.error('Error fetching enhanced contacts:', error);
     } finally {

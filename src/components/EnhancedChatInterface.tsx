@@ -25,9 +25,9 @@ import { useEnhancedMessages } from '@/hooks/useEnhancedMessages';
 import { useDisappearingMessages } from '@/hooks/useDisappearingMessages';
 import { useCalls } from '@/hooks/useCalls';
 import { useAuth } from '@/hooks/useAuth';
-import { AttachmentUpload } from './AttachmentUpload';
-import { CallInterface } from './CallInterface';
-import { TypingIndicator } from './TypingIndicator';
+import AttachmentUpload from './AttachmentUpload';
+import CallInterface from './CallInterface';
+import TypingIndicator from './TypingIndicator';
 
 interface EnhancedChatInterfaceProps {
   conversationId: string;

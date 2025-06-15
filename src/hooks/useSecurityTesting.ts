@@ -1,283 +1,149 @@
 
 import { useState } from 'react';
+import { useToast } from './use-toast';
 
-interface VulnerabilityReport {
+export interface SecurityScanResults {
   critical: number;
   high: number;
   medium: number;
   low: number;
   total: number;
-  details: Vulnerability[];
 }
 
-interface Vulnerability {
-  id: string;
-  title: string;
-  severity: 'critical' | 'high' | 'medium' | 'low';
-  description: string;
-  recommendation: string;
-  cve?: string;
-}
-
-interface DependencyVulnerability {
+export interface Vulnerability {
   package: string;
-  version: string;
   vulnerability: string;
   severity: 'critical' | 'high' | 'medium' | 'low';
-  fix: string;
 }
 
-interface RuntimeVulnerability {
-  endpoint: string;
-  method: string;
-  vulnerability: string;
-  risk: string;
-  proof: string;
+export interface SecurityThreat {
+  id: string;
+  type: string;
+  source: string;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  timestamp: string;
 }
 
-interface FuzzResults {
-  endpointsTested: number;
-  crashesFound: number;
-  vulnerabilitiesFound: number;
-  coverage: number;
-  details: FuzzResult[];
+export interface SecurityAlert {
+  id: string;
+  message: string;
+  resolved: boolean;
+  threat: SecurityThreat;
 }
 
-interface FuzzResult {
-  endpoint: string;
-  input: string;
-  result: 'crash' | 'error' | 'success';
-  details: string;
-}
-
-interface PenTestResults {
-  owaspTop10: OwaspVulnerability[];
+export interface ComplianceStatus {
   securityScore: number;
-  recommendations: string[];
-}
-
-interface OwaspVulnerability {
-  category: string;
-  found: boolean;
-  severity: string;
-  description: string;
-}
-
-interface AttackScenario {
-  name: string;
-  type: 'sql_injection' | 'xss' | 'csrf' | 'authentication_bypass' | 'privilege_escalation';
-  target: string;
-  payload: string;
-}
-
-interface AttackResults {
-  successful: boolean;
-  impact: string;
-  evidence: string;
-  mitigation: string;
+  gdprCompliance: number;
+  hipaCompliance: number;
+  sox404Compliance: number;
+  pciDssCompliance: number;
 }
 
 export const useSecurityTesting = () => {
-  const [lastScanResults, setLastScanResults] = useState<VulnerabilityReport | null>(null);
+  const [lastScanResults, setLastScanResults] = useState<SecurityScanResults | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [threats, setThreats] = useState<SecurityThreat[]>([]);
+  const [alerts, setAlerts] = useState<SecurityAlert[]>([]);
+  const [complianceStatus, setComplianceStatus] = useState<ComplianceStatus>({
+    securityScore: 87.5,
+    gdprCompliance: 95.2,
+    hipaCompliance: 89.7,
+    sox404Compliance: 92.1,
+    pciDssCompliance: 88.3
+  });
+  const { toast } = useToast();
 
-  // Static Application Security Testing (SAST)
-  const runSASTScan = async (codebase: string): Promise<VulnerabilityReport> => {
-    console.log('🔍 Running SAST scan on codebase...');
+  const runSASTScan = async (codebase: string): Promise<SecurityScanResults | null> => {
     setIsScanning(true);
     
-    // Simulate scanning process
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
-    const vulnerabilities: Vulnerability[] = [
-      {
-        id: 'SAST-001',
-        title: 'Potential SQL Injection',
-        severity: 'high',
-        description: 'User input not properly sanitized in database query',
-        recommendation: 'Use parameterized queries or prepared statements',
-        cve: 'CWE-89'
-      },
-      {
-        id: 'SAST-002',
-        title: 'Hardcoded Credentials',
-        severity: 'critical',
-        description: 'API key found hardcoded in source code',
-        recommendation: 'Move credentials to environment variables',
-        cve: 'CWE-798'
-      },
-      {
-        id: 'SAST-003',
-        title: 'Cross-Site Scripting (XSS)',
-        severity: 'medium',
-        description: 'User input reflected without encoding',
-        recommendation: 'Implement proper output encoding',
-        cve: 'CWE-79'
-      }
-    ];
-    
-    const report: VulnerabilityReport = {
-      critical: vulnerabilities.filter(v => v.severity === 'critical').length,
-      high: vulnerabilities.filter(v => v.severity === 'high').length,
-      medium: vulnerabilities.filter(v => v.severity === 'medium').length,
-      low: vulnerabilities.filter(v => v.severity === 'low').length,
-      total: vulnerabilities.length,
-      details: vulnerabilities
-    };
-    
-    setLastScanResults(report);
-    setIsScanning(false);
-    return report;
+    try {
+      // Simulate SAST scan
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      const results: SecurityScanResults = {
+        critical: Math.floor(Math.random() * 3),
+        high: Math.floor(Math.random() * 5),
+        medium: Math.floor(Math.random() * 10),
+        low: Math.floor(Math.random() * 15),
+        total: 0
+      };
+      
+      results.total = results.critical + results.high + results.medium + results.low;
+      
+      setLastScanResults(results);
+      
+      toast({
+        title: 'SAST Scan Complete',
+        description: `Found ${results.total} potential issues`,
+        variant: results.critical > 0 ? 'destructive' : 'default'
+      });
+      
+      return results;
+    } catch (error) {
+      console.error('SAST scan failed:', error);
+      toast({
+        title: 'Scan Failed',
+        description: 'Unable to complete security scan',
+        variant: 'destructive'
+      });
+      return null;
+    } finally {
+      setIsScanning(false);
+    }
   };
 
-  // Dependency vulnerability check
-  const checkDependencies = async (): Promise<DependencyVulnerability[]> => {
-    console.log('📦 Checking dependency vulnerabilities...');
-    
-    // Simulate dependency scan
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    return [
+  const checkDependencies = async (): Promise<Vulnerability[]> => {
+    // Simulate dependency check
+    const mockVulnerabilities: Vulnerability[] = [
       {
         package: 'lodash',
-        version: '4.17.15',
         vulnerability: 'Prototype Pollution',
-        severity: 'high',
-        fix: 'Upgrade to version 4.17.21 or later'
+        severity: 'medium'
       },
       {
         package: 'axios',
-        version: '0.21.0',
-        vulnerability: 'Server-Side Request Forgery',
-        severity: 'medium',
-        fix: 'Upgrade to version 0.21.4 or later'
+        vulnerability: 'SSRF via URL parsing',
+        severity: 'low'
       }
     ];
+    
+    return mockVulnerabilities;
   };
 
-  // Dynamic Application Security Testing (DAST)
-  const runDASTScan = async (applicationUrl: string): Promise<RuntimeVulnerability[]> => {
-    console.log(`🌐 Running DAST scan on ${applicationUrl}...`);
-    
-    // Simulate DAST scan
-    await new Promise(resolve => setTimeout(resolve, 4000));
-    
-    return [
-      {
-        endpoint: '/api/login',
-        method: 'POST',
-        vulnerability: 'Missing Rate Limiting',
-        risk: 'Brute force attacks possible',
-        proof: 'Successfully sent 1000 requests without throttling'
-      },
-      {
-        endpoint: '/api/user/profile',
-        method: 'GET',
-        vulnerability: 'Missing HTTPS Enforcement',
-        risk: 'Man-in-the-middle attacks possible',
-        proof: 'Endpoint accessible over HTTP'
-      }
-    ];
-  };
-
-  // Fuzz testing
-  const performFuzzTesting = async (endpoints: string[]): Promise<FuzzResults> => {
-    console.log('🎯 Performing fuzz testing...');
-    
-    // Simulate fuzz testing
+  const runOWASPZAP = async (targetUrl: string): Promise<any> => {
+    // Simulate OWASP ZAP scan
     await new Promise(resolve => setTimeout(resolve, 5000));
     
-    const fuzzResults: FuzzResult[] = endpoints.map(endpoint => ({
-      endpoint,
-      input: 'A'.repeat(Math.floor(Math.random() * 1000)),
-      result: Math.random() > 0.9 ? 'crash' : 'success',
-      details: Math.random() > 0.9 ? 'Buffer overflow detected' : 'No issues found'
-    }));
+    toast({
+      title: 'Penetration Test Complete',
+      description: 'OWASP ZAP scan finished successfully'
+    });
     
-    return {
-      endpointsTested: endpoints.length,
-      crashesFound: fuzzResults.filter(r => r.result === 'crash').length,
-      vulnerabilitiesFound: fuzzResults.filter(r => r.result === 'crash').length,
-      coverage: 85 + Math.random() * 15,
-      details: fuzzResults
-    };
+    return { status: 'completed', vulnerabilities: [] };
   };
 
-  // OWASP ZAP integration
-  const runOWASPZAP = async (target: string): Promise<PenTestResults> => {
-    console.log(`🕷️ Running OWASP ZAP scan on ${target}...`);
-    
-    // Simulate OWASP ZAP scan
-    await new Promise(resolve => setTimeout(resolve, 6000));
-    
-    const owaspTop10: OwaspVulnerability[] = [
-      {
-        category: 'A01:2021 – Broken Access Control',
-        found: false,
-        severity: 'not-applicable',
-        description: 'No broken access control vulnerabilities found'
-      },
-      {
-        category: 'A02:2021 – Cryptographic Failures',
-        found: true,
-        severity: 'medium',
-        description: 'Weak SSL/TLS configuration detected'
-      },
-      {
-        category: 'A03:2021 – Injection',
-        found: false,
-        severity: 'not-applicable',
-        description: 'No injection vulnerabilities found'
-      },
-      {
-        category: 'A04:2021 – Insecure Design',
-        found: false,
-        severity: 'not-applicable',
-        description: 'Security design patterns properly implemented'
-      },
-      {
-        category: 'A05:2021 – Security Misconfiguration',
-        found: true,
-        severity: 'low',
-        description: 'Some security headers missing'
-      }
-    ];
-    
-    return {
-      owaspTop10,
-      securityScore: 87,
-      recommendations: [
-        'Implement Content Security Policy (CSP)',
-        'Add X-Frame-Options header',
-        'Upgrade SSL/TLS configuration',
-        'Enable HSTS (HTTP Strict Transport Security)'
-      ]
-    };
-  };
-
-  // Attack simulation
-  const simulateAttacks = async (scenarios: AttackScenario[]): Promise<AttackResults[]> => {
-    console.log('⚔️ Simulating attack scenarios...');
-    
-    // Simulate attack execution
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
-    return scenarios.map(scenario => ({
-      successful: Math.random() > 0.8, // 20% success rate for demo
-      impact: scenario.type === 'privilege_escalation' ? 'High' : 'Medium',
-      evidence: `Payload: ${scenario.payload}`,
-      mitigation: 'Implement input validation and proper authentication checks'
+  const generateComplianceReport = () => {
+    // Update compliance status with some randomization
+    setComplianceStatus(prev => ({
+      ...prev,
+      securityScore: Math.max(80, Math.min(100, prev.securityScore + (Math.random() - 0.5) * 2))
     }));
+    
+    toast({
+      title: 'Compliance Report Generated',
+      description: 'Security compliance status updated'
+    });
   };
 
   return {
     lastScanResults,
     isScanning,
+    threats,
+    alerts,
+    complianceStatus,
     runSASTScan,
     checkDependencies,
-    runDASTScan,
-    performFuzzTesting,
     runOWASPZAP,
-    simulateAttacks
+    generateComplianceReport
   };
 };

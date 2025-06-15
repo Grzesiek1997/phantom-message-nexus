@@ -55,7 +55,15 @@ export const useEnhancedProfiles = () => {
         .single();
 
       if (error) throw error;
-      setProfile(data);
+      
+      // Transform the data to match our EnhancedProfile interface
+      const transformedProfile = {
+        ...data,
+        status: data.status as 'available' | 'away' | 'busy' | 'invisible',
+        privacy_settings: data.privacy_settings as PrivacySettings
+      };
+      
+      setProfile(transformedProfile);
     } catch (error) {
       console.error('Error fetching enhanced profile:', error);
     } finally {
@@ -79,13 +87,19 @@ export const useEnhancedProfiles = () => {
 
       if (error) throw error;
 
-      setProfile(data);
+      const transformedProfile = {
+        ...data,
+        status: data.status as 'available' | 'away' | 'busy' | 'invisible',
+        privacy_settings: data.privacy_settings as PrivacySettings
+      };
+
+      setProfile(transformedProfile);
       toast({
         title: 'Sukces',
         description: 'Profil został zaktualizowany'
       });
 
-      return data;
+      return transformedProfile;
     } catch (error) {
       console.error('Error updating profile:', error);
       toast({
