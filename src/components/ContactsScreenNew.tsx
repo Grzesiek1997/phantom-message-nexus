@@ -1,8 +1,10 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useContacts } from '@/hooks/useContacts';
 import { useFriendRequests } from '@/hooks/useFriendRequests';
 import { useMessages } from '@/hooks/useMessages';
+import { useToast } from '@/hooks/use-toast';
 import ContactsHeader from './contacts/ContactsHeader';
 import ContactsTabNavigation from './contacts/ContactsTabNavigation';
 import ContactsContent from './contacts/ContactsContent';
@@ -14,6 +16,8 @@ const ContactsScreenNew: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFriendSearch, setShowFriendSearch] = useState(false);
 
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const { contacts, deleteContact } = useContacts();
   const { 
     receivedRequests, 
@@ -26,13 +30,26 @@ const ContactsScreenNew: React.FC = () => {
 
   const handleSelectContact = async (contactId: string) => {
     try {
+      console.log('Creating conversation with contact:', contactId);
       const conversationId = await createConversation([contactId]);
       if (conversationId) {
-        // Tutaj można dodać nawigację do czatu
-        console.log('Created conversation:', conversationId);
+        console.log('Conversation created successfully:', conversationId);
+        toast({
+          title: 'Czat utworzony',
+          description: 'Przekierowuję do czatu...'
+        });
+        // Navigate to the main app with the conversation selected
+        navigate('/', { state: { selectedConversationId: conversationId } });
+      } else {
+        throw new Error('Failed to create conversation');
       }
     } catch (error) {
       console.error('Error creating conversation:', error);
+      toast({
+        title: 'Błąd',
+        description: 'Nie udało się utworzyć czatu',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -88,7 +105,6 @@ const ContactsScreenNew: React.FC = () => {
 
       <ContactsQuickActions onAddContact={handleAddContact} />
 
-      {/* Modal wyszukiwania znajomych */}
       {showFriendSearch && (
         <FriendSearch
           isOpen={showFriendSearch}

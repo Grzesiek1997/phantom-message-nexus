@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Send, Paperclip, Smile } from 'lucide-react';
@@ -21,11 +21,27 @@ const MessageInput: React.FC<MessageInputProps> = ({
   onSendMessage,
   onCancelReply
 }) => {
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
+  const commonEmojis = [
+    '😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊', '😇', '🙂', 
+    '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛',
+    '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏',
+    '👍', '👎', '👌', '✌️', '🤞', '🤟', '🤘', '👏', '🙌', '👐',
+    '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔',
+    '💯', '🔥', '⭐', '✨', '💎', '🎉', '🎊', '🎈', '🎁', '🏆'
+  ];
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       onSendMessage();
     }
+  };
+
+  const handleEmojiClick = (emoji: string) => {
+    onMessageChange(messageInput + emoji);
+    setShowEmojiPicker(false);
   };
 
   return (
@@ -52,6 +68,25 @@ const MessageInput: React.FC<MessageInputProps> = ({
         </div>
       )}
 
+      {/* Emoji Picker */}
+      {showEmojiPicker && (
+        <div className="p-4 bg-gray-800/90 border-t border-white/10">
+          <div className="grid grid-cols-10 gap-2 max-h-32 overflow-y-auto">
+            {commonEmojis.map((emoji, index) => (
+              <Button
+                key={index}
+                variant="ghost"
+                size="sm"
+                onClick={() => handleEmojiClick(emoji)}
+                className="text-xl hover:bg-white/10 h-8 w-8 p-0"
+              >
+                {emoji}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Message Input */}
       <div className="p-4 bg-black/20 backdrop-blur-sm border-t border-white/10">
         <div className="flex items-center space-x-2">
@@ -72,14 +107,15 @@ const MessageInput: React.FC<MessageInputProps> = ({
           <Button
             size="sm"
             variant="ghost"
-            className="text-white hover:bg-white/10"
+            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            className={`text-white hover:bg-white/10 ${showEmojiPicker ? 'bg-white/10' : ''}`}
           >
             <Smile className="w-4 h-4" />
           </Button>
           <Button
             onClick={onSendMessage}
             disabled={!messageInput.trim()}
-            className="bg-blue-500 hover:bg-blue-600"
+            className="bg-blue-500 hover:bg-blue-600 disabled:opacity-50"
           >
             <Send className="w-4 h-4" />
           </Button>

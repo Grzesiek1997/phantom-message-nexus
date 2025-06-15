@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Reply, Smile, Heart, ThumbsUp, Laugh, Angry } from 'lucide-react';
+import { Reply, Smile, Heart, ThumbsUp, Laugh, Angry, MoreVertical } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 
@@ -28,7 +28,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   onReact 
 }) => {
   const [showReactions, setShowReactions] = useState(false);
-  const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null);
+  const [showActions, setShowActions] = useState(false);
   
   const isOwnMessage = message.sender_id === currentUserId;
   
@@ -41,81 +41,105 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
     { emoji: '😠', icon: Angry }
   ];
 
-  const handleMouseDown = () => {
-    const timer = setTimeout(() => {
-      setShowReactions(true);
-    }, 500);
-    setPressTimer(timer);
-  };
-
-  const handleMouseUp = () => {
-    if (pressTimer) {
-      clearTimeout(pressTimer);
-      setPressTimer(null);
-    }
-  };
-
   const handleReaction = (emoji: string) => {
     onReact(message.id, emoji);
     setShowReactions(false);
   };
 
+  // Parse reply content if it's a reply message
+  const isReplyMessage = message.content.startsWith('↩️ Odpowiedź na:');
+  let displayContent = message.content;
+  let replyContent = '';
+
+  if (isReplyMessage) {
+    const lines = message.content.split('\n\n');
+    if (lines.length >= 2) {
+      replyContent = lines[0].replace('↩️ Odpowiedź na: "', '').replace('"...', '');
+      displayContent = lines.slice(1).join('\n\n');
+    }
+  }
+
   return (
-    <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} relative`}>
+    <div 
+      className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} relative group`}
+      onMouseEnter={() => setShowActions(true)}
+      onMouseLeave={() => {
+        setShowActions(false);
+        setShowReactions(false);
+      }}
+    >
       <div
-        className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg relative group ${
+        className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg relative ${
           isOwnMessage
             ? 'bg-blue-500 text-white'
             : 'bg-white/10 text-white'
         }`}
-        onMouseDown={handleMouseDown}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        onTouchStart={handleMouseDown}
-        onTouchEnd={handleMouseUp}
       >
         {!isOwnMessage && message.sender && (
           <p className="text-xs font-semibold mb-1 opacity-70">
             {message.sender.display_name || message.sender.username}
           </p>
         )}
+
+        {/* Reply preview */}
+        {isReplyMessage && replyContent && (
+          <div className={`mb-2 p-2 rounded text-xs ${
+            isOwnMessage ? 'bg-blue-600/50' : 'bg-white/10'
+          } border-l-2 border-gray-400`}>
+            <p className="opacity-70">Odpowiedź na:</p>
+            <p className="italic">"{replyContent}..."</p>
+          </div>
+        )}
         
-        <p className="text-sm">{message.content}</p>
+        <p className="text-sm whitespace-pre-wrap">{displayContent}</p>
         
         <div className="flex items-center justify-between mt-2 text-xs opacity-70">
           <span>{format(new Date(message.created_at), 'HH:mm', { locale: pl })}</span>
         </div>
 
-        {/* Hover actions */}
-        <div className={`absolute top-0 ${isOwnMessage ? 'left-0 -translate-x-full' : 'right-0 translate-x-full'} opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1 bg-gray-800 rounded-lg p-1`}>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => onReply(message.id)}
-            className="text-gray-300 hover:text-white p-1 h-auto"
-          >
-            <Reply className="w-3 h-3" />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setShowReactions(!showReactions)}
-            className="text-gray-300 hover:text-white p-1 h-auto"
-          >
-            <Smile className="w-3 h-3" />
-          </Button>
-        </div>
+        {/* Quick action buttons */}
+        {showActions && (
+          <div className={`absolute top-0 ${isOwnMessage ? 'left-0 -translate-x-full' : 'right-0 translate-x-full'} flex space-x-1 bg-gray-800 rounded-lg p-1 shadow-lg border border-gray-600 z-10`}>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onReply(message.id)}
+              className="text-gray-300 hover:text-white p-1 h-auto"
+              title="Odpowiedz"
+            >
+              <Reply className="w-3 h-3" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setShowReactions(!showReactions)}
+              className="text-gray-300 hover:text-white p-1 h-auto"
+              title="Dodaj reakcję"
+            >
+              <Smile className="w-3 h-3" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-gray-300 hover:text-white p-1 h-auto"
+              title="Więcej opcji"
+            >
+              <MoreVertical className="w-3 h-3" />
+            </Button>
+          </div>
+        )}
 
         {/* Reaction picker */}
         {showReactions && (
-          <div className={`absolute top-0 ${isOwnMessage ? 'left-0 -translate-x-full' : 'right-0 translate-x-full'} bg-gray-800 rounded-lg p-2 flex space-x-1 shadow-lg border border-gray-600 z-10`}>
+          <div className={`absolute top-0 ${isOwnMessage ? 'left-0 -translate-x-full -translate-y-full' : 'right-0 translate-x-full -translate-y-full'} bg-gray-800 rounded-lg p-2 flex space-x-1 shadow-lg border border-gray-600 z-20`}>
             {reactions.map((reaction) => (
               <Button
                 key={reaction.emoji}
                 size="sm"
                 variant="ghost"
                 onClick={() => handleReaction(reaction.emoji)}
-                className="text-gray-300 hover:text-white p-1 h-auto text-lg"
+                className="text-gray-300 hover:text-white p-1 h-auto text-lg hover:scale-110 transition-transform"
+                title={`Dodaj ${reaction.emoji}`}
               >
                 {reaction.emoji}
               </Button>

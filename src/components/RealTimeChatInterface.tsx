@@ -1,5 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { MessageCircle, Bell } from 'lucide-react';
 import { useMessages } from '@/hooks/useMessages';
 import { useContacts } from '@/hooks/useContacts';
@@ -18,6 +18,7 @@ import SearchOverlay from './search/SearchOverlay';
 import { Button } from '@/components/ui/button';
 
 const RealTimeChatInterface: React.FC = () => {
+  const location = useLocation();
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState('');
   const [showContactSearch, setShowContactSearch] = useState(false);
@@ -35,6 +36,19 @@ const RealTimeChatInterface: React.FC = () => {
   const { contacts } = useContacts();
   const { toast } = useToast();
   const { unreadCount } = useNotifications();
+
+  // Handle initial conversation selection from navigation state
+  useEffect(() => {
+    if (location.state?.selectedConversationId) {
+      console.log('Setting initial conversation from navigation:', location.state.selectedConversationId);
+      setSelectedConversationId(location.state.selectedConversationId);
+      if (window.innerWidth < 768) {
+        setShowConversationList(false);
+      }
+      // Clear the navigation state
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -75,6 +89,7 @@ const RealTimeChatInterface: React.FC = () => {
   };
 
   const handleSelectConversation = (conversationId: string) => {
+    console.log('Selecting conversation:', conversationId);
     setSelectedConversationId(conversationId);
     if (isMobile) {
       setShowConversationList(false);
@@ -90,16 +105,27 @@ const RealTimeChatInterface: React.FC = () => {
 
   const handleCreateConversation = async (contactId: string) => {
     try {
+      console.log('Creating conversation with contact:', contactId);
       const conversationId = await createConversation([contactId]);
       if (conversationId) {
+        console.log('Conversation created, selecting:', conversationId);
         setSelectedConversationId(conversationId);
         setShowContactSearch(false);
         if (isMobile) {
           setShowConversationList(false);
         }
+        toast({
+          title: 'Czat utworzony',
+          description: 'Możesz teraz wysyłać wiadomości'
+        });
       }
     } catch (error) {
       console.error('Error creating conversation:', error);
+      toast({
+        title: 'Błąd',
+        description: 'Nie udało się utworzyć czatu',
+        variant: 'destructive'
+      });
     }
   };
 
