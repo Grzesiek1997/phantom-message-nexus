@@ -8,6 +8,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import NotificationPanel from './NotificationPanel';
+import ContactSearch from './ContactSearch';
 
 interface Group {
   id: string;
@@ -25,6 +26,7 @@ const ContactsScreenNew: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'contacts' | 'groups' | 'requests'>('contacts');
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showContactSearch, setShowContactSearch] = useState(false);
 
   // Mock groups data
   const [groups] = useState<Group[]>([
@@ -100,6 +102,34 @@ const ContactsScreenNew: React.FC = () => {
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-white">Kontakty</h1>
           <div className="flex items-center space-x-2">
+            {/* Add Contact Button */}
+            <Button
+              onClick={() => setShowContactSearch(true)}
+              variant="ghost"
+              size="icon"
+              className="text-gray-400 hover:text-white"
+            >
+              <UserPlus className="w-5 h-5" />
+            </Button>
+
+            {/* Share Profile Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-gray-400 hover:text-white"
+            >
+              <Share className="w-5 h-5" />
+            </Button>
+
+            {/* QR Code Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-gray-400 hover:text-white"
+            >
+              <QrCode className="w-5 h-5" />
+            </Button>
+
             {/* Notifications Button */}
             <Button
               onClick={() => setShowNotifications(true)}
@@ -163,6 +193,36 @@ const ContactsScreenNew: React.FC = () => {
         </div>
       </div>
 
+      {/* Quick Actions Bar */}
+      <div className="px-6 py-4 border-b border-white/10">
+        <div className="flex items-center space-x-3">
+          <Button
+            onClick={() => setShowContactSearch(true)}
+            className="bg-blue-500 hover:bg-blue-600 text-white"
+            size="sm"
+          >
+            <UserPlus className="w-4 h-4 mr-2" />
+            Dodaj kontakt
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-white/20 text-white hover:bg-white/10"
+          >
+            <QrCode className="w-4 h-4 mr-2" />
+            Skanuj QR
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-white/20 text-white hover:bg-white/10"
+          >
+            <Link className="w-4 h-4 mr-2" />
+            Udostępnij profil
+          </Button>
+        </div>
+      </div>
+
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
         {activeTab === 'contacts' && (
@@ -171,7 +231,14 @@ const ContactsScreenNew: React.FC = () => {
               <div className="flex flex-col items-center justify-center h-full text-gray-400 p-8">
                 <Users className="w-16 h-16 mb-4 opacity-50" />
                 <p className="text-lg">Brak kontaktów</p>
-                <p className="text-sm text-center">Zaproś znajomych, aby zacząć rozmawiać</p>
+                <p className="text-sm text-center mb-4">Zaproś znajomych, aby zacząć rozmawiać</p>
+                <Button
+                  onClick={() => setShowContactSearch(true)}
+                  className="bg-blue-500 hover:bg-blue-600"
+                >
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Dodaj pierwszy kontakt
+                </Button>
               </div>
             ) : (
               filteredContacts.map((contact) => (
@@ -327,6 +394,15 @@ const ContactsScreenNew: React.FC = () => {
       <NotificationPanel
         isOpen={showNotifications}
         onClose={() => setShowNotifications(false)}
+      />
+
+      <ContactSearch
+        isOpen={showContactSearch}
+        onClose={() => setShowContactSearch(false)}
+        onSelectContact={(contactId) => {
+          console.log('Selected contact:', contactId);
+          setShowContactSearch(false);
+        }}
       />
     </div>
   );
