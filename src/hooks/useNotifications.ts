@@ -14,6 +14,27 @@ export interface Notification {
   created_at: string;
 }
 
+// Define types for both old and new schema
+interface OldNotificationSchema {
+  id: string;
+  user_id: string;
+  notification_type: string;
+  is_read: boolean;
+  created_at: string;
+  message_id?: string;
+}
+
+interface NewNotificationSchema {
+  id: string;
+  user_id: string;
+  type: string;
+  title: string;
+  message: string;
+  data?: any;
+  is_read: boolean;
+  created_at: string;
+}
+
 export const useNotifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -37,29 +58,33 @@ export const useNotifications = () => {
 
       // Map database fields to interface fields - handle both old and new schema
       const mappedNotifications = (data || []).map(item => {
-        // If the item has the new schema (type, title, message)
-        if ('type' in item && 'title' in item && 'message' in item) {
+        // Check if this is the new schema by looking for required new fields
+        const hasNewSchemaFields = 'type' in item && 'title' in item && 'message' in item;
+        
+        if (hasNewSchemaFields) {
+          const newItem = item as NewNotificationSchema;
           return {
-            id: item.id,
-            user_id: item.user_id,
-            type: item.type as 'friend_request' | 'friend_accepted' | 'message' | 'call',
-            title: item.title || '',
-            message: item.message || '',
-            data: item.data,
-            is_read: item.is_read || false,
-            created_at: item.created_at || ''
+            id: newItem.id,
+            user_id: newItem.user_id,
+            type: newItem.type as 'friend_request' | 'friend_accepted' | 'message' | 'call',
+            title: String(newItem.title) || '',
+            message: String(newItem.message) || '',
+            data: newItem.data || null,
+            is_read: newItem.is_read || false,
+            created_at: newItem.created_at || ''
           };
         } else {
           // Handle old schema with notification_type
+          const oldItem = item as OldNotificationSchema;
           return {
-            id: item.id,
-            user_id: item.user_id,
-            type: (item.notification_type || 'message') as 'friend_request' | 'friend_accepted' | 'message' | 'call',
+            id: oldItem.id,
+            user_id: oldItem.user_id,
+            type: (oldItem.notification_type || 'message') as 'friend_request' | 'friend_accepted' | 'message' | 'call',
             title: 'Powiadomienie',
             message: 'Masz nowe powiadomienie',
             data: null,
-            is_read: item.is_read || false,
-            created_at: item.created_at || ''
+            is_read: oldItem.is_read || false,
+            created_at: oldItem.created_at || ''
           };
         }
       });
