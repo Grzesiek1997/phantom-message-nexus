@@ -139,11 +139,13 @@ export const useStories = () => {
       const filteredData = (data as any[]).filter(isUserStoryRecord);
 
       // Mapowanie tylko filteredData!
-      const processedStories: UserStory[] = filteredData.map((story: any) => ({
-        ...story,
-        content_type: (story.content_type as 'text' | 'image' | 'video') || 'text',
-        visibility: (story.visibility as 'public' | 'contacts' | 'close_friends' | 'custom') || 'contacts'
-      }));
+      const processedStories: UserStory[] = filteredData
+        .filter(story => story && typeof story === 'object' && 'id' in story)
+        .map((story: any) => ({
+          ...story,
+          content_type: (story.content_type as 'text' | 'image' | 'video') || 'text',
+          visibility: (story.visibility as 'public' | 'contacts' | 'close_friends' | 'custom') || 'contacts'
+        }));
 
       setUserStories(processedStories);
     } catch (error) {

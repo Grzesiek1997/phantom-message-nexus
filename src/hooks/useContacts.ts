@@ -16,6 +16,7 @@ export interface Contact {
   };
   friend_request_status?: 'pending' | 'accepted' | 'rejected' | null;
   can_chat: boolean;
+  friend_request_id?: string;
 }
 
 export interface SearchUser {
@@ -79,7 +80,8 @@ export const useContacts = () => {
               display_name: 'Unknown User'
             },
             friend_request_status: isAccepted ? 'accepted' as const : contact.status as 'pending' | 'accepted' | 'rejected',
-            can_chat: isAccepted
+            can_chat: isAccepted,
+            friend_request_id: undefined
           };
         });
 
@@ -101,11 +103,12 @@ export const useContacts = () => {
           const req = receivedRequests?.find(
             (fr: any) => fr.sender_id === contact.contact_user_id
           );
+          // Also set friend_request_id if found
           return req
             ? {
                 ...contact,
                 friend_request_status: req.status as 'pending' | 'accepted' | 'rejected',
-                friend_request_id: req.id // PRZEKAZUJ ID zaproszenia do Accept/Reject
+                friend_request_id: req.id
               }
             : contact;
         })
@@ -153,7 +156,8 @@ export const useContacts = () => {
                   display_name: 'Unknown User'
                 },
                 friend_request_status: request.status as 'pending' | 'accepted' | 'rejected',
-                can_chat: false
+                can_chat: false,
+                friend_request_id: request.id
               };
             });
 

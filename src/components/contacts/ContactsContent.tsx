@@ -102,7 +102,7 @@ const ContactsContent: React.FC<ContactsContentProps> = ({
                   <>
                     <Button
                       size="sm"
-                      onClick={() => onAcceptRequest(contact.friend_request_id)}
+                      onClick={() => onAcceptRequest(contact.friend_request_id!)}
                       className="bg-green-500 hover:bg-green-600"
                       title="Akceptuj zaproszenie"
                     >
@@ -110,7 +110,7 @@ const ContactsContent: React.FC<ContactsContentProps> = ({
                     </Button>
                     <Button
                       size="sm"
-                      onClick={() => onRejectRequest(contact.friend_request_id)}
+                      onClick={() => onRejectRequest(contact.friend_request_id!)}
                       className="bg-red-500 hover:bg-red-600"
                       title="Odrzuć zaproszenie"
                     >
