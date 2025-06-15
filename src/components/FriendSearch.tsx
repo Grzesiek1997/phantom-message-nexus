@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import { Search, UserPlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useContacts } from '@/hooks/useContacts';
-import { useFriendRequests } from '@/hooks/friends/useFriendRequests';
+import { useFriendRequests } from '@/hooks/useFriendRequests';
 
 interface FriendSearchProps {
   isOpen: boolean;

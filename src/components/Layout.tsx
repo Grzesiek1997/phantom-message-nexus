@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Settings, HelpCircle, LogOut, Bell } from 'lucide-react';
@@ -6,7 +7,7 @@ import NavigationHelp from './NavigationHelp';
 import NotificationPanel from './NotificationPanel';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
-import { useFriendRequests } from '@/hooks/friends/useFriendRequests';
+import { useFriendRequests } from '@/hooks/useFriendRequests';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [showSettings, setShowSettings] = useState(false);
