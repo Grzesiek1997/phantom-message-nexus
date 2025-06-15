@@ -306,7 +306,7 @@ export const useConversations = () => {
           table: 'conversations'
         },
         () => {
-          console.log('Conversations updated, refreshing...');
+          console.log('Conversation updated, refetching...');
           fetchConversations();
         }
       )
@@ -318,7 +318,7 @@ export const useConversations = () => {
           table: 'conversation_participants'
         },
         () => {
-          console.log('Conversation participants updated, refreshing...');
+          console.log('Conversation participants updated, refetching...');
           fetchConversations();
         }
       )
