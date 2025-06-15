@@ -39,12 +39,11 @@ export const useContacts = () => {
       setLoading(true);
       console.log('Fetching contacts for user:', user.id);
       
-      // Pobierz zaakceptowane kontakty
+      // Pobierz wszystkie kontakty (zaakceptowane i oczekujące)
       const { data: contactsData, error: contactsError } = await supabase
         .from('contacts')
         .select('*')
-        .eq('user_id', user.id)
-        .eq('status', 'accepted');
+        .eq('user_id', user.id);
 
       if (contactsError) {
         console.error('Error fetching contacts:', contactsError);
@@ -80,9 +79,13 @@ export const useContacts = () => {
           return;
         }
 
-        // Formatuj zaakceptowane kontakty
+        // Formatuj kontakty z RZECZYWISTYM statusem
         const formattedContacts = (contactsData || []).map(contact => {
           const profile = profilesData?.find(p => p.id === contact.contact_user_id);
+          
+          // Sprawdź czy kontakt jest rzeczywiście zaakceptowany
+          const isAccepted = contact.status === 'accepted';
+          
           return {
             ...contact,
             status: contact.status as 'pending' | 'accepted' | 'blocked',
@@ -94,12 +97,12 @@ export const useContacts = () => {
               username: 'Unknown',
               display_name: 'Unknown User'
             },
-            friend_request_status: 'accepted' as const,
-            can_chat: true
+            friend_request_status: isAccepted ? 'accepted' as const : contact.status as 'pending' | 'accepted' | 'rejected',
+            can_chat: isAccepted // Tylko zaakceptowani znajomi mogą czatować
           };
         });
 
-        // Formatuj wysłane zaproszenia (pending/rejected)
+        // Formatuj wysłane zaproszenia (pending/rejected) - tylko te, które nie są jeszcze kontaktami
         const formattedRequests = (sentRequestsData || [])
           .filter(request => !contactsData?.some(contact => contact.contact_user_id === request.receiver_id))
           .map(request => {
@@ -119,7 +122,7 @@ export const useContacts = () => {
                 display_name: 'Unknown User'
               },
               friend_request_status: request.status as 'pending' | 'accepted' | 'rejected',
-              can_chat: false
+              can_chat: false // Wysłane zaproszenia nie mogą czatować
             };
           });
 

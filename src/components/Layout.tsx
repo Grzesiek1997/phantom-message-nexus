@@ -99,14 +99,15 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             >
               <Settings className="w-4 h-4" />
             </Button>
+            
+            {/* Prominent Logout Button */}
             <Button
-              variant="ghost"
-              size="sm"
               onClick={handleSignOut}
-              className="text-white hover:bg-white/10"
-              title="Wyloguj"
+              className="bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 rounded-lg transition-colors shadow-lg"
+              title="Wyloguj się"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-4 h-4 mr-2" />
+              Wyloguj
             </Button>
           </div>
         </div>

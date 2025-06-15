@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useMessages } from '@/hooks/useMessages';
@@ -73,6 +72,20 @@ const RealTimeChatInterface: React.FC = () => {
     } catch (error) {
       console.error('Error sending message:', error);
     }
+  };
+
+  const handleReply = (messageId: string) => {
+    const message = messages.find(m => m.id === messageId);
+    if (message) {
+      const replyPrefix = `↩️ Odpowiedź na: "${message.content.substring(0, 50)}${message.content.length > 50 ? '...' : '"}"\n\n`;
+      // Tutaj możesz dodać logikę do ustawienia tekstu w input
+      console.log('Reply to message:', messageId, replyPrefix);
+    }
+  };
+
+  const handleReact = (messageId: string, emoji: string) => {
+    console.log('React to message:', messageId, 'with emoji:', emoji);
+    // Tutaj możesz dodać logikę do dodawania reakcji
   };
 
   const handleBack = () => {
@@ -192,7 +205,9 @@ const RealTimeChatInterface: React.FC = () => {
               <MessageBubble
                 key={message.id}
                 message={message}
-                isOwn={message.sender_id === user?.id}
+                currentUserId={user?.id || ''}
+                onReply={handleReply}
+                onReact={handleReact}
               />
             ))}
             <div ref={messagesEndRef} />
