@@ -5,6 +5,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useContacts } from '@/hooks/useContacts';
 import { useFriendRequests } from '@/hooks/useFriendRequests';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useMessages } from '@/hooks/useMessages';
 import { Input } from '@/components/ui/input';
 import NotificationPanel from './NotificationPanel';
 import ContactSearch from './ContactSearch';
@@ -26,21 +27,20 @@ interface ContactsScreenNewProps {
 }
 
 const ContactsScreenNew: React.FC<ContactsScreenNewProps> = ({ onGoBack }) => {
-  console.log('ContactsScreenNew: Component rendering started');
-  
   const { t } = useTranslation();
-  const { contacts } = useContacts();
-  const { friendRequests, acceptFriendRequest, rejectFriendRequest } = useFriendRequests();
+  const { contacts, deleteContact } = useContacts();
+  const { 
+    receivedRequests, 
+    sentRequests, 
+    acceptFriendRequest, 
+    rejectFriendRequest, 
+    deleteFriendRequest 
+  } = useFriendRequests();
   const { unreadCount } = useNotifications();
-  
-  console.log('ContactsScreenNew: Hooks loaded', { 
-    contacts: contacts?.length || 0, 
-    friendRequests: friendRequests?.length || 0, 
-    unreadCount 
-  });
+  const { createConversation } = useMessages();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'contacts' | 'groups' | 'requests'>('contacts');
+  const [activeTab, setActiveTab] = useState<'contacts' | 'groups' | 'received-requests' | 'sent-requests'>('contacts');
   const [showNotifications, setShowNotifications] = useState(false);
   const [showContactSearch, setShowContactSearch] = useState(false);
 
@@ -51,18 +51,6 @@ const ContactsScreenNew: React.FC<ContactsScreenNewProps> = ({ onGoBack }) => {
       name: 'Rodzina',
       memberCount: 8,
       lastActivity: new Date(Date.now() - 2 * 60 * 60 * 1000)
-    },
-    {
-      id: '2',
-      name: 'Praca - Marketing',
-      memberCount: 12,
-      lastActivity: new Date(Date.now() - 30 * 60 * 1000)
-    },
-    {
-      id: '3',
-      name: 'Znajomi ze studiów',
-      memberCount: 25,
-      lastActivity: new Date(Date.now() - 24 * 60 * 60 * 1000)
     }
   ]);
 
@@ -75,28 +63,33 @@ const ContactsScreenNew: React.FC<ContactsScreenNewProps> = ({ onGoBack }) => {
     group.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredRequests = friendRequests?.filter(request =>
+  const filteredReceivedRequests = receivedRequests?.filter(request =>
     request.sender_profile?.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     request.sender_profile?.username?.toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
 
-  const handleQuickAction = (action: string, contact: any) => {
-    console.log(`${action} with ${contact.profile?.display_name}`);
-    // Implement quick actions
-  };
+  const filteredSentRequests = sentRequests?.filter(request =>
+    request.receiver_profile?.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    request.receiver_profile?.username?.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
 
-  const handleDeleteContact = (contactId: string) => {
-    console.log('Deleting contact:', contactId);
-    // TODO: Implement contact deletion
-  };
-
-  const handleDeleteRequest = (requestId: string) => {
-    console.log('Deleting request:', requestId);
-    // TODO: Implement request deletion
+  const handleQuickAction = async (action: string, contact: any) => {
+    if (action === 'chat') {
+      try {
+        const conversationId = await createConversation([contact.contact_user_id]);
+        if (conversationId) {
+          // Przejdź do czatu - tu możesz dodać nawigację
+          console.log('Opening chat with conversation:', conversationId);
+        }
+      } catch (error) {
+        console.error('Error creating conversation:', error);
+      }
+    } else {
+      console.log(`${action} with ${contact.profile?.display_name}`);
+    }
   };
 
   const handleDeleteGroup = (groupId: string) => {
-    console.log('Deleting group:', groupId);
     setGroups(prev => prev.filter(group => group.id !== groupId));
   };
 
@@ -110,106 +103,113 @@ const ContactsScreenNew: React.FC<ContactsScreenNewProps> = ({ onGoBack }) => {
     return `${Math.floor(hours / 24)}d temu`;
   };
 
-  const handleAcceptRequest = async (requestId: string) => {
-    try {
-      await acceptFriendRequest(requestId);
-    } catch (error) {
-      console.error('Error accepting friend request:', error);
-    }
-  };
+  return (
+    <div className="flex flex-col h-full bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
+      {/* Header */}
+      <div className="p-6 border-b border-white/10">
+        <ContactsHeader
+          unreadCount={unreadCount || 0}
+          onAddContact={() => setShowContactSearch(true)}
+          onShowNotifications={() => setShowNotifications(true)}
+          onGoBack={onGoBack}
+          showBackButton={!!onGoBack}
+        />
 
-  const handleRejectRequest = async (requestId: string) => {
-    try {
-      await rejectFriendRequest(requestId);
-    } catch (error) {
-      console.error('Error rejecting friend request:', error);
-    }
-  };
-
-  console.log('ContactsScreenNew: About to render JSX');
-
-  try {
-    return (
-      <div className="flex flex-col h-full bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
-        {/* Header */}
-        <div className="p-6 border-b border-white/10">
-          <ContactsHeader
-            unreadCount={unreadCount || 0}
-            onAddContact={() => setShowContactSearch(true)}
-            onShowNotifications={() => setShowNotifications(true)}
-            onGoBack={onGoBack}
-            showBackButton={!!onGoBack}
-          />
-
-          {/* Search */}
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Szukaj kontaktów..."
-              className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
-            />
-          </div>
-
-          {/* Tabs */}
-          <ContactsTabNavigation
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            contactsCount={filteredContacts.length}
-            requestsCount={filteredRequests.length}
-            groupsCount={filteredGroups.length}
+        {/* Search */}
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Szukaj kontaktów..."
+            className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
           />
         </div>
 
-        {/* Quick Actions Bar */}
-        <ContactsQuickActions onAddContact={() => setShowContactSearch(true)} />
+        {/* Tabs */}
+        <div className="flex space-x-1 bg-white/10 rounded-lg p-1">
+          <button
+            onClick={() => setActiveTab('contacts')}
+            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'contacts'
+                ? 'bg-white text-blue-600'
+                : 'text-white hover:bg-white/10'
+            }`}
+          >
+            Znajomi ({filteredContacts.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('received-requests')}
+            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'received-requests'
+                ? 'bg-white text-blue-600'
+                : 'text-white hover:bg-white/10'
+            }`}
+          >
+            Otrzymane ({filteredReceivedRequests.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('sent-requests')}
+            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'sent-requests'
+                ? 'bg-white text-blue-600'
+                : 'text-white hover:bg-white/10'
+            }`}
+          >
+            Wysłane ({filteredSentRequests.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('groups')}
+            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'groups'
+                ? 'bg-white text-blue-600'
+                : 'text-white hover:bg-white/10'
+            }`}
+          >
+            Grupy ({filteredGroups.length})
+          </button>
+        </div>
+      </div>
 
-        {/* Content */}
-        <ContactsContent
-          activeTab={activeTab}
-          filteredContacts={filteredContacts}
-          filteredRequests={filteredRequests}
-          filteredGroups={filteredGroups}
-          onAddContact={() => setShowContactSearch(true)}
-          onQuickAction={handleQuickAction}
-          onAcceptRequest={handleAcceptRequest}
-          onRejectRequest={handleRejectRequest}
-          onDeleteContact={handleDeleteContact}
-          onDeleteRequest={handleDeleteRequest}
-          onDeleteGroup={handleDeleteGroup}
-          formatLastActivity={formatLastActivity}
+      {/* Quick Actions Bar */}
+      <ContactsQuickActions onAddContact={() => setShowContactSearch(true)} />
+
+      {/* Content */}
+      <ContactsContent
+        activeTab={activeTab}
+        filteredContacts={filteredContacts}
+        filteredRequests={filteredReceivedRequests}
+        filteredSentRequests={filteredSentRequests}
+        filteredGroups={filteredGroups}
+        onAddContact={() => setShowContactSearch(true)}
+        onQuickAction={handleQuickAction}
+        onAcceptRequest={acceptFriendRequest}
+        onRejectRequest={rejectFriendRequest}
+        onDeleteContact={deleteContact}
+        onDeleteRequest={deleteFriendRequest}
+        onDeleteGroup={handleDeleteGroup}
+        formatLastActivity={formatLastActivity}
+      />
+
+      {/* Modals */}
+      {showNotifications && (
+        <NotificationPanel
+          isOpen={showNotifications}
+          onClose={() => setShowNotifications(false)}
         />
+      )}
 
-        {/* Modals */}
-        {showNotifications && (
-          <NotificationPanel
-            isOpen={showNotifications}
-            onClose={() => setShowNotifications(false)}
-          />
-        )}
-
-        {showContactSearch && (
-          <ContactSearch
-            isOpen={showContactSearch}
-            onClose={() => setShowContactSearch(false)}
-            onSelectContact={(contactId) => {
-              console.log('Selected contact:', contactId);
-              setShowContactSearch(false);
-            }}
-          />
-        )}
-      </div>
-    );
-  } catch (error) {
-    console.error('ContactsScreenNew: Error rendering component:', error);
-    return (
-      <div className="flex flex-col h-full bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 items-center justify-center">
-        <div className="text-white">Błąd ładowania kontaktów</div>
-        <div className="text-gray-400 text-sm mt-2">Sprawdź konsolę dla szczegółów</div>
-      </div>
-    );
-  }
+      {showContactSearch && (
+        <ContactSearch
+          isOpen={showContactSearch}
+          onClose={() => setShowContactSearch(false)}
+          onSelectContact={(contactId) => {
+            setShowContactSearch(false);
+          }}
+        />
+      )}
+    </div>
+  );
 };
 
 export default ContactsScreenNew;

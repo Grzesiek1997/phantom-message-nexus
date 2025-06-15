@@ -277,28 +277,40 @@ export type Database = {
         Row: {
           attempt_count: number | null
           created_at: string | null
+          data: Json | null
           id: string
+          message: string | null
           receiver_id: string
           sender_id: string
           status: string
+          title: string | null
+          type: string | null
           updated_at: string | null
         }
         Insert: {
           attempt_count?: number | null
           created_at?: string | null
+          data?: Json | null
           id?: string
+          message?: string | null
           receiver_id: string
           sender_id: string
           status?: string
+          title?: string | null
+          type?: string | null
           updated_at?: string | null
         }
         Update: {
           attempt_count?: number | null
           created_at?: string | null
+          data?: Json | null
           id?: string
+          message?: string | null
           receiver_id?: string
           sender_id?: string
           status?: string
+          title?: string | null
+          type?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -522,26 +534,38 @@ export type Database = {
       notifications: {
         Row: {
           created_at: string | null
+          data: Json | null
           id: string
           is_read: boolean | null
+          message: string | null
           message_id: string | null
           notification_type: string | null
+          title: string | null
+          type: string | null
           user_id: string | null
         }
         Insert: {
           created_at?: string | null
+          data?: Json | null
           id?: string
           is_read?: boolean | null
+          message?: string | null
           message_id?: string | null
           notification_type?: string | null
+          title?: string | null
+          type?: string | null
           user_id?: string | null
         }
         Update: {
           created_at?: string | null
+          data?: Json | null
           id?: string
           is_read?: boolean | null
+          message?: string | null
           message_id?: string | null
           notification_type?: string | null
+          title?: string | null
+          type?: string | null
           user_id?: string | null
         }
         Relationships: [
@@ -690,6 +714,14 @@ export type Database = {
       create_group_chat: {
         Args: { group_name: string; user_id: string }
         Returns: string
+      }
+      delete_contact: {
+        Args: { contact_id: string }
+        Returns: undefined
+      }
+      delete_friend_request: {
+        Args: { request_id: string }
+        Returns: undefined
       }
       get_user_role: {
         Args: { check_user_id: string }

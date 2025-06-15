@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -16,10 +17,15 @@ export interface FriendRequest {
     display_name: string;
     avatar_url?: string;
   };
+  receiver_profile?: {
+    username: string;
+    display_name: string;
+    avatar_url?: string;
+  };
 }
 
 export const useFriendRequests = () => {
-  const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
+  const [receivedRequests, setReceivedRequests] = useState<FriendRequest[]>([]);
   const [sentRequests, setSentRequests] = useState<FriendRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -29,7 +35,7 @@ export const useFriendRequests = () => {
     if (!user) return;
 
     try {
-      // Get received friend requests
+      // Pobierz otrzymane zaproszenia
       const { data: receivedData, error: receivedError } = await supabase
         .from('friend_requests')
         .select('*')
@@ -37,11 +43,11 @@ export const useFriendRequests = () => {
         .eq('status', 'pending');
 
       if (receivedError) {
-        console.error('Error fetching friend requests:', receivedError);
+        console.error('Error fetching received requests:', receivedError);
         return;
       }
 
-      // Get sent friend requests
+      // Pobierz wysłane zaproszenia
       const { data: sentData, error: sentError } = await supabase
         .from('friend_requests')
         .select('*')
@@ -52,42 +58,41 @@ export const useFriendRequests = () => {
         return;
       }
 
-      // Get profiles for received requests
+      // Pobierz profile dla otrzymanych zaproszeń
       if (receivedData && receivedData.length > 0) {
         const senderIds = receivedData.map(req => req.sender_id);
-        const { data: profiles } = await supabase
+        const { data: senderProfiles } = await supabase
           .from('profiles')
           .select('id, username, display_name, avatar_url')
           .in('id', senderIds);
 
         const requestsWithProfiles = receivedData.map(req => ({
-          id: req.id,
-          sender_id: req.sender_id,
-          receiver_id: req.receiver_id,
-          status: req.status as 'pending' | 'accepted' | 'rejected',
-          attempt_count: req.attempt_count || 1,
-          created_at: req.created_at || '',
-          updated_at: req.updated_at || '',
-          sender_profile: profiles?.find(p => p.id === req.sender_id)
+          ...req,
+          sender_profile: senderProfiles?.find(p => p.id === req.sender_id)
         }));
 
-        setFriendRequests(requestsWithProfiles);
+        setReceivedRequests(requestsWithProfiles);
       } else {
-        setFriendRequests([]);
+        setReceivedRequests([]);
       }
 
-      // Map sent requests with proper types
-      const mappedSentRequests = (sentData || []).map(req => ({
-        id: req.id,
-        sender_id: req.sender_id,
-        receiver_id: req.receiver_id,
-        status: req.status as 'pending' | 'accepted' | 'rejected',
-        attempt_count: req.attempt_count || 1,
-        created_at: req.created_at || '',
-        updated_at: req.updated_at || ''
-      }));
+      // Pobierz profile dla wysłanych zaproszeń
+      if (sentData && sentData.length > 0) {
+        const receiverIds = sentData.map(req => req.receiver_id);
+        const { data: receiverProfiles } = await supabase
+          .from('profiles')
+          .select('id, username, display_name, avatar_url')
+          .in('id', receiverIds);
 
-      setSentRequests(mappedSentRequests);
+        const sentWithProfiles = sentData.map(req => ({
+          ...req,
+          receiver_profile: receiverProfiles?.find(p => p.id === req.receiver_id)
+        }));
+
+        setSentRequests(sentWithProfiles);
+      } else {
+        setSentRequests([]);
+      }
     } catch (error) {
       console.error('Error in fetchFriendRequests:', error);
     } finally {
@@ -99,24 +104,24 @@ export const useFriendRequests = () => {
     if (!user) return;
 
     try {
-      // Check if user has already sent 3 requests to this person
+      // Sprawdź ile już było prób
       const { data: existingRequests } = await supabase
         .from('friend_requests')
-        .select('attempt_count')
+        .select('attempt_count, status')
         .eq('sender_id', user.id)
-        .eq('receiver_id', receiverId)
-        .eq('status', 'rejected');
+        .eq('receiver_id', receiverId);
 
-      if (existingRequests && existingRequests.length > 0) {
-        const totalAttempts = existingRequests.reduce((sum, req) => sum + (req.attempt_count || 0), 0);
-        if (totalAttempts >= 3) {
-          toast({
-            title: 'Limit osiągnięty',
-            description: 'Możesz wysłać maksymalnie 3 zaproszenia do tej osoby',
-            variant: 'destructive'
-          });
-          return;
-        }
+      const totalAttempts = existingRequests?.reduce((sum, req) => {
+        return sum + (req.status === 'rejected' ? req.attempt_count || 1 : 0);
+      }, 0) || 0;
+
+      if (totalAttempts >= 3) {
+        toast({
+          title: 'Limit osiągnięty',
+          description: 'Możesz wysłać maksymalnie 3 zaproszenia do tej osoby. Pozostałe próby: 0',
+          variant: 'destructive'
+        });
+        return;
       }
 
       const { error } = await supabase
@@ -124,7 +129,8 @@ export const useFriendRequests = () => {
         .insert({
           sender_id: user.id,
           receiver_id: receiverId,
-          status: 'pending'
+          status: 'pending',
+          attempt_count: 1
         });
 
       if (error) {
@@ -137,9 +143,10 @@ export const useFriendRequests = () => {
         return;
       }
 
+      const remainingAttempts = 3 - (totalAttempts + 1);
       toast({
         title: 'Zaproszenie wysłane',
-        description: 'Zaproszenie do znajomych zostało wysłane'
+        description: `Zaproszenie do znajomych zostało wysłane. Pozostałe próby: ${remainingAttempts}`
       });
 
       await fetchFriendRequests();
@@ -202,6 +209,33 @@ export const useFriendRequests = () => {
     }
   };
 
+  const deleteFriendRequest = async (requestId: string) => {
+    try {
+      const { error } = await supabase.rpc('delete_friend_request', {
+        request_id: requestId
+      });
+
+      if (error) {
+        console.error('Error deleting friend request:', error);
+        toast({
+          title: 'Błąd',
+          description: 'Nie udało się usunąć zaproszenia',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      toast({
+        title: 'Zaproszenie usunięte',
+        description: 'Zaproszenie zostało usunięte'
+      });
+
+      await fetchFriendRequests();
+    } catch (error) {
+      console.error('Error in deleteFriendRequest:', error);
+    }
+  };
+
   useEffect(() => {
     if (user) {
       fetchFriendRequests();
@@ -209,12 +243,13 @@ export const useFriendRequests = () => {
   }, [user]);
 
   return {
-    friendRequests,
+    receivedRequests,
     sentRequests,
     loading,
     sendFriendRequest,
     acceptFriendRequest,
     rejectFriendRequest,
+    deleteFriendRequest,
     fetchFriendRequests
   };
 };
