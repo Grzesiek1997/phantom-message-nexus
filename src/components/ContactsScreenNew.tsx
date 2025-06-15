@@ -22,10 +22,19 @@ interface Group {
 }
 
 const ContactsScreenNew: React.FC = () => {
+  console.log('ContactsScreenNew: Component rendering started');
+  
   const { t } = useTranslation();
   const { contacts } = useContacts();
   const { friendRequests, acceptFriendRequest, rejectFriendRequest } = useFriendRequests();
   const { unreadCount } = useNotifications();
+  
+  console.log('ContactsScreenNew: Hooks loaded', { 
+    contacts: contacts?.length || 0, 
+    friendRequests: friendRequests?.length || 0, 
+    unreadCount 
+  });
+
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'contacts' | 'groups' | 'requests'>('contacts');
   const [showNotifications, setShowNotifications] = useState(false);
@@ -98,69 +107,85 @@ const ContactsScreenNew: React.FC = () => {
     }
   };
 
-  return (
-    <div className="flex flex-col h-full bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
-      {/* Header */}
-      <div className="p-6 border-b border-white/10">
-        <ContactsHeader
-          unreadCount={unreadCount}
-          onAddContact={() => setShowContactSearch(true)}
-          onShowNotifications={() => setShowNotifications(true)}
-        />
+  console.log('ContactsScreenNew: About to render JSX');
 
-        {/* Search */}
-        <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Szukaj kontaktów..."
-            className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+  try {
+    return (
+      <div className="flex flex-col h-full bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
+        {/* Header */}
+        <div className="p-6 border-b border-white/10">
+          <ContactsHeader
+            unreadCount={unreadCount || 0}
+            onAddContact={() => setShowContactSearch(true)}
+            onShowNotifications={() => setShowNotifications(true)}
+          />
+
+          {/* Search */}
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Szukaj kontaktów..."
+              className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+            />
+          </div>
+
+          {/* Tabs */}
+          <ContactsTabNavigation
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            contactsCount={filteredContacts.length}
+            requestsCount={filteredRequests.length}
+            groupsCount={filteredGroups.length}
           />
         </div>
 
-        {/* Tabs */}
-        <ContactsTabNavigation
+        {/* Quick Actions Bar */}
+        <ContactsQuickActions onAddContact={() => setShowContactSearch(true)} />
+
+        {/* Content */}
+        <ContactsContent
           activeTab={activeTab}
-          onTabChange={setActiveTab}
-          contactsCount={filteredContacts.length}
-          requestsCount={filteredRequests.length}
-          groupsCount={filteredGroups.length}
+          filteredContacts={filteredContacts}
+          filteredRequests={filteredRequests}
+          filteredGroups={filteredGroups}
+          onAddContact={() => setShowContactSearch(true)}
+          onQuickAction={handleQuickAction}
+          onAcceptRequest={handleAcceptRequest}
+          onRejectRequest={handleRejectRequest}
+          formatLastActivity={formatLastActivity}
         />
+
+        {/* Modals */}
+        {showNotifications && (
+          <NotificationPanel
+            isOpen={showNotifications}
+            onClose={() => setShowNotifications(false)}
+          />
+        )}
+
+        {showContactSearch && (
+          <ContactSearch
+            isOpen={showContactSearch}
+            onClose={() => setShowContactSearch(false)}
+            onSelectContact={(contactId) => {
+              console.log('Selected contact:', contactId);
+              setShowContactSearch(false);
+            }}
+          />
+        )}
       </div>
-
-      {/* Quick Actions Bar */}
-      <ContactsQuickActions onAddContact={() => setShowContactSearch(true)} />
-
-      {/* Content */}
-      <ContactsContent
-        activeTab={activeTab}
-        filteredContacts={filteredContacts}
-        filteredRequests={filteredRequests}
-        filteredGroups={filteredGroups}
-        onAddContact={() => setShowContactSearch(true)}
-        onQuickAction={handleQuickAction}
-        onAcceptRequest={handleAcceptRequest}
-        onRejectRequest={handleRejectRequest}
-        formatLastActivity={formatLastActivity}
-      />
-
-      {/* Modals */}
-      <NotificationPanel
-        isOpen={showNotifications}
-        onClose={() => setShowNotifications(false)}
-      />
-
-      <ContactSearch
-        isOpen={showContactSearch}
-        onClose={() => setShowContactSearch(false)}
-        onSelectContact={(contactId) => {
-          console.log('Selected contact:', contactId);
-          setShowContactSearch(false);
-        }}
-      />
-    </div>
-  );
+    );
+  } catch (error) {
+    console.error('ContactsScreenNew: Error rendering component:', error);
+    return (
+      <div className="flex flex-col h-full bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 items-center justify-center">
+        <div className="text-white">Błąd ładowania kontaktów</div>
+        <div className="text-gray-400 text-sm mt-2">Sprawdź konsolę dla szczegółów</div>
+      </div>
+    );
+  }
 };
 
 export default ContactsScreenNew;
