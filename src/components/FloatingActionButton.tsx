@@ -1,13 +1,13 @@
-
 import React, { useState } from 'react';
-import { Plus, UserPlus, Users, MessageSquare, X } from 'lucide-react';
+import { Plus, Search, MessageCircle, Users, UserPlus, X } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 import FriendSearchDialog from "./contacts/FriendSearchDialog";
 
 interface FloatingActionButtonProps {
-  onNewChat?: () => void;
-  onGroupChat?: () => void;
-  onSearchChats?: () => void;
-  onAddContacts?: () => void;
+  onNewChat: () => void;
+  onGroupChat: () => void;
+  onSearchChats: () => void;
+  onAddContacts: () => void;
 }
 
 const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
@@ -18,87 +18,79 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showAddFriend, setShowAddFriend] = useState(false);
+  const { t } = useTranslation();
 
-  const handleOpenSearch = () => {
-    setShowAddFriend(true);
-    setIsOpen(false);
-  };
+  const menuItems = [
+    {
+      icon: Search,
+      label: t('searchChats'),
+      action: onSearchChats,
+      color: 'bg-blue-500',
+      delay: 'delay-100'
+    },
+    {
+      icon: MessageCircle,
+      label: t('newChat'),
+      action: onNewChat,
+      color: 'bg-green-500',
+      delay: 'delay-200'
+    },
+    {
+      icon: Users,
+      label: t('groupChat'),
+      action: onGroupChat,
+      color: 'bg-purple-500',
+      delay: 'delay-300'
+    },
+    {
+      icon: UserPlus,
+      label: 'Dodaj znajomego', // Nowa, jasna opcja!
+      action: () => setShowAddFriend(true),
+      color: 'bg-orange-500',
+      delay: 'delay-400'
+    },
+    {
+      icon: Users,
+      label: t('addContacts'),
+      action: onAddContacts,
+      color: 'bg-cyan-500',
+      delay: 'delay-500'
+    }
+  ];
 
-  const handleNewChat = () => {
-    onNewChat?.();
-    setIsOpen(false);
-  };
-
-  const handleGroupChat = () => {
-    onGroupChat?.();
-    setIsOpen(false);
-  };
-
-  const handleAddContacts = () => {
-    onAddContacts?.();
+  const handleMenuItemClick = (action: () => void) => {
+    action();
     setIsOpen(false);
   };
 
   return (
     <div className="fixed bottom-24 right-6 z-50">
-      {/* Menu options */}
+      {/* Menu Items */}
       {isOpen && (
         <div className="absolute bottom-16 right-0 space-y-3">
-          <div className="transform transition-all duration-300 delay-300 translate-y-0 opacity-100 scale-100">
-            <div className="flex items-center space-x-3">
-              <span className="bg-black/80 text-white px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap">
-                Nowy czat
-              </span>
-              <button
-                onClick={handleNewChat}
-                className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform duration-200"
+          {menuItems.map((item, index) => {
+            const Icon = item.icon;
+            return (
+              <div
+                key={index}
+                className={`transform transition-all duration-300 ${item.delay} ${
+                  isOpen ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-4 opacity-0 scale-0'
+                }`}
               >
-                <MessageSquare className="w-6 h-6 text-white" />
-              </button>
-            </div>
-          </div>
-
-          <div className="transform transition-all duration-300 delay-200 translate-y-0 opacity-100 scale-100">
-            <div className="flex items-center space-x-3">
-              <span className="bg-black/80 text-white px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap">
-                Czat grupowy
-              </span>
-              <button
-                onClick={handleGroupChat}
-                className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform duration-200"
-              >
-                <Users className="w-6 h-6 text-white" />
-              </button>
-            </div>
-          </div>
-
-          <div className="transform transition-all duration-300 delay-100 translate-y-0 opacity-100 scale-100">
-            <div className="flex items-center space-x-3">
-              <span className="bg-black/80 text-white px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap">
-                Dodaj znajomego
-              </span>
-              <button
-                onClick={handleOpenSearch}
-                className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform duration-200"
-              >
-                <UserPlus className="w-6 h-6 text-white" />
-              </button>
-            </div>
-          </div>
-
-          <div className="transform transition-all duration-300 translate-y-0 opacity-100 scale-100">
-            <div className="flex items-center space-x-3">
-              <span className="bg-black/80 text-white px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap">
-                Dodaj kontakty
-              </span>
-              <button
-                onClick={handleAddContacts}
-                className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform duration-200"
-              >
-                <Users className="w-6 h-6 text-white" />
-              </button>
-            </div>
-          </div>
+                <div className="flex items-center space-x-3">
+                  <span className="bg-black/80 text-white px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap">
+                    {item.label}
+                  </span>
+                  <button
+                    onClick={() => handleMenuItemClick(item.action)}
+                    className={`w-12 h-12 ${item.color} rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform duration-200`}
+                  >
+                    <Icon className="w-6 h-6 text-white" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 

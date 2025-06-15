@@ -1,6 +1,8 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { UserPlus } from 'lucide-react';
+import ContactsQuickActions from './ContactsQuickActions';
 import FriendSearchDialog from './FriendSearchDialog';
 
 interface ContactsActionsProps {
@@ -26,12 +28,14 @@ const ContactsActions: React.FC<ContactsActionsProps> = ({
         </Button>
       </div>
 
-      {/* Nie dodajemy ContactsQuickActions ani innych wyszukiwarek */}
+      <ContactsQuickActions onAddContact={onShowFriendSearch} />
 
-      <FriendSearchDialog
-        isOpen={showFriendSearchDialog}
-        onClose={onCloseFriendSearch}
-      />
+      {showFriendSearchDialog && (
+        <FriendSearchDialog
+          isOpen={showFriendSearchDialog}
+          onClose={onCloseFriendSearch}
+        />
+      )}
     </>
   );
 };

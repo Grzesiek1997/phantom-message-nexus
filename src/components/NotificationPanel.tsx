@@ -3,7 +3,7 @@ import React from 'react';
 import { Bell, Check, CheckCheck, X, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNotifications } from '@/hooks/useNotifications';
-import { useFriendRequests } from '@/hooks/useFriendRequests';
+import { useFriendRequests } from '@/hooks/friends/useFriendRequests';
 import { formatDistanceToNow } from 'date-fns';
 import { pl } from 'date-fns/locale';
 
@@ -18,22 +18,9 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, onClose }
 
   const handleAcceptFriendRequest = async (requestId: string, notificationId: string) => {
     try {
-      console.log('Accepting friend request from notification:', requestId);
       await acceptFriendRequest(requestId);
       await markAsRead(notificationId);
       await fetchNotifications();
-      
-      // Zamknij panel powiadomień i przekieruj do kontaktów
-      onClose();
-      
-      // Dodaj małe opóźnienie przed przekierowaniem
-      setTimeout(() => {
-        // Symulujemy przejście do zakładki kontakty
-        const bottomNav = document.querySelector('[data-tab="contacts"]') as HTMLButtonElement;
-        if (bottomNav) {
-          bottomNav.click();
-        }
-      }, 100);
     } catch (error) {
       console.error('Error accepting friend request:', error);
     }
@@ -41,7 +28,6 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, onClose }
 
   const handleRejectFriendRequest = async (requestId: string, notificationId: string) => {
     try {
-      console.log('Rejecting friend request from notification:', requestId);
       await rejectFriendRequest(requestId);
       await markAsRead(notificationId);
       await fetchNotifications();
@@ -51,25 +37,21 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, onClose }
   };
 
   // Create notifications for pending friend requests
-  const friendRequestNotifications = receivedRequests
-    .filter(request => request.status === 'pending')
-    .map(request => ({
-      id: `friend_request_${request.id}`,
-      user_id: request.receiver_id,
-      type: 'friend_request' as const,
-      title: 'Nowe zaproszenie do znajomych',
-      message: `${request.sender_profile?.display_name || request.sender_profile?.username || 'Użytkownik'} zaprasza Cię do znajomych`,
-      data: { friend_request_id: request.id, sender_id: request.sender_id },
-      is_read: false,
-      created_at: request.created_at || new Date().toISOString()
-    }));
+  const friendRequestNotifications = receivedRequests.map(request => ({
+    id: `friend_request_${request.id}`,
+    user_id: request.receiver_id,
+    type: 'friend_request' as const,
+    title: 'Nowe zaproszenie do znajomych',
+    message: `${request.sender_profile?.display_name || request.sender_profile?.username || 'Użytkownik'} chce dodać Cię do znajomych`,
+    data: { friend_request_id: request.id, sender_id: request.sender_id },
+    is_read: false,
+    created_at: request.created_at || new Date().toISOString()
+  }));
 
   // Combine regular notifications with friend request notifications
   const allNotifications = [...notifications, ...friendRequestNotifications].sort((a, b) => 
     new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
-
-  console.log('All notifications:', allNotifications);
 
   if (!isOpen) return null;
 

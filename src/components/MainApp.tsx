@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import BottomNavigation from './BottomNavigation';
 import FloatingActionButton from './FloatingActionButton';
@@ -36,7 +35,6 @@ const MainApp: React.FC = () => {
   };
 
   const handleAddContacts = () => {
-    console.log('Switching to contacts tab');
     setActiveTab('contacts');
   };
 
