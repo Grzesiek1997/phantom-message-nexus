@@ -14,6 +14,7 @@ import NotificationPanel from './NotificationPanel';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useFriendRequests } from '@/hooks/useFriendRequests';
+import { useUserStatus } from '@/hooks/useUserStatus';
 
 const MainApp: React.FC = () => {
   const [activeTab, setActiveTab] = useState('chats');
@@ -24,6 +25,7 @@ const MainApp: React.FC = () => {
   const { signOut, user } = useAuth();
   const { unreadCount } = useNotifications();
   const { receivedRequests } = useFriendRequests();
+  const { updateMyStatus } = useUserStatus();
 
   // Calculate total unread notifications including friend requests
   const totalUnreadCount = unreadCount + receivedRequests.length;
@@ -47,6 +49,7 @@ const MainApp: React.FC = () => {
 
   const handleSignOut = async () => {
     try {
+      await updateMyStatus('offline');
       await signOut();
     } catch (error) {
       console.error('Sign out error:', error);
@@ -81,7 +84,7 @@ const MainApp: React.FC = () => {
             <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
               <span className="text-white font-bold text-lg">🛡️</span>
             </div>
-            <h1 className="text-xl font-bold text-white">SecureChat Quantum</h1>
+            <h1 className="text-xl font-bold text-white">SecureChat Quantum - Make Gibek</h1>
             {user && (
               <div className="text-sm text-gray-300">
                 Zalogowany jako: <span className="text-blue-400">{user.email || user.user_metadata?.username}</span>

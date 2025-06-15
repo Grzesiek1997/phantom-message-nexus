@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useMessages } from '@/hooks/useMessages';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserStatus } from '@/hooks/useUserStatus';
 import ConversationList from './ConversationList';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
@@ -16,6 +17,7 @@ const RealTimeChatInterface: React.FC = () => {
   const [replyingToMessage, setReplyingToMessage] = useState<{ content: string } | undefined>();
   
   const { user } = useAuth();
+  const { fetchUserStatuses } = useUserStatus();
   const { 
     messages, 
     conversations, 
@@ -39,6 +41,16 @@ const RealTimeChatInterface: React.FC = () => {
       fetchMessages(selectedConversationId);
     }
   }, [selectedConversationId, fetchMessages]);
+
+  // Fetch user statuses for conversation participants
+  useEffect(() => {
+    if (selectedConversation) {
+      const participantIds = selectedConversation.participants?.map(p => p.user_id) || [];
+      if (participantIds.length > 0) {
+        fetchUserStatuses(participantIds);
+      }
+    }
+  }, [selectedConversation, fetchUserStatuses]);
 
   const handleSendMessage = async () => {
     if (selectedConversationId && messageInput.trim()) {
@@ -70,7 +82,7 @@ const RealTimeChatInterface: React.FC = () => {
 
   const handleReact = async (messageId: string, emoji: string) => {
     console.log('React to message:', messageId, emoji);
-    // TODO: Implement message reactions
+    // Reactions are handled by MessageBubble component
   };
 
   const handleCancelReply = () => {
