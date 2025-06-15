@@ -36,6 +36,11 @@ export interface StoryView {
   viewed_at: string;
 }
 
+// Type guard for story data
+function isUserStoryRecord(obj: any): obj is Record<string, any> {
+  return obj && typeof obj === 'object' && 'id' in obj && 'user_id' in obj;
+}
+
 export const useStories = () => {
   const [stories, setStories] = useState<UserStory[]>([]);
   const [userStories, setUserStories] = useState<UserStory[]>([]);
@@ -65,24 +70,27 @@ export const useStories = () => {
         return;
       }
 
+      // Filter to expected objects only
+      const filteredData = (data as any[]).filter(isUserStoryRecord);
+
       // Get author profiles separately
-      const authorIds = [...new Set(data.map((story: any) => story.user_id))];
+      const authorIds = [...new Set(filteredData.map((story: any) => story.user_id))];
       const { data: authors } = await supabase
         .from('profiles')
         .select('id, username, display_name, avatar_url')
         .in('id', authorIds);
 
       // Get story views for current user
-      const storyIds = data.map((story: any) => story.id);
+      const storyIds = filteredData.map((story: any) => story.id);
       const { data: views } = await supabase
         .from('story_views' as any)
         .select('story_id')
         .in('story_id', storyIds)
         .eq('viewer_id', user.id);
 
-      const viewedStoryIds = new Set(views?.map(v => v.story_id) || []);
+      const viewedStoryIds = new Set((views as any[] || []).filter(isUserStoryRecord).map(v => v.story_id));
 
-      const processedStories: UserStory[] = data.map((story: any) => {
+      const processedStories: UserStory[] = filteredData.map((story: any) => {
         const author = authors?.find(a => a.id === story.user_id);
         return {
           ...story,
@@ -122,13 +130,21 @@ export const useStories = () => {
         console.error('Error fetching user stories:', error);
         return;
       }
-      
-      const processedStories: UserStory[] = (data || []).map((story: any) => ({
+
+      if (!data) {
+        setUserStories([]);
+        return;
+      }
+
+      // Filter to expected objects only
+      const filteredData = (data as any[]).filter(isUserStoryRecord);
+
+      const processedStories: UserStory[] = filteredData.map((story: any) => ({
         ...story,
         content_type: (story.content_type as 'text' | 'image' | 'video') || 'text',
         visibility: (story.visibility as 'public' | 'contacts' | 'close_friends' | 'custom') || 'contacts'
       }));
-      
+
       setUserStories(processedStories);
     } catch (error) {
       console.error('Error fetching user stories:', error);
@@ -171,6 +187,8 @@ export const useStories = () => {
 
       if (error) throw error;
 
+      if (!isUserStoryRecord(data)) return;
+
       const processedStory: UserStory = {
         ...data,
         content_type: data.content_type as 'text' | 'image' | 'video',
@@ -208,11 +226,9 @@ export const useStories = () => {
 
       if (error) throw error;
 
-      // Try to update view count with the available RPC function
       try {
         await supabase.rpc('increment_story_view_count', { p_story_id: storyId });
       } catch (rpcError) {
-        console.log('RPC function not available, updating directly');
         const currentStory = stories.find(s => s.id === storyId);
         if (currentStory) {
           await supabase
@@ -222,8 +238,8 @@ export const useStories = () => {
         }
       }
 
-      setStories(prev => prev.map(story => 
-        story.id === storyId 
+      setStories(prev => prev.map(story =>
+        story.id === storyId
           ? { ...story, viewed_by_user: true, view_count: (story.view_count || 0) + 1 }
           : story
       ));
@@ -272,7 +288,7 @@ export const useStories = () => {
         .eq('story_id', storyId);
 
       if (error) throw error;
-      return data || [];
+      return (data as any[] || []).filter(isUserStoryRecord);
     } catch (error) {
       console.error('Error fetching story views:', error);
       return [];
