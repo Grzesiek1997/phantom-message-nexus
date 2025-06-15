@@ -77,7 +77,7 @@ const RealTimeChatInterface: React.FC = () => {
   const handleReply = (messageId: string) => {
     const message = messages.find(m => m.id === messageId);
     if (message) {
-      const replyPrefix = `↩️ Odpowiedź na: "${message.content.substring(0, 50)}${message.content.length > 50 ? '...' : '"}"\n\n`;
+      const replyPrefix = `↩️ Odpowiedź na: "${message.content.substring(0, 50)}${message.content.length > 50 ? '...' : ''}"\n\n`;
       // Tutaj możesz dodać logikę do ustawienia tekstu w input
       console.log('Reply to message:', messageId, replyPrefix);
     }
