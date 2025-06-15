@@ -30,6 +30,7 @@ export const useConversations = () => {
       }
 
       if (!userParticipants || userParticipants.length === 0) {
+        console.log('No conversations found for user');
         setConversations([]);
         setLoading(false);
         return;
@@ -97,16 +98,24 @@ export const useConversations = () => {
       setConversations(formattedConversations);
     } catch (error) {
       console.error('Error in fetchConversations:', error);
+      toast({
+        title: 'Błąd',
+        description: 'Nie udało się pobrać listy konwersacji',
+        variant: 'destructive'
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const createConversation = async (participantIds: string[], type: 'direct' | 'group' = 'direct', name?: string) => {
-    if (!user) return;
+    if (!user) {
+      console.error('No user found when creating conversation');
+      return;
+    }
 
     try {
-      console.log('Creating conversation with participants:', participantIds);
+      console.log('Creating conversation with participants:', participantIds, 'type:', type);
 
       // For direct conversations, check if one already exists
       if (type === 'direct' && participantIds.length === 1) {
@@ -141,6 +150,7 @@ export const useConversations = () => {
         }
       }
 
+      // Create new conversation
       const { data: conversation, error } = await supabase
         .from('conversations')
         .insert({
@@ -163,7 +173,7 @@ export const useConversations = () => {
 
       console.log('Conversation created:', conversation);
 
-      // Add participants
+      // Add participants (including current user)
       const participants = [user.id, ...participantIds].map(userId => ({
         conversation_id: conversation.id,
         user_id: userId,
@@ -193,10 +203,18 @@ export const useConversations = () => {
       }
 
       console.log('Participants added successfully');
+      
+      // Refresh conversations list
       await fetchConversations();
+      
       return conversation.id;
     } catch (error) {
       console.error('Error in createConversation:', error);
+      toast({
+        title: 'Błąd',
+        description: 'Nie udało się utworzyć konwersacji',
+        variant: 'destructive'
+      });
       throw error;
     }
   };
@@ -205,6 +223,43 @@ export const useConversations = () => {
     if (user) {
       fetchConversations();
     }
+  }, [user]);
+
+  // Real-time subscriptions for conversations
+  useEffect(() => {
+    if (!user) return;
+
+    const conversationsChannel = supabase
+      .channel('conversations-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'conversations'
+        },
+        () => {
+          console.log('Conversations updated, refreshing...');
+          fetchConversations();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'conversation_participants'
+        },
+        () => {
+          console.log('Conversation participants updated, refreshing...');
+          fetchConversations();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(conversationsChannel);
+    };
   }, [user]);
 
   return {

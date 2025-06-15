@@ -39,7 +39,7 @@ export const useContacts = () => {
       setLoading(true);
       console.log('Fetching contacts for user:', user.id);
       
-      // Pobierz kontakty (zaakceptowane znajomości)
+      // Pobierz zaakceptowane kontakty
       const { data: contactsData, error: contactsError } = await supabase
         .from('contacts')
         .select('*')
@@ -51,7 +51,7 @@ export const useContacts = () => {
         return;
       }
 
-      // Pobierz również wysłane zaproszenia (pending/rejected)
+      // Pobierz wysłane zaproszenia (pending/rejected)
       const { data: sentRequestsData, error: sentRequestsError } = await supabase
         .from('friend_requests')
         .select('*')
@@ -62,7 +62,7 @@ export const useContacts = () => {
         console.error('Error fetching sent requests:', sentRequestsError);
       }
 
-      // Zbierz wszystkich użytkowników (kontakty + zaproszenia)
+      // Zbierz wszystkich użytkowników
       const allUserIds = new Set([
         ...(contactsData || []).map(contact => contact.contact_user_id),
         ...(sentRequestsData || []).map(request => request.receiver_id)
@@ -80,7 +80,7 @@ export const useContacts = () => {
           return;
         }
 
-        // Formatuj kontakty (zaakceptowane znajomości)
+        // Formatuj zaakceptowane kontakty
         const formattedContacts = (contactsData || []).map(contact => {
           const profile = profilesData?.find(p => p.id === contact.contact_user_id);
           return {
@@ -99,7 +99,7 @@ export const useContacts = () => {
           };
         });
 
-        // Formatuj zaproszenia (pending/rejected)
+        // Formatuj wysłane zaproszenia (pending/rejected)
         const formattedRequests = (sentRequestsData || [])
           .filter(request => !contactsData?.some(contact => contact.contact_user_id === request.receiver_id))
           .map(request => {
@@ -129,6 +129,11 @@ export const useContacts = () => {
       }
     } catch (error) {
       console.error('Error in fetchContacts:', error);
+      toast({
+        title: 'Błąd',
+        description: 'Nie udało się pobrać listy kontaktów',
+        variant: 'destructive'
+      });
     } finally {
       setLoading(false);
     }
@@ -194,11 +199,11 @@ export const useContacts = () => {
     }
   }, [user]);
 
-  // Ustaw real-time subscription dla aktualizacji
+  // Real-time subscriptions
   useEffect(() => {
     if (!user) return;
 
-    const channel = supabase
+    const contactsChannel = supabase
       .channel('contacts-updates')
       .on(
         'postgres_changes',
@@ -209,6 +214,7 @@ export const useContacts = () => {
           filter: `user_id=eq.${user.id}`
         },
         () => {
+          console.log('Contacts table updated, refreshing...');
           fetchContacts();
         }
       )
@@ -221,13 +227,27 @@ export const useContacts = () => {
           filter: `sender_id=eq.${user.id}`
         },
         () => {
+          console.log('Friend requests table updated, refreshing...');
+          fetchContacts();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'friend_requests',
+          filter: `receiver_id=eq.${user.id}`
+        },
+        () => {
+          console.log('Received friend requests updated, refreshing...');
           fetchContacts();
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(contactsChannel);
     };
   }, [user]);
 

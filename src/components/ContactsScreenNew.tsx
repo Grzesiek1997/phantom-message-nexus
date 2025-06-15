@@ -18,22 +18,26 @@ const ContactsScreenNew: React.FC = () => {
 
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { contacts, deleteContact } = useContacts();
+  const { contacts, deleteContact, fetchContacts } = useContacts();
   const { 
     receivedRequests, 
     sentRequests, 
     acceptFriendRequest, 
     rejectFriendRequest,
-    deleteFriendRequest 
+    deleteFriendRequest,
+    fetchFriendRequests
   } = useFriendRequests();
   const { createConversation } = useMessages();
 
   const handleSelectContact = async (contactId: string) => {
     try {
-      // Sprawdź czy to zaakceptowany znajomy
+      console.log('Attempting to start chat with contact:', contactId);
+      
+      // Znajdź kontakt w liście
       const contact = contacts.find(c => c.contact_user_id === contactId);
       
       if (!contact) {
+        console.error('Contact not found:', contactId);
         toast({
           title: 'Błąd',
           description: 'Nie znaleziono kontaktu',
@@ -42,7 +46,9 @@ const ContactsScreenNew: React.FC = () => {
         return;
       }
 
+      // Sprawdź czy można rozmawiać z tym kontaktem
       if (!contact.can_chat) {
+        console.log('Cannot chat with contact - not accepted yet:', contact);
         toast({
           title: 'Nie można rozpocząć czatu',
           description: 'Poczekaj, aż użytkownik zaakceptuje zaproszenie do znajomych',
@@ -52,6 +58,8 @@ const ContactsScreenNew: React.FC = () => {
       }
 
       console.log('Creating conversation with contact:', contactId);
+      
+      // Utwórz konwersację
       const conversationId = await createConversation([contactId]);
       
       if (conversationId) {
@@ -60,16 +68,22 @@ const ContactsScreenNew: React.FC = () => {
           title: 'Czat utworzony',
           description: 'Przekierowuję do czatu...'
         });
-        // Navigate to the main app with the conversation selected
-        navigate('/', { state: { selectedConversationId: conversationId } });
+        
+        // Przekieruj do głównej aplikacji z wybraną konwersacją
+        navigate('/', { 
+          state: { 
+            selectedConversationId: conversationId,
+            fromContacts: true 
+          } 
+        });
       } else {
-        throw new Error('Failed to create conversation');
+        throw new Error('Failed to create conversation - no ID returned');
       }
     } catch (error) {
       console.error('Error creating conversation:', error);
       toast({
         title: 'Błąd',
-        description: 'Nie udało się utworzyć czatu',
+        description: 'Nie udało się utworzyć czatu. Spróbuj ponownie.',
         variant: 'destructive'
       });
     }
@@ -77,6 +91,44 @@ const ContactsScreenNew: React.FC = () => {
 
   const handleAddContact = () => {
     setShowFriendSearch(true);
+  };
+
+  const handleAcceptRequest = async (requestId: string) => {
+    try {
+      await acceptFriendRequest(requestId);
+      // Odśwież listę kontaktów po zaakceptowaniu zaproszenia
+      await fetchContacts();
+      await fetchFriendRequests();
+    } catch (error) {
+      console.error('Error accepting friend request:', error);
+    }
+  };
+
+  const handleRejectRequest = async (requestId: string) => {
+    try {
+      await rejectFriendRequest(requestId);
+      await fetchFriendRequests();
+    } catch (error) {
+      console.error('Error rejecting friend request:', error);
+    }
+  };
+
+  const handleDeleteRequest = async (requestId: string) => {
+    try {
+      await deleteFriendRequest(requestId);
+      await fetchFriendRequests();
+    } catch (error) {
+      console.error('Error deleting friend request:', error);
+    }
+  };
+
+  const handleDeleteContact = async (contactId: string) => {
+    try {
+      await deleteContact(contactId);
+      await fetchContacts();
+    } catch (error) {
+      console.error('Error deleting contact:', error);
+    }
   };
 
   // Filtrowanie kontaktów na podstawie wyszukiwania
@@ -122,10 +174,10 @@ const ContactsScreenNew: React.FC = () => {
           receivedRequests={filteredReceivedRequests}
           sentRequests={filteredSentRequests}
           onSelectContact={handleSelectContact}
-          onDeleteContact={deleteContact}
-          onAcceptRequest={acceptFriendRequest}
-          onRejectRequest={rejectFriendRequest}
-          onDeleteRequest={deleteFriendRequest}
+          onDeleteContact={handleDeleteContact}
+          onAcceptRequest={handleAcceptRequest}
+          onRejectRequest={handleRejectRequest}
+          onDeleteRequest={handleDeleteRequest}
         />
       </div>
 

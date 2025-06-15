@@ -35,6 +35,9 @@ export const useFriendRequests = () => {
     if (!user) return;
 
     try {
+      setLoading(true);
+      console.log('Fetching friend requests for user:', user.id);
+
       // Pobierz otrzymane zaproszenia
       const { data: receivedData, error: receivedError } = await supabase
         .from('friend_requests')
@@ -44,7 +47,6 @@ export const useFriendRequests = () => {
 
       if (receivedError) {
         console.error('Error fetching received requests:', receivedError);
-        return;
       }
 
       // Pobierz wysłane zaproszenia
@@ -55,7 +57,6 @@ export const useFriendRequests = () => {
 
       if (sentError) {
         console.error('Error fetching sent requests:', sentError);
-        return;
       }
 
       // Pobierz profile dla otrzymanych zaproszeń
@@ -165,6 +166,8 @@ export const useFriendRequests = () => {
 
   const acceptFriendRequest = async (requestId: string) => {
     try {
+      console.log('Accepting friend request:', requestId);
+      
       const { error } = await supabase.rpc('accept_friend_request', {
         request_id: requestId
       });
@@ -248,6 +251,45 @@ export const useFriendRequests = () => {
     if (user) {
       fetchFriendRequests();
     }
+  }, [user]);
+
+  // Real-time subscriptions
+  useEffect(() => {
+    if (!user) return;
+
+    const friendRequestsChannel = supabase
+      .channel('friend-requests-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'friend_requests',
+          filter: `receiver_id=eq.${user.id}`
+        },
+        () => {
+          console.log('Received friend requests updated, refreshing...');
+          fetchFriendRequests();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'friend_requests',
+          filter: `sender_id=eq.${user.id}`
+        },
+        () => {
+          console.log('Sent friend requests updated, refreshing...');
+          fetchFriendRequests();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(friendRequestsChannel);
+    };
   }, [user]);
 
   return {

@@ -29,22 +29,40 @@ const RealTimeChatInterface: React.FC = () => {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
 
   const { user } = useAuth();
-  const { messages, conversations, loading, sendMessage, createConversation } = useMessages(selectedConversationId || undefined);
+  const { messages, conversations, loading, sendMessage, createConversation, fetchConversations } = useMessages(selectedConversationId || undefined);
   const { contacts } = useContacts();
   const { toast } = useToast();
 
   // Handle initial conversation selection from navigation state
   useEffect(() => {
-    if (location.state?.selectedConversationId) {
-      console.log('Setting initial conversation from navigation:', location.state.selectedConversationId);
-      setSelectedConversationId(location.state.selectedConversationId);
+    const state = location.state as any;
+    if (state?.selectedConversationId) {
+      console.log('Setting initial conversation from navigation:', state.selectedConversationId);
+      setSelectedConversationId(state.selectedConversationId);
       if (window.innerWidth < 768) {
         setShowConversationList(false);
       }
-      // Clear the navigation state
-      window.history.replaceState({}, document.title);
+      
+      // Clear the navigation state to prevent issues on refresh
+      if (state.fromContacts) {
+        window.history.replaceState({}, document.title);
+      }
     }
   }, [location.state]);
+
+  // Monitor conversations to ensure selected conversation exists
+  useEffect(() => {
+    if (selectedConversationId && conversations.length > 0) {
+      const conversationExists = conversations.find(c => c.id === selectedConversationId);
+      if (!conversationExists) {
+        console.log('Selected conversation no longer exists, clearing selection');
+        setSelectedConversationId(null);
+        if (window.innerWidth < 768) {
+          setShowConversationList(true);
+        }
+      }
+    }
+  }, [conversations, selectedConversationId]);
 
   useEffect(() => {
     const checkMobile = () => {
