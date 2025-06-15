@@ -43,8 +43,8 @@ const ContactsScreenNew: React.FC = () => {
   ]);
 
   const filteredContacts = contacts.filter(contact =>
-    contact.profiles?.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    contact.profiles?.username?.toLowerCase().includes(searchQuery.toLowerCase())
+    contact.profile?.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    contact.profile?.username?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const filteredGroups = groups.filter(group =>
@@ -52,7 +52,7 @@ const ContactsScreenNew: React.FC = () => {
   );
 
   const handleQuickAction = (action: string, contact: any) => {
-    console.log(`${action} with ${contact.profiles?.display_name}`);
+    console.log(`${action} with ${contact.profile?.display_name}`);
     // Implement quick actions
   };
 
@@ -160,14 +160,14 @@ const ContactsScreenNew: React.FC = () => {
                   {/* Avatar */}
                   <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mr-4">
                     <span className="text-white font-bold">
-                      {contact.profiles?.display_name?.charAt(0) || '?'}
+                      {contact.profile?.display_name?.charAt(0) || '?'}
                     </span>
                   </div>
 
                   {/* Contact Info */}
                   <div className="flex-1">
                     <h3 className="font-medium text-white">
-                      {contact.profiles?.display_name || contact.profiles?.username || 'Unknown'}
+                      {contact.profile?.display_name || contact.profile?.username || 'Unknown'}
                     </h3>
                     <div className="flex items-center space-x-2 text-sm text-gray-400">
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
