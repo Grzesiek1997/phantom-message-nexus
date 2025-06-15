@@ -20,7 +20,7 @@ interface Group {
 const ContactsScreenNew: React.FC = () => {
   const { t } = useTranslation();
   const { contacts } = useContacts();
-  const { friendRequests } = useFriendRequests();
+  const { friendRequests, acceptFriendRequest, rejectFriendRequest } = useFriendRequests();
   const { unreadCount } = useNotifications();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'contacts' | 'groups' | 'requests'>('contacts');
@@ -48,19 +48,19 @@ const ContactsScreenNew: React.FC = () => {
     }
   ]);
 
-  const filteredContacts = contacts.filter(contact =>
+  const filteredContacts = contacts?.filter(contact =>
     contact.profile?.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     contact.profile?.username?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ) || [];
 
   const filteredGroups = groups.filter(group =>
     group.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredRequests = friendRequests.filter(request =>
+  const filteredRequests = friendRequests?.filter(request =>
     request.sender_profile?.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     request.sender_profile?.username?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ) || [];
 
   const handleQuickAction = (action: string, contact: any) => {
     console.log(`${action} with ${contact.profile?.display_name}`);
@@ -77,12 +77,28 @@ const ContactsScreenNew: React.FC = () => {
     return `${Math.floor(hours / 24)}d temu`;
   };
 
+  const handleAcceptRequest = async (requestId: string) => {
+    try {
+      await acceptFriendRequest(requestId);
+    } catch (error) {
+      console.error('Error accepting friend request:', error);
+    }
+  };
+
+  const handleRejectRequest = async (requestId: string) => {
+    try {
+      await rejectFriendRequest(requestId);
+    } catch (error) {
+      console.error('Error rejecting friend request:', error);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
       {/* Header */}
       <div className="p-6 border-b border-white/10">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-white">{t('contacts')}</h1>
+          <h1 className="text-2xl font-bold text-white">Kontakty</h1>
           <div className="flex items-center space-x-2">
             {/* Notifications Button */}
             <Button
@@ -149,8 +165,7 @@ const ContactsScreenNew: React.FC = () => {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
-        {activeTab === 'contacts' ? (
-          // Contacts List
+        {activeTab === 'contacts' && (
           <div className="space-y-1">
             {filteredContacts.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-gray-400 p-8">
@@ -178,7 +193,7 @@ const ContactsScreenNew: React.FC = () => {
                     </h3>
                     <div className="flex items-center space-x-2 text-sm text-gray-400">
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span>{t('online')}</span>
+                      <span>Online</span>
                     </div>
                   </div>
 
@@ -213,8 +228,9 @@ const ContactsScreenNew: React.FC = () => {
               ))
             )}
           </div>
-        ) : activeTab === 'requests' ? (
-          // Friend Requests List
+        )}
+
+        {activeTab === 'requests' && (
           <div className="space-y-1">
             {filteredRequests.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-gray-400 p-8">
@@ -247,6 +263,7 @@ const ContactsScreenNew: React.FC = () => {
                   <div className="flex items-center space-x-2">
                     <Button
                       size="sm"
+                      onClick={() => handleAcceptRequest(request.id)}
                       className="bg-green-600 hover:bg-green-700"
                     >
                       Akceptuj
@@ -254,6 +271,7 @@ const ContactsScreenNew: React.FC = () => {
                     <Button
                       size="sm"
                       variant="outline"
+                      onClick={() => handleRejectRequest(request.id)}
                       className="border-red-500 text-red-400 hover:bg-red-500/20"
                     >
                       Odrzuć
@@ -263,8 +281,9 @@ const ContactsScreenNew: React.FC = () => {
               ))
             )}
           </div>
-        ) : (
-          // Groups List
+        )}
+
+        {activeTab === 'groups' && (
           <div className="space-y-1">
             {filteredGroups.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-gray-400 p-8">
