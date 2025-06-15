@@ -39,18 +39,10 @@ export const useContacts = () => {
       setLoading(true);
       console.log('Fetching contacts for user:', user.id);
       
-      // Pobierz wszystkie kontakty bezpośrednio z joinami
+      // Pobierz wszystkie kontakty z profilami
       const { data: contactsData, error: contactsError } = await supabase
         .from('contacts')
-        .select(`
-          *,
-          profiles!contacts_contact_user_id_fkey (
-            id,
-            username,
-            display_name,
-            avatar_url
-          )
-        `)
+        .select('*')
         .eq('user_id', user.id);
 
       if (contactsError) {
@@ -59,57 +51,26 @@ export const useContacts = () => {
         return;
       }
 
-      // Pobierz wysłane zaproszenia
-      const { data: sentRequestsData, error: sentRequestsError } = await supabase
-        .from('friend_requests')
-        .select(`
-          *,
-          profiles!friend_requests_receiver_id_fkey (
-            id,
-            username,
-            display_name,
-            avatar_url
-          )
-        `)
-        .eq('sender_id', user.id)
-        .in('status', ['pending', 'rejected']);
+      // Pobierz profile dla kontaktów
+      if (contactsData && contactsData.length > 0) {
+        const contactUserIds = contactsData.map(c => c.contact_user_id);
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, username, display_name, avatar_url')
+          .in('id', contactUserIds);
 
-      if (sentRequestsError) {
-        console.error('Error fetching sent requests:', sentRequestsError);
-      }
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+        }
 
-      // Formatuj kontakty
-      const formattedContacts = (contactsData || []).map(contact => {
-        const profile = contact.profiles;
-        const isAccepted = contact.status === 'accepted';
-        
-        return {
-          ...contact,
-          status: contact.status as 'pending' | 'accepted' | 'blocked',
-          profile: profile ? {
-            username: profile.username,
-            display_name: profile.display_name || profile.username,
-            avatar_url: profile.avatar_url
-          } : {
-            username: 'Unknown',
-            display_name: 'Unknown User'
-          },
-          friend_request_status: isAccepted ? 'accepted' as const : contact.status as 'pending' | 'accepted' | 'rejected',
-          can_chat: isAccepted
-        };
-      });
-
-      // Formatuj wysłane zaproszenia (pending/rejected)
-      const formattedRequests = (sentRequestsData || [])
-        .filter(request => !contactsData?.some(contact => contact.contact_user_id === request.receiver_id))
-        .map(request => {
-          const profile = request.profiles;
+        // Formatuj kontakty z profilami
+        const formattedContacts = contactsData.map(contact => {
+          const profile = profilesData?.find(p => p.id === contact.contact_user_id);
+          const isAccepted = contact.status === 'accepted';
+          
           return {
-            id: request.id,
-            user_id: user.id,
-            contact_user_id: request.receiver_id,
-            status: 'pending' as const,
-            created_at: request.created_at || new Date().toISOString(),
+            ...contact,
+            status: contact.status as 'pending' | 'accepted' | 'blocked',
             profile: profile ? {
               username: profile.username,
               display_name: profile.display_name || profile.username,
@@ -118,12 +79,63 @@ export const useContacts = () => {
               username: 'Unknown',
               display_name: 'Unknown User'
             },
-            friend_request_status: request.status as 'pending' | 'accepted' | 'rejected',
-            can_chat: false
+            friend_request_status: isAccepted ? 'accepted' as const : contact.status as 'pending' | 'accepted' | 'rejected',
+            can_chat: isAccepted
           };
         });
 
-      setContacts([...formattedContacts, ...formattedRequests]);
+        setContacts(formattedContacts);
+      }
+
+      // Pobierz wysłane zaproszenia
+      const { data: sentRequestsData, error: sentRequestsError } = await supabase
+        .from('friend_requests')
+        .select('*')
+        .eq('sender_id', user.id)
+        .in('status', ['pending', 'rejected']);
+
+      if (sentRequestsError) {
+        console.error('Error fetching sent requests:', sentRequestsError);
+      } else if (sentRequestsData) {
+        // Pobierz profile dla wysłanych zaproszeń
+        const receiverIds = sentRequestsData.map(r => r.receiver_id);
+        if (receiverIds.length > 0) {
+          const { data: receiverProfiles, error: receiverProfilesError } = await supabase
+            .from('profiles')
+            .select('id, username, display_name, avatar_url')
+            .in('id', receiverIds);
+
+          if (receiverProfilesError) {
+            console.error('Error fetching receiver profiles:', receiverProfilesError);
+          }
+
+          // Formatuj wysłane zaproszenia
+          const formattedRequests = sentRequestsData
+            .filter(request => !contactsData?.some(contact => contact.contact_user_id === request.receiver_id))
+            .map(request => {
+              const profile = receiverProfiles?.find(p => p.id === request.receiver_id);
+              return {
+                id: request.id,
+                user_id: user.id,
+                contact_user_id: request.receiver_id,
+                status: 'pending' as const,
+                created_at: request.created_at || new Date().toISOString(),
+                profile: profile ? {
+                  username: profile.username,
+                  display_name: profile.display_name || profile.username,
+                  avatar_url: profile.avatar_url
+                } : {
+                  username: 'Unknown',
+                  display_name: 'Unknown User'
+                },
+                friend_request_status: request.status as 'pending' | 'accepted' | 'rejected',
+                can_chat: false
+              };
+            });
+
+          setContacts(prev => [...prev, ...formattedRequests]);
+        }
+      }
     } catch (error) {
       console.error('Error in fetchContacts:', error);
       toast({

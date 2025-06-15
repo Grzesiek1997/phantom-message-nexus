@@ -10,7 +10,11 @@ import { Card } from '@/components/ui/card';
 import { Users, MessageCircle } from 'lucide-react';
 
 const RealTimeChatInterface: React.FC = () => {
-  const [selectedConversationId, setSelectedConversationId] = useState<string | undefined>();
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [messageInput, setMessageInput] = useState('');
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyingToMessage, setReplyingToMessage] = useState<{ content: string } | undefined>();
+  
   const { user } = useAuth();
   const { 
     messages, 
@@ -18,7 +22,7 @@ const RealTimeChatInterface: React.FC = () => {
     loading, 
     sendMessage,
     fetchMessages 
-  } = useMessages(selectedConversationId);
+  } = useMessages(selectedConversationId || undefined);
 
   const selectedConversation = conversations.find(c => c.id === selectedConversationId);
 
@@ -36,14 +40,42 @@ const RealTimeChatInterface: React.FC = () => {
     }
   }, [selectedConversationId, fetchMessages]);
 
-  const handleSendMessage = async (content: string, expiresInHours?: number) => {
-    if (selectedConversationId && content.trim()) {
+  const handleSendMessage = async () => {
+    if (selectedConversationId && messageInput.trim()) {
       try {
-        await sendMessage(content, selectedConversationId, expiresInHours);
+        let content = messageInput.trim();
+        
+        // Add reply context if replying
+        if (replyingTo && replyingToMessage) {
+          content = `↩️ Odpowiedź na: "${replyingToMessage.content.substring(0, 50)}..."\n\n${content}`;
+        }
+        
+        await sendMessage(content, selectedConversationId);
+        setMessageInput('');
+        setReplyingTo(null);
+        setReplyingToMessage(undefined);
       } catch (error) {
         console.error('Error sending message:', error);
       }
     }
+  };
+
+  const handleReply = (messageId: string) => {
+    const message = messages.find(m => m.id === messageId);
+    if (message) {
+      setReplyingTo(messageId);
+      setReplyingToMessage({ content: message.content });
+    }
+  };
+
+  const handleReact = async (messageId: string, emoji: string) => {
+    console.log('React to message:', messageId, emoji);
+    // TODO: Implement message reactions
+  };
+
+  const handleCancelReply = () => {
+    setReplyingTo(null);
+    setReplyingToMessage(undefined);
   };
 
   const getConversationDisplayName = (conversation: any) => {
@@ -72,31 +104,18 @@ const RealTimeChatInterface: React.FC = () => {
   return (
     <div className="flex h-full">
       {/* Conversations Sidebar */}
-      <div className="w-80 border-r border-white/10 bg-black/20 backdrop-blur-sm">
-        <div className="p-4 border-b border-white/10">
-          <h2 className="text-lg font-semibold text-white flex items-center">
-            <MessageCircle className="w-5 h-5 mr-2" />
-            Konwersacje
-          </h2>
-        </div>
-        
-        <div className="flex-1 overflow-y-auto">
-          {conversations.length === 0 ? (
-            <div className="p-4 text-center text-gray-400">
-              <MessageCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>Brak konwersacji</p>
-              <p className="text-sm mt-2">Dodaj znajomych aby rozpocząć czat</p>
-            </div>
-          ) : (
-            <ConversationList
-              conversations={conversations}
-              selectedConversationId={selectedConversationId}
-              onSelectConversation={setSelectedConversationId}
-              currentUserId={user?.id || ''}
-            />
-          )}
-        </div>
-      </div>
+      <ConversationList
+        conversations={conversations}
+        selectedConversationId={selectedConversationId}
+        currentUserId={user?.id || ''}
+        loading={loading}
+        isVisible={true}
+        onSelectConversation={setSelectedConversationId}
+        onShowContactSearch={() => console.log('Show contact search')}
+        onShowAIAssistant={() => console.log('Show AI assistant')}
+        onShowGroupManagement={() => console.log('Show group management')}
+        onSearchChats={() => console.log('Search chats')}
+      />
 
       {/* Chat Area */}
       <div className="flex-1 flex flex-col">
@@ -105,6 +124,8 @@ const RealTimeChatInterface: React.FC = () => {
             <ChatHeader 
               conversation={selectedConversation}
               currentUserId={user?.id || ''}
+              showBackButton={false}
+              onBack={() => {}}
             />
             
             {/* Messages Area */}
@@ -122,17 +143,23 @@ const RealTimeChatInterface: React.FC = () => {
                   <MessageBubble
                     key={message.id}
                     message={message}
-                    isOwn={message.sender_id === user?.id}
                     currentUserId={user?.id || ''}
+                    onReply={handleReply}
+                    onReact={handleReact}
                   />
                 ))
               )}
             </div>
 
             {/* Message Input */}
-            <div className="border-t border-white/10 p-4">
-              <MessageInput onSendMessage={handleSendMessage} />
-            </div>
+            <MessageInput
+              messageInput={messageInput}
+              replyingTo={replyingTo}
+              replyingToMessage={replyingToMessage}
+              onMessageChange={setMessageInput}
+              onSendMessage={handleSendMessage}
+              onCancelReply={handleCancelReply}
+            />
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center">

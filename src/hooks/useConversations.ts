@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -86,7 +85,7 @@ export const useConversations = () => {
       }
 
       // Combine the data
-      const formattedConversations = conversationsData.map(conv => {
+      const formattedConversations: Conversation[] = conversationsData.map(conv => {
         const participants = allParticipants
           ?.filter(p => p.conversation_id === conv.id)
           .map(p => {
@@ -104,10 +103,17 @@ export const useConversations = () => {
         const lastMessage = lastMessages?.find(msg => msg.conversation_id === conv.id);
 
         return {
-          ...conv,
+          id: conv.id,
           type: conv.type as 'direct' | 'group',
+          name: conv.name,
+          created_by: conv.created_by,
+          created_at: conv.created_at,
+          updated_at: conv.updated_at,
           participants,
-          last_message: lastMessage
+          last_message: lastMessage ? {
+            ...lastMessage,
+            message_type: lastMessage.message_type as 'text' | 'file' | 'image'
+          } : undefined
         };
       });
 
