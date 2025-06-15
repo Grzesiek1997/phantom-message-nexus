@@ -10,6 +10,8 @@ import ContactsContent from './contacts/ContactsContent';
 import ContactsQuickActions from './contacts/ContactsQuickActions';
 import FriendSearch from './FriendSearch';
 import FriendSearchDialog from './contacts/FriendSearchDialog';
+import { Button } from '@/components/ui/button';
+import { UserPlus } from 'lucide-react';
 
 const ContactsScreenNew: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'friends' | 'received' | 'sent' | 'groups'>('friends');
