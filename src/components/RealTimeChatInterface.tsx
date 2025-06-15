@@ -85,16 +85,6 @@ const RealTimeChatInterface: React.FC = () => {
     }
   };
 
-  const handleReply = (messageId: string) => {
-    // TODO: Implement reply functionality
-    console.log('Reply to message:', messageId);
-  };
-
-  const handleReact = (messageId: string, emoji: string) => {
-    // TODO: Implement reaction functionality
-    console.log('React to message:', messageId, 'with emoji:', emoji);
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
@@ -202,9 +192,7 @@ const RealTimeChatInterface: React.FC = () => {
               <MessageBubble
                 key={message.id}
                 message={message}
-                currentUserId={user?.id || ''}
-                onReply={handleReply}
-                onReact={handleReact}
+                isOwn={message.sender_id === user?.id}
               />
             ))}
             <div ref={messagesEndRef} />
