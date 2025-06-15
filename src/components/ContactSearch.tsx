@@ -50,10 +50,17 @@ const ContactSearch: React.FC<ContactSearchProps> = ({ isOpen, onClose, onSelect
   const handleAddContact = async (userId: string) => {
     try {
       await sendFriendRequest(userId);
-      // Remove from search results after adding
       setSearchResults(prev => prev.filter(user => user.id !== userId));
+      toast({
+        title: "Prośba wysłana!",
+        description: "Wysłano zaproszenie do znajomych.",
+      });
     } catch (error) {
-      console.error('Add contact error:', error);
+      toast({
+        title: "Błąd",
+        description: "Nie udało się wysłać zaproszenia.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -65,16 +72,26 @@ const ContactSearch: React.FC<ContactSearchProps> = ({ isOpen, onClose, onSelect
   const handleAcceptContact = async (requestId: string) => {
     try {
       await acceptFriendRequest(requestId);
+      toast({ title: "Zaakceptowano!", description: "Masz nowego znajomego." });
     } catch (error) {
-      console.error('Accept contact error:', error);
+      toast({
+        title: "Błąd",
+        description: "Nie udało się zaakceptować zaproszenia.",
+        variant: "destructive"
+      });
     }
   };
 
   const handleRejectContact = async (requestId: string) => {
     try {
       await rejectFriendRequest(requestId);
+      toast({ title: "Odrzucono", description: "Zaproszenie zostało odrzucone." });
     } catch (error) {
-      console.error('Reject contact error:', error);
+      toast({
+        title: "Błąd",
+        description: "Nie udało się odrzucić zaproszenia.",
+        variant: "destructive"
+      });
     }
   };
 

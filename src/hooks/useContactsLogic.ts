@@ -102,13 +102,16 @@ export const useContactsLogic = () => {
       await acceptFriendRequest(requestId);
       await fetchContacts();
       await fetchFriendRequests();
-      
       toast({
         title: 'Zaproszenie zaakceptowane',
         description: 'Możesz teraz rozpocząć czat z tą osobą'
       });
     } catch (error) {
-      console.error('Error accepting friend request:', error);
+      toast({
+        title: "Błąd",
+        description: "Nie udało się zaakceptować zaproszenia.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -116,8 +119,13 @@ export const useContactsLogic = () => {
     try {
       await rejectFriendRequest(requestId);
       await fetchFriendRequests();
+      toast({ title: "Zaproszenie odrzucone", description: "Zaproszenie zostało odrzucone." });
     } catch (error) {
-      console.error('Error rejecting friend request:', error);
+      toast({
+        title: "Błąd",
+        description: "Nie udało się odrzucić zaproszenia.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -125,8 +133,13 @@ export const useContactsLogic = () => {
     try {
       await deleteFriendRequest(requestId);
       await fetchFriendRequests();
+      toast({ title: "Zaproszenie usunięte", description: "Zaproszenie zostało usunięte." });
     } catch (error) {
-      console.error('Error deleting friend request:', error);
+      toast({
+        title: "Błąd",
+        description: "Nie udało się usunąć zaproszenia.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -134,8 +147,16 @@ export const useContactsLogic = () => {
     try {
       await deleteContact(contactId);
       await fetchContacts();
+      toast({
+        title: "Kontakt usunięty",
+        description: "Kontakt został usunięty.",
+      });
     } catch (error) {
-      console.error('Error deleting contact:', error);
+      toast({
+        title: "Błąd",
+        description: "Nie udało się usunąć kontaktu.",
+        variant: "destructive"
+      });
     }
   };
 
