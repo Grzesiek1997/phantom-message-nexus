@@ -83,7 +83,9 @@ export const useStoriesData = () => {
       }
 
       const filteredData = (data as any[]).filter(isUserStoryRecord);
-      const processedStories = filteredData.map(formatStoryWithAuthor);
+      const processedStories = filteredData.map((story: any) => {
+        return formatStoryWithAuthor(story, null);
+      });
       setUserStories(processedStories);
     } catch (error) {
       console.error('Error fetching user stories:', error);
