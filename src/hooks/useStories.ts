@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -136,9 +135,10 @@ export const useStories = () => {
         return;
       }
 
-      // Filter to expected objects only
+      // Filter out only objects matching UserStory record shape!
       const filteredData = (data as any[]).filter(isUserStoryRecord);
 
+      // Do the mapping *only* on filteredData!
       const processedStories: UserStory[] = filteredData.map((story: any) => ({
         ...story,
         content_type: (story.content_type as 'text' | 'image' | 'video') || 'text',
