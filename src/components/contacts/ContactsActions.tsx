@@ -30,12 +30,10 @@ const ContactsActions: React.FC<ContactsActionsProps> = ({
 
       <ContactsQuickActions onAddContact={onShowFriendSearch} />
 
-      {showFriendSearchDialog && (
-        <FriendSearchDialog
-          isOpen={showFriendSearchDialog}
-          onClose={onCloseFriendSearch}
-        />
-      )}
+      <FriendSearchDialog
+        isOpen={showFriendSearchDialog}
+        onClose={onCloseFriendSearch}
+      />
     </>
   );
 };
