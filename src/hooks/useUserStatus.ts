@@ -21,7 +21,7 @@ export const useUserStatus = () => {
     if (!user) return;
 
     try {
-      // Direct insert/update to user_status table using raw query since types aren't updated yet
+      // Try to upsert to user_status table
       const { error } = await supabase
         .from('user_status' as any)
         .upsert({
@@ -32,9 +32,20 @@ export const useUserStatus = () => {
           updated_at: new Date().toISOString()
         });
 
-      if (!error) {
-        setMyStatus(status);
+      if (error) {
+        console.log('User status table not available, updating profile instead');
+        // Fallback to updating profile
+        await supabase
+          .from('profiles')
+          .update({ 
+            status: status,
+            last_seen: new Date().toISOString(),
+            is_online: status === 'online'
+          })
+          .eq('id', user.id);
       }
+
+      setMyStatus(status);
     } catch (error) {
       console.error('Error updating status:', error);
       // Fallback to local state
@@ -46,7 +57,7 @@ export const useUserStatus = () => {
     if (userIds.length === 0) return;
 
     try {
-      // Try to fetch from the new user_status table
+      // Try to fetch from the new user_status table first
       const { data, error } = await supabase
         .from('user_status' as any)
         .select('*')
@@ -66,18 +77,25 @@ export const useUserStatus = () => {
         });
         setUserStatuses(prev => ({ ...prev, ...statusMap }));
       } else {
-        // Fallback to simulated data if table doesn't exist yet
-        const statusMap: Record<string, UserStatus> = {};
-        userIds.forEach(userId => {
-          statusMap[userId] = {
-            id: `status-${userId}`,
-            user_id: userId,
-            status: 'online',
-            last_seen: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          };
-        });
-        setUserStatuses(prev => ({ ...prev, ...statusMap }));
+        // Fallback to profiles table
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('id, status, last_seen, is_online')
+          .in('id', userIds);
+
+        if (profileData) {
+          const statusMap: Record<string, UserStatus> = {};
+          profileData.forEach(profile => {
+            statusMap[profile.id] = {
+              id: `status-${profile.id}`,
+              user_id: profile.id,
+              status: profile.is_online ? 'online' : (profile.status as any) || 'offline',
+              last_seen: profile.last_seen || new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+          });
+          setUserStatuses(prev => ({ ...prev, ...statusMap }));
+        }
       }
     } catch (error) {
       console.error('Error fetching user statuses:', error);

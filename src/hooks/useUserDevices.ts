@@ -7,14 +7,14 @@ import { useToast } from './use-toast';
 export interface UserDevice {
   id: string;
   user_id: string;
-  device_name: string;
   device_id: string;
+  device_name: string;
   device_key: string;
   platform: 'ios' | 'android' | 'desktop' | 'web';
-  push_token?: string;
-  last_active: string;
   is_primary: boolean;
+  last_active: string;
   created_at: string;
+  push_token?: string;
 }
 
 export const useUserDevices = () => {
@@ -35,42 +35,43 @@ export const useUserDevices = () => {
 
       if (error) throw error;
 
+      // Process the data to ensure platform matches the expected type
       const processedDevices = (data || []).map(device => ({
         ...device,
-        platform: (device.platform as 'ios' | 'android' | 'desktop' | 'web') || 'web'
-      })) as UserDevice[];
+        platform: ['ios', 'android', 'desktop', 'web'].includes(device.platform) 
+          ? device.platform as 'ios' | 'android' | 'desktop' | 'web'
+          : 'web' // default fallback
+      }));
 
       setDevices(processedDevices);
     } catch (error) {
       console.error('Error fetching devices:', error);
-      toast({
-        title: 'Błąd',
-        description: 'Nie udało się załadować urządzeń',
-        variant: 'destructive'
-      });
     } finally {
       setLoading(false);
     }
   };
 
-  const registerDevice = async (deviceInfo: {
-    device_name: string;
-    device_id: string;
-    platform: 'ios' | 'android' | 'desktop' | 'web';
-    push_token?: string;
-  }) => {
+  const registerDevice = async (
+    deviceId: string,
+    deviceName: string,
+    platform: 'ios' | 'android' | 'desktop' | 'web',
+    deviceKey: string,
+    pushToken?: string
+  ) => {
     if (!user) return;
 
     try {
-      // Generate device key for encryption
-      const deviceKey = crypto.randomUUID();
-
       const { data, error } = await supabase
         .from('user_devices')
-        .insert({
+        .upsert({
           user_id: user.id,
+          device_id: deviceId,
+          device_name: deviceName,
+          platform: platform,
           device_key: deviceKey,
-          ...deviceInfo
+          push_token: pushToken,
+          last_active: new Date().toISOString(),
+          is_primary: devices.length === 0 // First device is primary
         })
         .select()
         .single();
@@ -79,16 +80,25 @@ export const useUserDevices = () => {
 
       const processedDevice = {
         ...data,
-        platform: data.platform as 'ios' | 'android' | 'desktop' | 'web'
-      } as UserDevice;
+        platform: ['ios', 'android', 'desktop', 'web'].includes(data.platform) 
+          ? data.platform as 'ios' | 'android' | 'desktop' | 'web'
+          : 'web'
+      };
 
-      setDevices(prev => [processedDevice, ...prev]);
+      setDevices(prev => {
+        const existingIndex = prev.findIndex(d => d.device_id === deviceId);
+        if (existingIndex >= 0) {
+          const updated = [...prev];
+          updated[existingIndex] = processedDevice;
+          return updated;
+        }
+        return [processedDevice, ...prev];
+      });
+
       toast({
         title: 'Sukces',
         description: 'Urządzenie zostało zarejestrowane'
       });
-
-      return processedDevice;
     } catch (error) {
       console.error('Error registering device:', error);
       toast({
@@ -100,15 +110,19 @@ export const useUserDevices = () => {
   };
 
   const removeDevice = async (deviceId: string) => {
+    if (!user) return;
+
     try {
       const { error } = await supabase
         .from('user_devices')
         .delete()
-        .eq('id', deviceId);
+        .eq('device_id', deviceId)
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
-      setDevices(prev => prev.filter(d => d.id !== deviceId));
+      setDevices(prev => prev.filter(device => device.device_id !== deviceId));
+
       toast({
         title: 'Sukces',
         description: 'Urządzenie zostało usunięte'
@@ -123,16 +137,55 @@ export const useUserDevices = () => {
     }
   };
 
-  const updateLastActive = async (deviceId: string) => {
+  const setPrimaryDevice = async (deviceId: string) => {
+    if (!user) return;
+
     try {
+      // First, remove primary status from all devices
+      await supabase
+        .from('user_devices')
+        .update({ is_primary: false })
+        .eq('user_id', user.id);
+
+      // Then set the selected device as primary
       const { error } = await supabase
         .from('user_devices')
-        .update({ last_active: new Date().toISOString() })
-        .eq('id', deviceId);
+        .update({ is_primary: true })
+        .eq('device_id', deviceId)
+        .eq('user_id', user.id);
 
       if (error) throw error;
+
+      setDevices(prev => prev.map(device => ({
+        ...device,
+        is_primary: device.device_id === deviceId
+      })));
+
+      toast({
+        title: 'Sukces',
+        description: 'Urządzenie zostało ustawione jako główne'
+      });
     } catch (error) {
-      console.error('Error updating device activity:', error);
+      console.error('Error setting primary device:', error);
+      toast({
+        title: 'Błąd',
+        description: 'Nie udało się ustawić urządzenia jako głównego',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const updateLastActive = async (deviceId: string) => {
+    if (!user) return;
+
+    try {
+      await supabase
+        .from('user_devices')
+        .update({ last_active: new Date().toISOString() })
+        .eq('device_id', deviceId)
+        .eq('user_id', user.id);
+    } catch (error) {
+      console.error('Error updating last active:', error);
     }
   };
 
@@ -145,6 +198,7 @@ export const useUserDevices = () => {
     loading,
     registerDevice,
     removeDevice,
+    setPrimaryDevice,
     updateLastActive,
     refetch: fetchDevices
   };

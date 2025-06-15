@@ -47,8 +47,20 @@ export const useStories = () => {
     if (!user) return;
 
     try {
+      // First check if user_stories table exists
+      const { data: tableCheck } = await supabase
+        .from('user_stories' as any)
+        .select('id')
+        .limit(1);
+
+      if (!tableCheck) {
+        console.log('User stories table not found');
+        setStories([]);
+        return;
+      }
+
       const { data, error } = await supabase
-        .from('user_stories')
+        .from('user_stories' as any)
         .select(`
           *,
           author:profiles!user_stories_user_id_fkey(username, display_name, avatar_url),
@@ -58,7 +70,10 @@ export const useStories = () => {
         .in('visibility', ['public', 'contacts'])
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching stories:', error);
+        return;
+      }
 
       const processedStories = (data || []).map(story => ({
         ...story,
@@ -81,13 +96,16 @@ export const useStories = () => {
 
     try {
       const { data, error } = await supabase
-        .from('user_stories')
+        .from('user_stories' as any)
         .select('*')
         .eq('user_id', user.id)
         .gt('expires_at', new Date().toISOString())
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching user stories:', error);
+        return;
+      }
       
       const processedStories = (data || []).map(story => ({
         ...story,
@@ -118,7 +136,7 @@ export const useStories = () => {
 
     try {
       const { data, error } = await supabase
-        .from('user_stories')
+        .from('user_stories' as any)
         .insert({
           user_id: user.id,
           content_type: contentType,
@@ -165,7 +183,7 @@ export const useStories = () => {
 
     try {
       const { error } = await supabase
-        .from('story_views')
+        .from('story_views' as any)
         .upsert({
           story_id: storyId,
           viewer_id: user.id,
@@ -174,13 +192,18 @@ export const useStories = () => {
 
       if (error) throw error;
 
-      // Update view count directly
-      const currentStory = stories.find(s => s.id === storyId);
-      if (currentStory) {
-        await supabase
-          .from('user_stories')
-          .update({ view_count: (currentStory.view_count || 0) + 1 })
-          .eq('id', storyId);
+      // Try to update view count with the available RPC function
+      try {
+        await supabase.rpc('increment_story_view_count', { p_story_id: storyId });
+      } catch (rpcError) {
+        console.log('RPC function not available, updating directly');
+        const currentStory = stories.find(s => s.id === storyId);
+        if (currentStory) {
+          await supabase
+            .from('user_stories' as any)
+            .update({ view_count: (currentStory.view_count || 0) + 1 })
+            .eq('id', storyId);
+        }
       }
 
       setStories(prev => prev.map(story => 
@@ -198,7 +221,7 @@ export const useStories = () => {
 
     try {
       const { error } = await supabase
-        .from('user_stories')
+        .from('user_stories' as any)
         .delete()
         .eq('id', storyId)
         .eq('user_id', user.id);
@@ -225,7 +248,7 @@ export const useStories = () => {
 
     try {
       const { data, error } = await supabase
-        .from('story_views')
+        .from('story_views' as any)
         .select(`
           *,
           viewer:profiles!story_views_viewer_id_fkey(username, display_name, avatar_url)

@@ -618,7 +618,22 @@ export type Database = {
           user_id?: string
           verified_safety_number?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "contacts_contact_user_id_fkey"
+            columns: ["contact_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contacts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       conversation_analytics: {
         Row: {
@@ -2736,6 +2751,10 @@ export type Database = {
         Args: { group_name: string; user_id: string }
         Returns: string
       }
+      decrement_subscriber_count: {
+        Args: { p_channel_id: string }
+        Returns: undefined
+      }
       delete_contact: {
         Args: { contact_id: string }
         Returns: undefined
@@ -2772,8 +2791,24 @@ export type Database = {
         Args: { "": unknown }
         Returns: unknown
       }
+      increment_story_view_count: {
+        Args: { p_story_id: string }
+        Returns: undefined
+      }
+      increment_subscriber_count: {
+        Args: { p_channel_id: string }
+        Returns: undefined
+      }
+      increment_vote_count: {
+        Args: { p_option_id: string }
+        Returns: undefined
+      }
       is_admin: {
         Args: { check_user_id: string }
+        Returns: boolean
+      }
+      is_member_of: {
+        Args: { p_conversation_id: string }
         Returns: boolean
       }
       login_user: {

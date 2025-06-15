@@ -8,14 +8,12 @@ export interface EnhancedContact {
   id: string;
   user_id: string;
   contact_user_id: string;
+  status: 'pending' | 'accepted' | 'blocked';
   nickname?: string;
-  is_blocked: boolean;
   is_favorite: boolean;
-  verified_safety_number?: string;
-  status: string;
+  is_blocked: boolean;
   added_at: string;
-  created_at: string;
-  contact_profile?: {
+  profile: {
     username: string;
     display_name?: string;
     avatar_url?: string;
@@ -24,23 +22,13 @@ export interface EnhancedContact {
     status: string;
     is_verified: boolean;
   };
-}
-
-export interface ContactVerification {
-  id: string;
-  user1_id: string;
-  user2_id: string;
-  safety_number: string;
-  is_verified: boolean;
-  verified_at?: string;
-  created_at: string;
+  mutual_contacts_count?: number;
+  last_conversation_at?: string;
+  unread_messages_count?: number;
 }
 
 export const useEnhancedContacts = () => {
   const [contacts, setContacts] = useState<EnhancedContact[]>([]);
-  const [blockedContacts, setBlockedContacts] = useState<EnhancedContact[]>([]);
-  const [favoriteContacts, setFavoriteContacts] = useState<EnhancedContact[]>([]);
-  const [verifications, setVerifications] = useState<ContactVerification[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -64,63 +52,163 @@ export const useEnhancedContacts = () => {
           )
         `)
         .eq('user_id', user.id)
-        .eq('status', 'accepted');
+        .order('added_at', { ascending: false });
 
       if (error) throw error;
 
-      const processedContacts = (data || [])
-        .filter(contact => contact.contact_profile !== null)
-        .map(contact => ({
-          ...contact,
-          contact_profile: contact.contact_profile && typeof contact.contact_profile === 'object' && !Array.isArray(contact.contact_profile)
-            ? contact.contact_profile as EnhancedContact['contact_profile']
-            : {
-                username: 'Unknown',
-                display_name: 'Unknown User',
-                avatar_url: '',
-                is_online: false,
-                last_seen: new Date().toISOString(),
-                status: 'offline',
-                is_verified: false
-              }
-        })) as EnhancedContact[];
+      const processedContacts = (data || []).map(contact => {
+        // Handle the case where contact_profile might be an error object
+        let profile;
+        if (contact.contact_profile && typeof contact.contact_profile === 'object' && !Array.isArray(contact.contact_profile)) {
+          // Check if it's an error object
+          if ('error' in contact.contact_profile) {
+            profile = {
+              username: 'Unknown',
+              display_name: 'Unknown User',
+              avatar_url: '',
+              is_online: false,
+              last_seen: new Date().toISOString(),
+              status: 'offline',
+              is_verified: false
+            };
+          } else {
+            profile = contact.contact_profile as EnhancedContact['profile'];
+          }
+        } else {
+          profile = {
+            username: 'Unknown',
+            display_name: 'Unknown User',
+            avatar_url: '',
+            is_online: false,
+            last_seen: new Date().toISOString(),
+            status: 'offline',
+            is_verified: false
+          };
+        }
 
-      setContacts(processedContacts.filter(c => !c.is_blocked));
-      setBlockedContacts(processedContacts.filter(c => c.is_blocked));
-      setFavoriteContacts(processedContacts.filter(c => c.is_favorite && !c.is_blocked));
+        return {
+          ...contact,
+          profile
+        };
+      }) as EnhancedContact[];
+
+      setContacts(processedContacts);
     } catch (error) {
-      console.error('Error fetching enhanced contacts:', error);
+      console.error('Error fetching contacts:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchVerifications = async () => {
+  const addContact = async (username: string, message?: string) => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
-        .from('contact_verifications')
-        .select('*')
-        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
+      // First find the user by username
+      const { data: targetUser, error: userError } = await supabase
+        .from('profiles')
+        .select('id, username')
+        .eq('username', username)
+        .single();
+
+      if (userError || !targetUser) {
+        toast({
+          title: 'Błąd',
+          description: 'Nie znaleziono użytkownika o tej nazwie',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // Check if contact already exists
+      const { data: existingContact } = await supabase
+        .from('contacts')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('contact_user_id', targetUser.id)
+        .single();
+
+      if (existingContact) {
+        toast({
+          title: 'Informacja',
+          description: 'Ten kontakt już istnieje',
+          variant: 'default'
+        });
+        return;
+      }
+
+      // Create friend request
+      const { error: requestError } = await supabase
+        .from('friend_requests')
+        .insert({
+          sender_id: user.id,
+          receiver_id: targetUser.id,
+          status: 'pending',
+          message: message || 'Chcę dodać Cię do znajomych'
+        });
+
+      if (requestError) throw requestError;
+
+      toast({
+        title: 'Sukces',
+        description: 'Zaproszenie zostało wysłane'
+      });
+    } catch (error) {
+      console.error('Error adding contact:', error);
+      toast({
+        title: 'Błąd',
+        description: 'Nie udało się wysłać zaproszenia',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const removeContact = async (contactId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('contacts')
+        .delete()
+        .eq('id', contactId)
+        .eq('user_id', user.id);
 
       if (error) throw error;
-      setVerifications(data || []);
+
+      setContacts(prev => prev.filter(contact => contact.id !== contactId));
+
+      toast({
+        title: 'Sukces',
+        description: 'Kontakt został usunięty'
+      });
     } catch (error) {
-      console.error('Error fetching verifications:', error);
+      console.error('Error removing contact:', error);
+      toast({
+        title: 'Błąd',
+        description: 'Nie udało się usunąć kontaktu',
+        variant: 'destructive'
+      });
     }
   };
 
   const blockContact = async (contactId: string) => {
+    if (!user) return;
+
     try {
       const { error } = await supabase
         .from('contacts')
-        .update({ is_blocked: true })
-        .eq('id', contactId);
+        .update({ is_blocked: true, status: 'blocked' })
+        .eq('id', contactId)
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
-      await fetchContacts();
+      setContacts(prev => prev.map(contact => 
+        contact.id === contactId 
+          ? { ...contact, is_blocked: true, status: 'blocked' }
+          : contact
+      ));
+
       toast({
         title: 'Sukces',
         description: 'Kontakt został zablokowany'
@@ -136,15 +224,23 @@ export const useEnhancedContacts = () => {
   };
 
   const unblockContact = async (contactId: string) => {
+    if (!user) return;
+
     try {
       const { error } = await supabase
         .from('contacts')
-        .update({ is_blocked: false })
-        .eq('id', contactId);
+        .update({ is_blocked: false, status: 'accepted' })
+        .eq('id', contactId)
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
-      await fetchContacts();
+      setContacts(prev => prev.map(contact => 
+        contact.id === contactId 
+          ? { ...contact, is_blocked: false, status: 'accepted' }
+          : contact
+      ));
+
       toast({
         title: 'Sukces',
         description: 'Kontakt został odblokowany'
@@ -159,46 +255,65 @@ export const useEnhancedContacts = () => {
     }
   };
 
-  const toggleFavorite = async (contactId: string, isFavorite: boolean) => {
+  const toggleFavorite = async (contactId: string) => {
+    if (!user) return;
+
     try {
+      const contact = contacts.find(c => c.id === contactId);
+      if (!contact) return;
+
       const { error } = await supabase
         .from('contacts')
-        .update({ is_favorite: isFavorite })
-        .eq('id', contactId);
+        .update({ is_favorite: !contact.is_favorite })
+        .eq('id', contactId)
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
-      await fetchContacts();
+      setContacts(prev => prev.map(c => 
+        c.id === contactId 
+          ? { ...c, is_favorite: !c.is_favorite }
+          : c
+      ));
+
       toast({
         title: 'Sukces',
-        description: isFavorite ? 'Dodano do ulubionych' : 'Usunięto z ulubionych'
+        description: contact.is_favorite ? 'Usunięto z ulubionych' : 'Dodano do ulubionych'
       });
     } catch (error) {
       console.error('Error toggling favorite:', error);
       toast({
         title: 'Błąd',
-        description: 'Nie udało się zaktualizować ulubionego',
+        description: 'Nie udało się zmienić statusu ulubionego',
         variant: 'destructive'
       });
     }
   };
 
-  const setNickname = async (contactId: string, nickname: string) => {
+  const updateNickname = async (contactId: string, nickname: string) => {
+    if (!user) return;
+
     try {
       const { error } = await supabase
         .from('contacts')
         .update({ nickname: nickname || null })
-        .eq('id', contactId);
+        .eq('id', contactId)
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
-      await fetchContacts();
+      setContacts(prev => prev.map(contact => 
+        contact.id === contactId 
+          ? { ...contact, nickname }
+          : contact
+      ));
+
       toast({
         title: 'Sukces',
         description: 'Pseudonim został zaktualizowany'
       });
     } catch (error) {
-      console.error('Error setting nickname:', error);
+      console.error('Error updating nickname:', error);
       toast({
         title: 'Błąd',
         description: 'Nie udało się zaktualizować pseudonimu',
@@ -207,102 +322,47 @@ export const useEnhancedContacts = () => {
     }
   };
 
-  const generateSafetyNumber = async (contactUserId: string) => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase.rpc('generate_safety_number', {
-        user1_uuid: user.id,
-        user2_uuid: contactUserId
-      });
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Error generating safety number:', error);
-      return null;
-    }
+  const searchContacts = (query: string) => {
+    return contacts.filter(contact => 
+      contact.profile.username.toLowerCase().includes(query.toLowerCase()) ||
+      contact.profile.display_name?.toLowerCase().includes(query.toLowerCase()) ||
+      contact.nickname?.toLowerCase().includes(query.toLowerCase())
+    );
   };
 
-  const verifyContact = async (contactUserId: string, userEnteredNumber: string) => {
-    if (!user) return;
-
-    try {
-      const actualSafetyNumber = await generateSafetyNumber(contactUserId);
-      
-      if (!actualSafetyNumber) {
-        throw new Error('Could not generate safety number');
-      }
-
-      const isValid = actualSafetyNumber === userEnteredNumber;
-
-      if (isValid) {
-        const { error } = await supabase
-          .from('contact_verifications')
-          .upsert({
-            user1_id: user.id < contactUserId ? user.id : contactUserId,
-            user2_id: user.id < contactUserId ? contactUserId : user.id,
-            safety_number: actualSafetyNumber,
-            is_verified: true,
-            verified_at: new Date().toISOString()
-          });
-
-        if (error) throw error;
-
-        await fetchVerifications();
-        toast({
-          title: 'Sukces',
-          description: 'Kontakt został zweryfikowany'
-        });
-      } else {
-        toast({
-          title: 'Błąd weryfikacji',
-          description: 'Podany numer bezpieczeństwa jest nieprawidłowy',
-          variant: 'destructive'
-        });
-      }
-
-      return isValid;
-    } catch (error) {
-      console.error('Error verifying contact:', error);
-      toast({
-        title: 'Błąd',
-        description: 'Nie udało się zweryfikować kontaktu',
-        variant: 'destructive'
-      });
-      return false;
-    }
+  const getContactsByStatus = (status: 'pending' | 'accepted' | 'blocked') => {
+    return contacts.filter(contact => contact.status === status);
   };
 
-  const getVerificationStatus = (contactUserId: string): ContactVerification | null => {
-    if (!user) return null;
+  const getFavoriteContacts = () => {
+    return contacts.filter(contact => contact.is_favorite && contact.status === 'accepted');
+  };
 
-    return verifications.find(v => 
-      (v.user1_id === user.id && v.user2_id === contactUserId) ||
-      (v.user1_id === contactUserId && v.user2_id === user.id)
-    ) || null;
+  const getOnlineContacts = () => {
+    return contacts.filter(contact => 
+      contact.profile.is_online && 
+      contact.status === 'accepted' && 
+      !contact.is_blocked
+    );
   };
 
   useEffect(() => {
-    const fetchData = async () => {
-      await Promise.all([fetchContacts(), fetchVerifications()]);
-    };
-    fetchData();
+    fetchContacts();
   }, [user]);
 
   return {
     contacts,
-    blockedContacts,
-    favoriteContacts,
-    verifications,
     loading,
+    addContact,
+    removeContact,
     blockContact,
     unblockContact,
     toggleFavorite,
-    setNickname,
-    generateSafetyNumber,
-    verifyContact,
-    getVerificationStatus,
-    refetch: () => Promise.all([fetchContacts(), fetchVerifications()])
+    updateNickname,
+    searchContacts,
+    getContactsByStatus,
+    getFavoriteContacts,
+    getOnlineContacts,
+    refetch: fetchContacts
   };
 };
