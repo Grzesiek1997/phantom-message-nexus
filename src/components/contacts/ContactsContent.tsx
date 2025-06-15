@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { MessageCircle, Phone, Trash2, UserPlus, UserX, Check, Clock, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -66,6 +65,7 @@ const ContactsContent: React.FC<ContactsContentProps> = ({
     return null;
   };
 
+  // Dodajemy buttony do akceptacji/odrzucenia bezpośrednio przy kontakcie, jeśli jest niezaakceptowany
   const renderFriends = () => {
     if (contacts.length === 0) {
       return (
@@ -92,12 +92,32 @@ const ContactsContent: React.FC<ContactsContentProps> = ({
                   <h3 className="font-medium text-white">{contact.profile.display_name}</h3>
                   <p className="text-sm text-gray-400">@{contact.profile.username}</p>
                   <div className="mt-1">
+                    {/* status */}
                     {getStatusBadge(contact)}
                   </div>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
-                {contact.can_chat ? (
+                {contact.friend_request_status === 'pending' && contact.friend_request_id ? (
+                  <>
+                    <Button
+                      size="sm"
+                      onClick={() => onAcceptRequest(contact.friend_request_id)}
+                      className="bg-green-500 hover:bg-green-600"
+                      title="Akceptuj zaproszenie"
+                    >
+                      Akceptuj
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => onRejectRequest(contact.friend_request_id)}
+                      className="bg-red-500 hover:bg-red-600"
+                      title="Odrzuć zaproszenie"
+                    >
+                      Odrzuć
+                    </Button>
+                  </>
+                ) : contact.can_chat ? (
                   <>
                     <Button
                       size="sm"

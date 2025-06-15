@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -38,18 +37,17 @@ export const useFriendRequests = () => {
       setLoading(true);
       console.log('Fetching friend requests for user:', user.id);
 
-      // Pobierz otrzymane zaproszenia
+      // ZMODYFIKOWANE POBIERANIE: pobierz WSZYSTKIE zaproszenia gdzie odbiorca to user (nieważne jaki status)
       const { data: receivedData, error: receivedError } = await supabase
         .from('friend_requests')
         .select('*')
-        .eq('receiver_id', user.id)
-        .eq('status', 'pending');
+        .eq('receiver_id', user.id);
 
       if (receivedError) {
         console.error('Error fetching received requests:', receivedError);
       }
 
-      // Pobierz wysłane zaproszenia
+      // Wysłane zaproszenia bez zmian
       const { data: sentData, error: sentError } = await supabase
         .from('friend_requests')
         .select('*')
@@ -59,7 +57,7 @@ export const useFriendRequests = () => {
         console.error('Error fetching sent requests:', sentError);
       }
 
-      // Pobierz profile dla otrzymanych zaproszeń
+      // Profile dla otrzymanych zaproszeń (niezależnie od statusu)
       if (receivedData && receivedData.length > 0) {
         const senderIds = receivedData.map(req => req.sender_id);
         const { data: senderProfiles } = await supabase
@@ -81,7 +79,7 @@ export const useFriendRequests = () => {
         setReceivedRequests([]);
       }
 
-      // Pobierz profile dla wysłanych zaproszeń
+      // Wysłane z profilem bez zmian
       if (sentData && sentData.length > 0) {
         const receiverIds = sentData.map(req => req.receiver_id);
         const { data: receiverProfiles } = await supabase

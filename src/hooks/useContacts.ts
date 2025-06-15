@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -86,6 +85,31 @@ export const useContacts = () => {
 
         setContacts(formattedContacts);
       }
+
+      // UPEWNIJ SIĘ, że KAŻDY kontakt ma friend_request_status, które oddaje aktualny status relacji z innym użytkownikiem
+      // tzn. nawet jak nie zaakceptowane, to będzie info o oczekiwaniu lub odrzuceniu, poprzez łączenie z friend_requests
+
+      // Pobierz otrzymane zaproszenia
+      const { data: receivedRequests, error: receivedRequestsError } = await supabase
+        .from('friend_requests')
+        .select('*')
+        .eq('receiver_id', user.id);
+
+      // Dodaj info o zaproszeniach do istniejących kontaktów (logic merge by contact_user_id)
+      setContacts(prevContacts => 
+        prevContacts.map(contact => {
+          const req = receivedRequests?.find(
+            (fr: any) => fr.sender_id === contact.contact_user_id
+          );
+          return req
+            ? {
+                ...contact,
+                friend_request_status: req.status as 'pending' | 'accepted' | 'rejected',
+                friend_request_id: req.id // PRZEKAZUJ ID zaproszenia do Accept/Reject
+              }
+            : contact;
+        })
+      );
 
       // Pobierz wysłane zaproszenia
       const { data: sentRequestsData, error: sentRequestsError } = await supabase

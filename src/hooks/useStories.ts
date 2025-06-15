@@ -135,10 +135,10 @@ export const useStories = () => {
         return;
       }
 
-      // Filter out only objects matching UserStory record shape!
+      // Ważne: Filtrujemy TYLKO obiekty faktycznych historii
       const filteredData = (data as any[]).filter(isUserStoryRecord);
 
-      // Do the mapping *only* on filteredData!
+      // Mapowanie tylko filteredData!
       const processedStories: UserStory[] = filteredData.map((story: any) => ({
         ...story,
         content_type: (story.content_type as 'text' | 'image' | 'video') || 'text',

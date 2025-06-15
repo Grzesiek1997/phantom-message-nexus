@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useContacts } from '@/hooks/useContacts';
@@ -33,13 +32,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     if (otherUserId && user) {
       // Sprawdź status znajomości
       const contact = contacts.find(c => c.contact_user_id === otherUserId);
-      
+
       if (contact) {
         if (contact.can_chat && contact.status === 'accepted') {
           setFriendshipStatus('accepted');
           setCanSendMessages(true);
-        } else {
+        } else if(contact.friend_request_status === 'pending') {
           setFriendshipStatus('pending');
+          setCanSendMessages(false);
+        } else {
+          setFriendshipStatus('none');
           setCanSendMessages(false);
         }
       } else {
