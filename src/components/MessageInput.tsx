@@ -1,16 +1,20 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Send, Paperclip, Smile } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Send, X } from 'lucide-react';
+import { useTypingIndicator } from '@/hooks/useTypingIndicator';
+import AttachmentUpload from './AttachmentUpload';
 
 interface MessageInputProps {
   messageInput: string;
-  replyingTo: string | null;
+  replyingTo?: string | null;
   replyingToMessage?: { content: string };
-  onMessageChange: (message: string) => void;
+  onMessageChange: (value: string) => void;
   onSendMessage: () => void;
-  onCancelReply: () => void;
+  onCancelReply?: () => void;
+  conversationId?: string;
+  disabled?: boolean;
 }
 
 const MessageInput: React.FC<MessageInputProps> = ({
@@ -19,18 +23,13 @@ const MessageInput: React.FC<MessageInputProps> = ({
   replyingToMessage,
   onMessageChange,
   onSendMessage,
-  onCancelReply
+  onCancelReply,
+  conversationId,
+  disabled = false
 }) => {
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-
-  const commonEmojis = [
-    '😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊', '😇', '🙂', 
-    '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛',
-    '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏',
-    '👍', '👎', '👌', '✌️', '🤞', '🤟', '🤘', '👏', '🙌', '👐',
-    '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔',
-    '💯', '🔥', '⭐', '✨', '💎', '🎉', '🎊', '🎈', '🎁', '🏆'
-  ];
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { startTyping, stopTyping } = useTypingIndicator(conversationId);
+  const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -39,87 +38,103 @@ const MessageInput: React.FC<MessageInputProps> = ({
     }
   };
 
-  const handleEmojiClick = (emoji: string) => {
-    onMessageChange(messageInput + emoji);
-    setShowEmojiPicker(false);
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    onMessageChange(value);
+
+    // Handle typing indicators
+    if (value.trim() && conversationId) {
+      startTyping();
+      
+      // Clear existing timeout
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
+      }
+      
+      // Set new timeout to stop typing after 2 seconds of inactivity
+      const newTimeout = setTimeout(() => {
+        stopTyping();
+      }, 2000);
+      
+      setTypingTimeout(newTimeout);
+    } else if (conversationId) {
+      stopTyping();
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
+        setTypingTimeout(null);
+      }
+    }
   };
 
+  // Cleanup typing indicator on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
+      }
+      stopTyping();
+    };
+  }, [typingTimeout, stopTyping]);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  }, [messageInput]);
+
   return (
-    <div>
-      {/* Reply Preview */}
+    <div className="border-t border-gray-700 p-4">
       {replyingTo && replyingToMessage && (
-        <div className="px-4 py-2 bg-gray-800/50 border-t border-white/10">
-          <div className="flex items-center justify-between bg-gray-700/50 rounded p-2">
-            <div className="flex-1">
-              <p className="text-xs text-gray-400">Odpowiadasz na:</p>
-              <p className="text-sm text-white truncate">
-                {replyingToMessage.content}
-              </p>
-            </div>
+        <div className="mb-3 p-3 bg-gray-700/50 rounded-lg flex items-start justify-between">
+          <div className="flex-1">
+            <p className="text-sm text-blue-400 mb-1">Odpowiadasz na:</p>
+            <p className="text-sm text-gray-300 truncate">
+              {replyingToMessage.content}
+            </p>
+          </div>
+          {onCancelReply && (
             <Button
-              size="sm"
               variant="ghost"
+              size="sm"
               onClick={onCancelReply}
-              className="text-gray-400 hover:text-white"
+              className="text-gray-400 hover:text-white ml-2"
             >
-              ✕
+              <X className="w-4 h-4" />
             </Button>
-          </div>
+          )}
         </div>
       )}
-
-      {/* Emoji Picker */}
-      {showEmojiPicker && (
-        <div className="p-4 bg-gray-800/90 border-t border-white/10">
-          <div className="grid grid-cols-10 gap-2 max-h-32 overflow-y-auto">
-            {commonEmojis.map((emoji, index) => (
-              <Button
-                key={index}
-                variant="ghost"
-                size="sm"
-                onClick={() => handleEmojiClick(emoji)}
-                className="text-xl hover:bg-white/10 h-8 w-8 p-0"
-              >
-                {emoji}
-              </Button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Message Input */}
-      <div className="p-4 bg-black/20 backdrop-blur-sm border-t border-white/10">
-        <div className="flex items-center space-x-2">
-          <Button
-            size="sm"
-            variant="ghost"
-            className="text-white hover:bg-white/10"
-          >
-            <Paperclip className="w-4 h-4" />
-          </Button>
-          <Input
+      
+      <div className="flex items-end space-x-2">
+        <AttachmentUpload
+          disabled={disabled}
+          onAttachmentUploaded={(attachment) => {
+            console.log('Attachment uploaded:', attachment);
+          }}
+        />
+        
+        <div className="flex-1">
+          <Textarea
+            ref={textareaRef}
             value={messageInput}
-            onChange={(e) => onMessageChange(e.target.value)}
+            onChange={handleInputChange}
             onKeyPress={handleKeyPress}
             placeholder="Napisz wiadomość..."
-            className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+            disabled={disabled}
+            className="min-h-[44px] max-h-32 resize-none bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-500"
+            rows={1}
           />
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            className={`text-white hover:bg-white/10 ${showEmojiPicker ? 'bg-white/10' : ''}`}
-          >
-            <Smile className="w-4 h-4" />
-          </Button>
-          <Button
-            onClick={onSendMessage}
-            disabled={!messageInput.trim()}
-            className="bg-blue-500 hover:bg-blue-600 disabled:opacity-50"
-          >
-            <Send className="w-4 h-4" />
-          </Button>
         </div>
+        
+        <Button
+          onClick={onSendMessage}
+          disabled={disabled || !messageInput.trim()}
+          className="bg-blue-600 hover:bg-blue-700 text-white"
+        >
+          <Send className="w-4 h-4" />
+        </Button>
       </div>
     </div>
   );

@@ -1,9 +1,11 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Message } from '@/types/chat';
 import { useMessageReactions } from '@/hooks/useMessageReactions';
+import { useMessageReadStatus } from '@/hooks/useMessageReadStatus';
 import MessageReactions from './MessageReactions';
 import ReactionPicker from './ReactionPicker';
+import MessageReadIndicator from './MessageReadIndicator';
 import UserStatusIndicator from './UserStatusIndicator';
 import { useUserStatus } from '@/hooks/useUserStatus';
 import { formatDistanceToNow } from 'date-fns';
@@ -12,6 +14,7 @@ import { pl } from 'date-fns/locale';
 interface MessageBubbleProps {
   message: Message;
   currentUserId: string;
+  conversationParticipants?: string[];
   onReply?: (messageId: string) => void;
   onReact?: (messageId: string, emoji: string) => void;
 }
@@ -19,14 +22,23 @@ interface MessageBubbleProps {
 const MessageBubble: React.FC<MessageBubbleProps> = ({
   message,
   currentUserId,
+  conversationParticipants = [],
   onReply,
   onReact
 }) => {
   const isOwn = message.sender_id === currentUserId;
   const { reactions, toggleReaction } = useMessageReactions([message.id]);
+  const { markAsRead } = useMessageReadStatus();
   const { userStatuses } = useUserStatus();
   const messageReactions = reactions[message.id] || [];
   const senderStatus = userStatuses[message.sender_id];
+
+  // Mark message as read when it's displayed and not from current user
+  useEffect(() => {
+    if (!isOwn) {
+      markAsRead(message.id);
+    }
+  }, [message.id, isOwn, markAsRead]);
 
   const handleReactionSelect = (reactionType: string) => {
     toggleReaction(message.id, reactionType);
@@ -78,6 +90,15 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             )}
             
             <ReactionPicker onReactionSelect={handleReactionSelect} />
+            
+            {isOwn && (
+              <MessageReadIndicator
+                messageId={message.id}
+                senderId={message.sender_id}
+                currentUserId={currentUserId}
+                conversationParticipants={conversationParticipants}
+              />
+            )}
           </div>
         </div>
 

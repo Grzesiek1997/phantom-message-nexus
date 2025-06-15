@@ -3,9 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { useMessages } from '@/hooks/useMessages';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserStatus } from '@/hooks/useUserStatus';
+import { useMessageReadStatus } from '@/hooks/useMessageReadStatus';
 import ConversationList from './ConversationList';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
+import TypingIndicator from './TypingIndicator';
 import ChatHeader from './ChatHeader';
 import { Card } from '@/components/ui/card';
 import { Users, MessageCircle } from 'lucide-react';
@@ -18,6 +20,7 @@ const RealTimeChatInterface: React.FC = () => {
   
   const { user } = useAuth();
   const { fetchUserStatuses } = useUserStatus();
+  const { fetchReadStatuses } = useMessageReadStatus(selectedConversationId || undefined);
   const { 
     messages, 
     conversations, 
@@ -51,6 +54,14 @@ const RealTimeChatInterface: React.FC = () => {
       }
     }
   }, [selectedConversation, fetchUserStatuses]);
+
+  // Fetch read statuses for current messages
+  useEffect(() => {
+    if (messages.length > 0) {
+      const messageIds = messages.map(m => m.id);
+      fetchReadStatuses(messageIds);
+    }
+  }, [messages, fetchReadStatuses]);
 
   const handleSendMessage = async () => {
     if (selectedConversationId && messageInput.trim()) {
@@ -98,6 +109,20 @@ const RealTimeChatInterface: React.FC = () => {
       (p: any) => p.user_id !== user?.id
     );
     return otherParticipant?.profiles?.display_name || 'Nieznany użytkownik';
+  };
+
+  // Get participant profiles for typing indicator
+  const getParticipantProfiles = () => {
+    if (!selectedConversation) return {};
+    
+    const profiles: Record<string, { display_name: string; username: string }> = {};
+    selectedConversation.participants?.forEach(p => {
+      profiles[p.user_id] = {
+        display_name: p.profiles.display_name,
+        username: p.profiles.username
+      };
+    });
+    return profiles;
   };
 
   if (loading) {
@@ -156,10 +181,19 @@ const RealTimeChatInterface: React.FC = () => {
                     key={message.id}
                     message={message}
                     currentUserId={user?.id || ''}
+                    conversationParticipants={selectedConversation.participants?.map(p => p.user_id)}
                     onReply={handleReply}
                     onReact={handleReact}
                   />
                 ))
+              )}
+              
+              {/* Typing Indicator */}
+              {selectedConversationId && (
+                <TypingIndicator 
+                  conversationId={selectedConversationId}
+                  userProfiles={getParticipantProfiles()}
+                />
               )}
             </div>
 
@@ -168,6 +202,7 @@ const RealTimeChatInterface: React.FC = () => {
               messageInput={messageInput}
               replyingTo={replyingTo}
               replyingToMessage={replyingToMessage}
+              conversationId={selectedConversationId}
               onMessageChange={setMessageInput}
               onSendMessage={handleSendMessage}
               onCancelReply={handleCancelReply}
