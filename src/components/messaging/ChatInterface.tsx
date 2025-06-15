@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useContacts } from '@/hooks/useContacts';
-import { useFriendRequests } from '@/hooks/useFriendRequests';
+import { useFriendRequests } from '@/hooks/friends/useFriendRequests';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

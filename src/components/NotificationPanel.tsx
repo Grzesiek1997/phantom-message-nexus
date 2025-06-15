@@ -3,7 +3,7 @@ import React from 'react';
 import { Bell, Check, CheckCheck, X, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNotifications } from '@/hooks/useNotifications';
-import { useFriendRequests } from '@/hooks/useFriendRequests';
+import { useFriendRequests } from '@/hooks/friends/useFriendRequests';
 import { formatDistanceToNow } from 'date-fns';
 import { pl } from 'date-fns/locale';
 

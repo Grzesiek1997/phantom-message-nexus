@@ -1,11 +1,11 @@
 
 import { useConversations } from './useConversations';
-import { useMessageOperations } from './useMessageOperations';
-import { useRealtimeSubscriptions } from './useRealtimeSubscriptions';
+import { useMessageOperations } from './messaging/useMessageOperations';
+import { useRealtimeSubscriptions } from './messaging/useRealtimeSubscriptions';
 
 export const useMessages = (conversationId?: string) => {
   const { conversations, loading, createConversation, fetchConversations } = useConversations();
-  const { messages, sendMessage, fetchMessages, setMessages } = useMessageOperations(conversationId);
+  const { messages, sendMessage, editMessage, deleteMessage, fetchMessages, setMessages } = useMessageOperations(conversationId);
   
   useRealtimeSubscriptions(conversationId, setMessages, fetchConversations);
 
@@ -26,6 +26,8 @@ export const useMessages = (conversationId?: string) => {
     conversations,
     loading,
     sendMessage,
+    editMessage,
+    deleteMessage,
     createConversation: createConversationWithErrorHandling,
     fetchConversations,
     fetchMessages
