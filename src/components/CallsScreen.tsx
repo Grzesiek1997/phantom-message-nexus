@@ -1,8 +1,19 @@
 
 import React, { useState } from 'react';
-import { Phone, Video, Clock, PhoneCall, PhoneMissed, PhoneIncoming, PhoneOutgoing, MoreVertical } from 'lucide-react';
+import { Phone, Video, Clock, PhoneCall, PhoneMissed, PhoneIncoming, PhoneOutgoing, MoreVertical, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface CallRecord {
   id: string;
@@ -20,7 +31,7 @@ const CallsScreen: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'missed' | 'incoming' | 'outgoing'>('all');
 
   // Mock data - replace with real data from your backend
-  const [callHistory] = useState<CallRecord[]>([
+  const [callHistory, setCallHistory] = useState<CallRecord[]>([
     {
       id: '1',
       contactName: 'Anna Kowalska',
@@ -98,6 +109,10 @@ const CallsScreen: React.FC = () => {
   const handleRedial = (call: CallRecord) => {
     console.log(`Redialing ${call.contactName}`);
     // Implement redial logic
+  };
+
+  const handleDeleteCall = (callId: string) => {
+    setCallHistory(prev => prev.filter(call => call.id !== callId));
   };
 
   return (
@@ -214,9 +229,38 @@ const CallsScreen: React.FC = () => {
                     >
                       <Video className="w-4 h-4" />
                     </button>
-                    <button className="p-2 text-gray-400 hover:text-white transition-colors">
-                      <MoreVertical className="w-4 h-4" />
-                    </button>
+                    
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <button 
+                          onClick={(e) => e.stopPropagation()}
+                          className="p-2 bg-red-500/20 text-red-400 rounded-full hover:bg-red-500/30 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="bg-gray-900 border-gray-700">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="text-white">
+                            Usuń połączenie
+                          </AlertDialogTitle>
+                          <AlertDialogDescription className="text-gray-300">
+                            Czy na pewno chcesz usunąć to połączenie z historii? Tej operacji nie można cofnąć.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600">
+                            Anuluj
+                          </AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={() => handleDeleteCall(call.id)}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                          >
+                            Usuń
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               );

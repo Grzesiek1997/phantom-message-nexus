@@ -1,213 +1,86 @@
 
 import React, { useState } from 'react';
-import { Search } from 'lucide-react';
-import { useTranslation } from '@/hooks/useTranslation';
 import { useContacts } from '@/hooks/useContacts';
 import { useFriendRequests } from '@/hooks/useFriendRequests';
-import { useNotifications } from '@/hooks/useNotifications';
 import { useMessages } from '@/hooks/useMessages';
-import { Input } from '@/components/ui/input';
-import NotificationPanel from './NotificationPanel';
-import ContactSearch from './ContactSearch';
 import ContactsHeader from './contacts/ContactsHeader';
-import ContactsQuickActions from './contacts/ContactsQuickActions';
 import ContactsTabNavigation from './contacts/ContactsTabNavigation';
 import ContactsContent from './contacts/ContactsContent';
+import ContactsQuickActions from './contacts/ContactsQuickActions';
 
-interface Group {
-  id: string;
-  name: string;
-  memberCount: number;
-  avatar?: string;
-  lastActivity: Date;
-}
+const ContactsScreenNew: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'friends' | 'received' | 'sent' | 'groups'>('friends');
+  const [searchQuery, setSearchQuery] = useState('');
 
-interface ContactsScreenNewProps {
-  onGoBack?: () => void;
-}
-
-const ContactsScreenNew: React.FC<ContactsScreenNewProps> = ({ onGoBack }) => {
-  const { t } = useTranslation();
   const { contacts, deleteContact } = useContacts();
   const { 
     receivedRequests, 
     sentRequests, 
     acceptFriendRequest, 
-    rejectFriendRequest, 
+    rejectFriendRequest,
     deleteFriendRequest 
   } = useFriendRequests();
-  const { unreadCount } = useNotifications();
   const { createConversation } = useMessages();
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'contacts' | 'groups' | 'received-requests' | 'sent-requests'>('contacts');
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showContactSearch, setShowContactSearch] = useState(false);
-
-  // Mock groups data
-  const [groups, setGroups] = useState<Group[]>([
-    {
-      id: '1',
-      name: 'Rodzina',
-      memberCount: 8,
-      lastActivity: new Date(Date.now() - 2 * 60 * 60 * 1000)
+  const handleSelectContact = async (contactId: string) => {
+    try {
+      const conversationId = await createConversation([contactId]);
+      if (conversationId) {
+        // Tutaj można dodać nawigację do czatu
+        console.log('Created conversation:', conversationId);
+      }
+    } catch (error) {
+      console.error('Error creating conversation:', error);
     }
-  ]);
+  };
 
-  const filteredContacts = contacts?.filter(contact =>
-    contact.profile?.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    contact.profile?.username?.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
-
-  const filteredGroups = groups.filter(group =>
-    group.name.toLowerCase().includes(searchQuery.toLowerCase())
+  // Filtrowanie kontaktów na podstawie wyszukiwania
+  const filteredContacts = contacts.filter(contact =>
+    contact.profile.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    contact.profile.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredReceivedRequests = receivedRequests?.filter(request =>
+  const filteredReceivedRequests = receivedRequests.filter(request =>
     request.sender_profile?.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    request.sender_profile?.username?.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+    request.sender_profile?.username.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  const filteredSentRequests = sentRequests?.filter(request =>
+  const filteredSentRequests = sentRequests.filter(request =>
     request.receiver_profile?.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    request.receiver_profile?.username?.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
-
-  const handleQuickAction = async (action: string, contact: any) => {
-    if (action === 'chat') {
-      try {
-        const conversationId = await createConversation([contact.contact_user_id]);
-        if (conversationId) {
-          // Przejdź do czatu - tu możesz dodać nawigację
-          console.log('Opening chat with conversation:', conversationId);
-        }
-      } catch (error) {
-        console.error('Error creating conversation:', error);
-      }
-    } else {
-      console.log(`${action} with ${contact.profile?.display_name}`);
-    }
-  };
-
-  const handleDeleteGroup = (groupId: string) => {
-    setGroups(prev => prev.filter(group => group.id !== groupId));
-  };
-
-  const formatLastActivity = (date: Date): string => {
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const hours = diff / (1000 * 60 * 60);
-    
-    if (hours < 1) return 'aktywne teraz';
-    if (hours < 24) return `${Math.floor(hours)}h temu`;
-    return `${Math.floor(hours / 24)}d temu`;
-  };
+    request.receiver_profile?.username.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
-      {/* Header */}
-      <div className="p-6 border-b border-white/10">
-        <ContactsHeader
-          unreadCount={unreadCount || 0}
-          onAddContact={() => setShowContactSearch(true)}
-          onShowNotifications={() => setShowNotifications(true)}
-          onGoBack={onGoBack}
-          showBackButton={!!onGoBack}
-        />
-
-        {/* Search */}
-        <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Szukaj kontaktów..."
-            className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
-          />
-        </div>
-
-        {/* Tabs */}
-        <div className="flex space-x-1 bg-white/10 rounded-lg p-1">
-          <button
-            onClick={() => setActiveTab('contacts')}
-            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'contacts'
-                ? 'bg-white text-blue-600'
-                : 'text-white hover:bg-white/10'
-            }`}
-          >
-            Znajomi ({filteredContacts.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('received-requests')}
-            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'received-requests'
-                ? 'bg-white text-blue-600'
-                : 'text-white hover:bg-white/10'
-            }`}
-          >
-            Otrzymane ({filteredReceivedRequests.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('sent-requests')}
-            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'sent-requests'
-                ? 'bg-white text-blue-600'
-                : 'text-white hover:bg-white/10'
-            }`}
-          >
-            Wysłane ({filteredSentRequests.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('groups')}
-            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'groups'
-                ? 'bg-white text-blue-600'
-                : 'text-white hover:bg-white/10'
-            }`}
-          >
-            Grupy ({filteredGroups.length})
-          </button>
-        </div>
-      </div>
-
-      {/* Quick Actions Bar */}
-      <ContactsQuickActions onAddContact={() => setShowContactSearch(true)} />
-
-      {/* Content */}
-      <ContactsContent
+      <ContactsHeader 
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
+      
+      <ContactsTabNavigation 
         activeTab={activeTab}
-        filteredContacts={filteredContacts}
-        filteredRequests={filteredReceivedRequests}
-        filteredSentRequests={filteredSentRequests}
-        filteredGroups={filteredGroups}
-        onAddContact={() => setShowContactSearch(true)}
-        onQuickAction={handleQuickAction}
-        onAcceptRequest={acceptFriendRequest}
-        onRejectRequest={rejectFriendRequest}
-        onDeleteContact={deleteContact}
-        onDeleteRequest={deleteFriendRequest}
-        onDeleteGroup={handleDeleteGroup}
-        formatLastActivity={formatLastActivity}
+        onTabChange={setActiveTab}
+        friendsCount={filteredContacts.length}
+        receivedCount={filteredReceivedRequests.length}
+        sentCount={filteredSentRequests.length}
+        groupsCount={0}
       />
 
-      {/* Modals */}
-      {showNotifications && (
-        <NotificationPanel
-          isOpen={showNotifications}
-          onClose={() => setShowNotifications(false)}
+      <div className="flex-1 overflow-y-auto p-4">
+        <ContactsContent
+          activeTab={activeTab}
+          contacts={filteredContacts}
+          receivedRequests={filteredReceivedRequests}
+          sentRequests={filteredSentRequests}
+          onSelectContact={handleSelectContact}
+          onDeleteContact={deleteContact}
+          onAcceptRequest={acceptFriendRequest}
+          onRejectRequest={rejectFriendRequest}
+          onDeleteRequest={deleteFriendRequest}
         />
-      )}
+      </div>
 
-      {showContactSearch && (
-        <ContactSearch
-          isOpen={showContactSearch}
-          onClose={() => setShowContactSearch(false)}
-          onSelectContact={(contactId) => {
-            setShowContactSearch(false);
-          }}
-        />
-      )}
+      <ContactsQuickActions />
     </div>
   );
 };
