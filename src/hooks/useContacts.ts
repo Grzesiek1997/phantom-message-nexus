@@ -15,6 +15,8 @@ export interface Contact {
     display_name: string;
     avatar_url?: string;
   };
+  friend_request_status?: 'pending' | 'accepted' | 'rejected' | null;
+  can_chat: boolean;
 }
 
 export interface SearchUser {
@@ -37,7 +39,7 @@ export const useContacts = () => {
       setLoading(true);
       console.log('Fetching contacts for user:', user.id);
       
-      // Pobierz zaakceptowane kontakty
+      // Pobierz kontakty (zaakceptowane znajomości)
       const { data: contactsData, error: contactsError } = await supabase
         .from('contacts')
         .select('*')
@@ -49,21 +51,37 @@ export const useContacts = () => {
         return;
       }
 
-      // Pobierz profile kontaktów
-      if (contactsData && contactsData.length > 0) {
-        const contactUserIds = contactsData.map(contact => contact.contact_user_id);
-        
+      // Pobierz również wysłane zaproszenia (pending/rejected)
+      const { data: sentRequestsData, error: sentRequestsError } = await supabase
+        .from('friend_requests')
+        .select('*')
+        .eq('sender_id', user.id)
+        .in('status', ['pending', 'rejected']);
+
+      if (sentRequestsError) {
+        console.error('Error fetching sent requests:', sentRequestsError);
+      }
+
+      // Zbierz wszystkich użytkowników (kontakty + zaproszenia)
+      const allUserIds = new Set([
+        ...(contactsData || []).map(contact => contact.contact_user_id),
+        ...(sentRequestsData || []).map(request => request.receiver_id)
+      ]);
+
+      if (allUserIds.size > 0) {
+        // Pobierz profile wszystkich użytkowników
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
           .select('id, username, display_name, avatar_url')
-          .in('id', contactUserIds);
+          .in('id', Array.from(allUserIds));
 
         if (profilesError) {
           console.error('Error fetching profiles:', profilesError);
           return;
         }
 
-        const formattedContacts = contactsData.map(contact => {
+        // Formatuj kontakty (zaakceptowane znajomości)
+        const formattedContacts = (contactsData || []).map(contact => {
           const profile = profilesData?.find(p => p.id === contact.contact_user_id);
           return {
             ...contact,
@@ -75,11 +93,37 @@ export const useContacts = () => {
             } : {
               username: 'Unknown',
               display_name: 'Unknown User'
-            }
+            },
+            friend_request_status: 'accepted' as const,
+            can_chat: true
           };
         });
 
-        setContacts(formattedContacts);
+        // Formatuj zaproszenia (pending/rejected)
+        const formattedRequests = (sentRequestsData || [])
+          .filter(request => !contactsData?.some(contact => contact.contact_user_id === request.receiver_id))
+          .map(request => {
+            const profile = profilesData?.find(p => p.id === request.receiver_id);
+            return {
+              id: request.id,
+              user_id: user.id,
+              contact_user_id: request.receiver_id,
+              status: 'pending' as const,
+              created_at: request.created_at || new Date().toISOString(),
+              profile: profile ? {
+                username: profile.username,
+                display_name: profile.display_name || profile.username,
+                avatar_url: profile.avatar_url
+              } : {
+                username: 'Unknown',
+                display_name: 'Unknown User'
+              },
+              friend_request_status: request.status as 'pending' | 'accepted' | 'rejected',
+              can_chat: false
+            };
+          });
+
+        setContacts([...formattedContacts, ...formattedRequests]);
       } else {
         setContacts([]);
       }
@@ -148,6 +192,43 @@ export const useContacts = () => {
     if (user) {
       fetchContacts();
     }
+  }, [user]);
+
+  // Ustaw real-time subscription dla aktualizacji
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('contacts-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'contacts',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          fetchContacts();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'friend_requests',
+          filter: `sender_id=eq.${user.id}`
+        },
+        () => {
+          fetchContacts();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   return {

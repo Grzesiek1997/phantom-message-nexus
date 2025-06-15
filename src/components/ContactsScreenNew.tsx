@@ -30,8 +30,30 @@ const ContactsScreenNew: React.FC = () => {
 
   const handleSelectContact = async (contactId: string) => {
     try {
+      // Sprawdź czy to zaakceptowany znajomy
+      const contact = contacts.find(c => c.contact_user_id === contactId);
+      
+      if (!contact) {
+        toast({
+          title: 'Błąd',
+          description: 'Nie znaleziono kontaktu',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      if (!contact.can_chat) {
+        toast({
+          title: 'Nie można rozpocząć czatu',
+          description: 'Poczekaj, aż użytkownik zaakceptuje zaproszenie do znajomych',
+          variant: 'destructive'
+        });
+        return;
+      }
+
       console.log('Creating conversation with contact:', contactId);
       const conversationId = await createConversation([contactId]);
+      
       if (conversationId) {
         console.log('Conversation created successfully:', conversationId);
         toast({
@@ -73,6 +95,10 @@ const ContactsScreenNew: React.FC = () => {
     request.receiver_profile?.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Oblicz liczby dla zakładek
+  const acceptedFriendsCount = filteredContacts.filter(c => c.can_chat).length;
+  const pendingRequestsCount = filteredContacts.filter(c => !c.can_chat).length + acceptedFriendsCount;
+
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
       <ContactsHeader 
@@ -83,7 +109,7 @@ const ContactsScreenNew: React.FC = () => {
       <ContactsTabNavigation 
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        friendsCount={filteredContacts.length}
+        friendsCount={pendingRequestsCount}
         receivedCount={filteredReceivedRequests.length}
         sentCount={filteredSentRequests.length}
         groupsCount={0}

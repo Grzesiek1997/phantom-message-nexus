@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { MessageCircle, Phone, Trash2, UserPlus, UserX, Check, Clock } from 'lucide-react';
+import { MessageCircle, Phone, Trash2, UserPlus, UserX, Check, Clock, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -39,6 +39,33 @@ const ContactsContent: React.FC<ContactsContentProps> = ({
   onRejectRequest,
   onDeleteRequest
 }) => {
+
+  const getStatusBadge = (contact: Contact) => {
+    if (contact.friend_request_status === 'accepted') {
+      return (
+        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-500/20 text-green-400">
+          <Check className="w-3 h-3 mr-1" />
+          Zaakceptowany
+        </span>
+      );
+    } else if (contact.friend_request_status === 'pending') {
+      return (
+        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-yellow-500/20 text-yellow-400">
+          <Clock className="w-3 h-3 mr-1" />
+          Oczekuje
+        </span>
+      );
+    } else if (contact.friend_request_status === 'rejected') {
+      return (
+        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-500/20 text-red-400">
+          <AlertCircle className="w-3 h-3 mr-1" />
+          Odrzucony
+        </span>
+      );
+    }
+    return null;
+  };
+
   const renderFriends = () => {
     if (contacts.length === 0) {
       return (
@@ -64,23 +91,42 @@ const ContactsContent: React.FC<ContactsContentProps> = ({
                 <div>
                   <h3 className="font-medium text-white">{contact.profile.display_name}</h3>
                   <p className="text-sm text-gray-400">@{contact.profile.username}</p>
+                  <div className="mt-1">
+                    {getStatusBadge(contact)}
+                  </div>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
-                <Button
-                  size="sm"
-                  onClick={() => onSelectContact(contact.contact_user_id)}
-                  className="bg-blue-500 hover:bg-blue-600"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                >
-                  <Phone className="w-4 h-4" />
-                </Button>
+                {contact.can_chat ? (
+                  <>
+                    <Button
+                      size="sm"
+                      onClick={() => onSelectContact(contact.contact_user_id)}
+                      className="bg-blue-500 hover:bg-blue-600"
+                      title="Rozpocznij czat"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                      title="Zadzwoń"
+                    >
+                      <Phone className="w-4 h-4" />
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled
+                    className="border-gray-600 text-gray-500 cursor-not-allowed"
+                    title="Czekaj na akceptację zaproszenia"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                  </Button>
+                )}
                 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
