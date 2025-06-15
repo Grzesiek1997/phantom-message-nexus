@@ -1,11 +1,12 @@
+
 import React, { useState } from 'react';
 import { Plus, Search, Users, UserPlus, QrCode, Link, Share, MoreVertical, MessageCircle, Phone, Video, Info, Bell } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContacts } from '@/hooks/useContacts';
+import { useFriendRequests } from '@/hooks/useFriendRequests';
 import { useNotifications } from '@/hooks/useNotifications';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import FriendSearch from './FriendSearch';
 import NotificationPanel from './NotificationPanel';
 
 interface Group {
@@ -19,10 +20,10 @@ interface Group {
 const ContactsScreenNew: React.FC = () => {
   const { t } = useTranslation();
   const { contacts } = useContacts();
+  const { friendRequests } = useFriendRequests();
   const { unreadCount } = useNotifications();
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'contacts' | 'groups'>('contacts');
-  const [showFriendSearch, setShowFriendSearch] = useState(false);
+  const [activeTab, setActiveTab] = useState<'contacts' | 'groups' | 'requests'>('contacts');
   const [showNotifications, setShowNotifications] = useState(false);
 
   // Mock groups data
@@ -56,13 +57,14 @@ const ContactsScreenNew: React.FC = () => {
     group.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const filteredRequests = friendRequests.filter(request =>
+    request.sender_profile?.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    request.sender_profile?.username?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const handleQuickAction = (action: string, contact: any) => {
     console.log(`${action} with ${contact.profile?.display_name}`);
     // Implement quick actions
-  };
-
-  const handleInviteFriends = () => {
-    setShowFriendSearch(true);
   };
 
   const formatLastActivity = (date: Date): string => {
@@ -96,15 +98,6 @@ const ContactsScreenNew: React.FC = () => {
                 </span>
               )}
             </Button>
-            
-            {/* Search Friends Button */}
-            <Button
-              onClick={handleInviteFriends}
-              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-            >
-              <UserPlus className="w-4 h-4 mr-2" />
-              Znajdź znajomych
-            </Button>
           </div>
         </div>
 
@@ -132,6 +125,16 @@ const ContactsScreenNew: React.FC = () => {
             Kontakty ({filteredContacts.length})
           </button>
           <button
+            onClick={() => setActiveTab('requests')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === 'requests'
+                ? 'bg-white/20 text-white'
+                : 'text-gray-400 hover:text-white hover:bg-white/10'
+            }`}
+          >
+            Zaproszenia ({filteredRequests.length})
+          </button>
+          <button
             onClick={() => setActiveTab('groups')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               activeTab === 'groups'
@@ -140,24 +143,6 @@ const ContactsScreenNew: React.FC = () => {
             }`}
           >
             Grupy ({filteredGroups.length})
-          </button>
-        </div>
-      </div>
-
-      {/* Invite Section */}
-      <div className="p-4 border-b border-white/10">
-        <div className="grid grid-cols-3 gap-4">
-          <button className="flex flex-col items-center p-3 bg-white/10 rounded-lg hover:bg-white/20 transition-colors">
-            <QrCode className="w-6 h-6 text-blue-400 mb-2" />
-            <span className="text-xs text-white">QR Code</span>
-          </button>
-          <button className="flex flex-col items-center p-3 bg-white/10 rounded-lg hover:bg-white/20 transition-colors">
-            <Link className="w-6 h-6 text-green-400 mb-2" />
-            <span className="text-xs text-white">Link</span>
-          </button>
-          <button className="flex flex-col items-center p-3 bg-white/10 rounded-lg hover:bg-white/20 transition-colors">
-            <Share className="w-6 h-6 text-purple-400 mb-2" />
-            <span className="text-xs text-white">Udostępnij</span>
           </button>
         </div>
       </div>
@@ -228,6 +213,56 @@ const ContactsScreenNew: React.FC = () => {
               ))
             )}
           </div>
+        ) : activeTab === 'requests' ? (
+          // Friend Requests List
+          <div className="space-y-1">
+            {filteredRequests.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-gray-400 p-8">
+                <UserPlus className="w-16 h-16 mb-4 opacity-50" />
+                <p className="text-lg">Brak zaproszeń</p>
+                <p className="text-sm text-center">Nowe zaproszenia pojawią się tutaj</p>
+              </div>
+            ) : (
+              filteredRequests.map((request) => (
+                <div
+                  key={request.id}
+                  className="flex items-center p-4 hover:bg-white/5 transition-colors"
+                >
+                  {/* Avatar */}
+                  <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center mr-4">
+                    <span className="text-white font-bold">
+                      {request.sender_profile?.display_name?.charAt(0) || '?'}
+                    </span>
+                  </div>
+
+                  {/* Request Info */}
+                  <div className="flex-1">
+                    <h3 className="font-medium text-white">
+                      {request.sender_profile?.display_name || request.sender_profile?.username || 'Unknown'}
+                    </h3>
+                    <p className="text-sm text-gray-400">Chce dodać Cię do znajomych</p>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      size="sm"
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      Akceptuj
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-red-500 text-red-400 hover:bg-red-500/20"
+                    >
+                      Odrzuć
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         ) : (
           // Groups List
           <div className="space-y-1">
@@ -270,11 +305,6 @@ const ContactsScreenNew: React.FC = () => {
       </div>
 
       {/* Modals */}
-      <FriendSearch
-        isOpen={showFriendSearch}
-        onClose={() => setShowFriendSearch(false)}
-      />
-
       <NotificationPanel
         isOpen={showNotifications}
         onClose={() => setShowNotifications(false)}
