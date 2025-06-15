@@ -1,8 +1,33 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
-import { Conversation } from '@/types/chat';
+
+// Define our own conversation interface that matches what we actually use
+export interface Conversation {
+  id: string;
+  type: 'direct' | 'group';
+  name: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  participants?: Array<{
+    user_id: string;
+    role: string;
+    profiles: {
+      username: string;
+      display_name: string;
+    };
+  }>;
+  last_message?: {
+    id: string;
+    content: string;
+    created_at: string;
+    sender_id: string;
+    message_type: 'text' | 'file' | 'image';
+  };
+}
 
 export const useConversations = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -111,7 +136,10 @@ export const useConversations = () => {
           updated_at: conv.updated_at,
           participants,
           last_message: lastMessage ? {
-            ...lastMessage,
+            id: lastMessage.id,
+            content: lastMessage.content,
+            created_at: lastMessage.created_at,
+            sender_id: lastMessage.sender_id,
             message_type: lastMessage.message_type as 'text' | 'file' | 'image'
           } : undefined
         };
@@ -140,13 +168,13 @@ export const useConversations = () => {
     try {
       console.log('Creating conversation with participants:', participantIds, 'type:', type);
 
-      // Sprawdź czy użytkownicy są znajomymi (tylko dla direct chat)
+      // Check if users are friends (only for direct chat)
       if (type === 'direct' && participantIds.length === 1) {
         const otherUserId = participantIds[0];
         
         console.log('Checking friendship status with:', otherUserId);
         
-        // Sprawdź bezpośrednio w tabeli contacts
+        // Check friendship status
         const { data: friendship1, error: error1 } = await supabase
           .from('contacts')
           .select('status')
@@ -175,7 +203,7 @@ export const useConversations = () => {
 
         console.log('Users are friends, checking for existing conversation');
         
-        // Sprawdź czy istnieje już konwersacja bezpośrednia
+        // Check if direct conversation already exists
         const { data: existingConversations, error: checkError } = await supabase
           .from('conversations')
           .select(`
@@ -187,9 +215,9 @@ export const useConversations = () => {
         if (checkError) {
           console.error('Error checking existing conversations:', checkError);
         } else if (existingConversations) {
-          // Znajdź konwersację z dokładnie tymi dwoma użytkownikami
+          // Find conversation with exactly these two users
           for (const conv of existingConversations) {
-            const participantUserIds = conv.conversation_participants?.map(p => p.user_id) || [];
+            const participantUserIds = conv.conversation_participants?.map((p: any) => p.user_id) || [];
             if (participantUserIds.length === 2 && 
                 participantUserIds.includes(user.id) && 
                 participantUserIds.includes(otherUserId)) {
@@ -201,7 +229,7 @@ export const useConversations = () => {
         }
       }
 
-      // Utwórz nową konwersację
+      // Create new conversation
       console.log('Creating new conversation...');
       const { data: conversation, error } = await supabase
         .from('conversations')
@@ -221,7 +249,7 @@ export const useConversations = () => {
 
       console.log('Conversation created:', conversation);
 
-      // Dodaj uczestników (łącznie z obecnym użytkownikiem)
+      // Add participants (including current user)
       const participants = [user.id, ...participantIds].map(userId => ({
         conversation_id: conversation.id,
         user_id: userId,
@@ -237,7 +265,7 @@ export const useConversations = () => {
       if (participantError) {
         console.error('Error adding participants:', participantError);
         
-        // Spróbuj usunąć konwersację jeśli nie udało się dodać uczestników
+        // Try to delete conversation if participants couldn't be added
         await supabase.from('conversations').delete().eq('id', conversation.id);
         
         throw new Error(`Nie udało się dodać uczestników: ${participantError.message}`);
@@ -245,7 +273,7 @@ export const useConversations = () => {
 
       console.log('Participants added successfully');
       
-      // Odśwież listę konwersacji
+      // Refresh conversations list
       await fetchConversations();
       
       return conversation.id;

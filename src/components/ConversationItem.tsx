@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Conversation } from '@/types/chat';
 import UserStatusIndicator from './UserStatusIndicator';
 import { useUserStatus } from '@/hooks/useUserStatus';
 import { formatDistanceToNow } from 'date-fns';
@@ -8,10 +7,25 @@ import { pl } from 'date-fns/locale';
 import { Users, MessageCircle } from 'lucide-react';
 
 interface ConversationItemProps {
-  conversation: Conversation;
+  conversation: {
+    id: string;
+    name: string | null;
+    type: 'direct' | 'group';
+    participants?: Array<{
+      user_id: string;
+      profiles: {
+        display_name: string;
+      };
+    }>;
+    last_message?: {
+      content: string;
+      created_at: string;
+      sender_id?: string;
+    };
+  };
   isSelected: boolean;
   currentUserId: string;
-  onClick: () => void;
+  onClick: (conversationId: string) => void;
 }
 
 const ConversationItem: React.FC<ConversationItemProps> = ({
@@ -58,7 +72,7 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
 
   return (
     <div
-      onClick={onClick}
+      onClick={() => onClick(conversation.id)}
       className={`p-4 cursor-pointer transition-colors border-b border-gray-700 hover:bg-gray-700/50 ${
         isSelected ? 'bg-blue-600/20 border-blue-500/30' : ''
       }`}
