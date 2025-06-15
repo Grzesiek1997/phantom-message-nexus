@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, UserPlus, X, Check, UserX, Clock } from 'lucide-react';
 import { useContacts } from '@/hooks/useContacts';
-import { useFriendRequests } from '@/hooks/useFriendRequests';
+import { useFriendRequests } from '@/hooks/friends/useFriendRequests';
 import { useToast } from '@/hooks/use-toast';
 
 interface ContactSearchProps {

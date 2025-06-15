@@ -24,8 +24,7 @@ const RealTimeChatInterface: React.FC = () => {
     messages, 
     conversations, 
     loading, 
-    sendMessage,
-    fetchMessages 
+    sendMessage
   } = useMessages(selectedConversationId || undefined);
 
   const selectedConversation = conversations.find(c => c.id === selectedConversationId);
@@ -35,12 +34,6 @@ const RealTimeChatInterface: React.FC = () => {
       setSelectedConversationId(conversations[0].id);
     }
   }, [conversations, selectedConversationId]);
-
-  useEffect(() => {
-    if (selectedConversationId) {
-      fetchMessages(selectedConversationId);
-    }
-  }, [selectedConversationId, fetchMessages]);
 
   useEffect(() => {
     if (selectedConversation) {

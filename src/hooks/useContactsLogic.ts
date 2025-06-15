@@ -1,8 +1,7 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useContacts } from '@/hooks/useContacts';
-import { useFriendRequests } from '@/hooks/useFriendRequests';
+import { useFriendRequests } from '@/hooks/friends/useFriendRequests';
 import { useMessages } from '@/hooks/useMessages';
 import { useToast } from '@/hooks/use-toast';
 

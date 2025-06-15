@@ -1,10 +1,9 @@
-
 import React from 'react';
 import FriendsTab from './FriendsTab';
 import RequestsTab from './RequestsTab';
 import GroupsTab from './GroupsTab';
 import type { Contact } from '@/hooks/useContacts';
-import type { FriendRequest } from '@/hooks/useFriendRequests';
+import type { FriendRequest } from '@/hooks/friends/useFriendRequests';
 
 interface ContactsContentProps {
   activeTab: 'friends' | 'received' | 'sent' | 'groups';

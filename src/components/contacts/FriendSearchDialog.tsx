@@ -1,11 +1,10 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogHeader } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, UserPlus, X } from "lucide-react";
 import { useContacts } from "@/hooks/useContacts";
-import { useFriendRequests } from "@/hooks/useFriendRequests";
+import { useFriendRequests } from '@/hooks/friends/useFriendRequests';
 
 interface FriendSearchDialogProps {
   isOpen: boolean;
