@@ -1,273 +1,248 @@
 
 import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useToast } from './use-toast';
 
-interface SecurityThreat {
+export interface SecurityEvent {
   id: string;
-  type: 'brute_force' | 'ddos' | 'data_exfiltration' | 'malware' | 'phishing';
+  user_id: string;
+  event_type: string;
+  description?: string;
+  metadata: Record<string, any>;
   severity: 'low' | 'medium' | 'high' | 'critical';
-  source: string;
-  timestamp: Date;
-  details: any;
+  ip_address?: string;
+  user_agent?: string;
+  device_id?: string;
+  created_at: string;
 }
 
-interface SecurityAlert {
+export interface DecryptionFailure {
   id: string;
-  threat: SecurityThreat;
-  message: string;
-  actionRequired: boolean;
-  resolved: boolean;
-}
-
-interface TrafficPattern {
-  requestsPerSecond: number;
-  uniqueIPs: number;
-  suspiciousPatterns: string[];
-  geolocation: string[];
-}
-
-interface SecurityEvent {
-  id: string;
-  userId: string;
-  eventType: string;
-  timestamp: Date;
-  ipAddress: string;
-  userAgent: string;
-  success: boolean;
-  details: any;
-}
-
-interface ComplianceReport {
-  gdprCompliance: number;
-  hipaCompliance: number;
-  sox404Compliance: number;
-  pciDssCompliance: number;
-  vulnerabilities: number;
-  securityScore: number;
+  user_id?: string;
+  conversation_id?: string;
+  message_id?: string;
+  failure_type?: string;
+  device_info: Record<string, any>;
+  ip_address?: string;
+  created_at: string;
 }
 
 export const useSecurityMonitoring = () => {
-  const [threats, setThreats] = useState<SecurityThreat[]>([]);
-  const [alerts, setAlerts] = useState<SecurityAlert[]>([]);
   const [securityEvents, setSecurityEvents] = useState<SecurityEvent[]>([]);
-  const [complianceStatus, setComplianceStatus] = useState<ComplianceReport>({
-    gdprCompliance: 98.5,
-    hipaCompliance: 99.1,
-    sox404Compliance: 97.8,
-    pciDssCompliance: 99.5,
-    vulnerabilities: 0,
-    securityScore: 98.7
-  });
+  const [decryptionFailures, setDecryptionFailures] = useState<DecryptionFailure[]>([]);
+  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const { toast } = useToast();
 
-  // Real-time threat detection
-  const detectBruteForce = async (ip: string, endpoint: string): Promise<boolean> => {
-    console.log(`🔍 Analyzing brute force attempts from ${ip} on ${endpoint}`);
-    
-    // Simulate detection logic
-    const failedAttempts = Math.floor(Math.random() * 10);
-    const isBruteForce = failedAttempts > 5;
-    
-    if (isBruteForce) {
-      const threat: SecurityThreat = {
-        id: Date.now().toString(),
-        type: 'brute_force',
-        severity: 'high',
-        source: ip,
-        timestamp: new Date(),
-        details: { endpoint, failedAttempts }
-      };
+  const fetchSecurityEvents = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('security_events')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+      setSecurityEvents(data || []);
+    } catch (error) {
+      console.error('Error fetching security events:', error);
+    }
+  };
+
+  const fetchDecryptionFailures = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('decryption_failures')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+      setDecryptionFailures(data || []);
+    } catch (error) {
+      console.error('Error fetching decryption failures:', error);
+    }
+  };
+
+  const logSecurityEvent = async (
+    eventType: string,
+    description: string,
+    severity: 'low' | 'medium' | 'high' | 'critical' = 'medium',
+    metadata: Record<string, any> = {}
+  ) => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('security_events')
+        .insert({
+          user_id: user.id,
+          event_type: eventType,
+          description,
+          severity,
+          metadata,
+          ip_address: await getUserIP(),
+          user_agent: navigator.userAgent
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setSecurityEvents(prev => [data, ...prev]);
+
+      // Show toast for high/critical events
+      if (severity === 'high' || severity === 'critical') {
+        toast({
+          title: 'Ostrzeżenie bezpieczeństwa',
+          description: description,
+          variant: 'destructive'
+        });
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error logging security event:', error);
+    }
+  };
+
+  const logDecryptionFailure = async (
+    conversationId: string,
+    messageId: string,
+    failureType: string,
+    deviceInfo: Record<string, any> = {}
+  ) => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('decryption_failures')
+        .insert({
+          user_id: user.id,
+          conversation_id: conversationId,
+          message_id: messageId,
+          failure_type: failureType,
+          device_info: {
+            ...deviceInfo,
+            user_agent: navigator.userAgent,
+            timestamp: new Date().toISOString()
+          },
+          ip_address: await getUserIP()
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setDecryptionFailures(prev => [data, ...prev]);
+
+      // Log as security event too
+      await logSecurityEvent(
+        'decryption_failure',
+        `Decryption failed: ${failureType}`,
+        'high',
+        { conversationId, messageId, failureType }
+      );
+
+      return data;
+    } catch (error) {
+      console.error('Error logging decryption failure:', error);
+    }
+  };
+
+  const getUserIP = async (): Promise<string | undefined> => {
+    try {
+      const response = await fetch('https://api.ipify.org?format=json');
+      const data = await response.json();
+      return data.ip;
+    } catch (error) {
+      console.error('Error getting user IP:', error);
+      return undefined;
+    }
+  };
+
+  const clearOldEvents = async (daysToKeep: number = 90) => {
+    if (!user) return;
+
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
+
+    try {
+      const { error } = await supabase
+        .from('security_events')
+        .delete()
+        .eq('user_id', user.id)
+        .lt('created_at', cutoffDate.toISOString());
+
+      if (error) throw error;
+
+      await fetchSecurityEvents();
       
-      setThreats(prev => [threat, ...prev.slice(0, 49)]);
-      await triggerIncidentResponse(threat);
+      toast({
+        title: 'Sukces',
+        description: 'Stare zdarzenia bezpieczeństwa zostały usunięte'
+      });
+    } catch (error) {
+      console.error('Error clearing old events:', error);
+      toast({
+        title: 'Błąd',
+        description: 'Nie udało się usunąć starych zdarzeń',
+        variant: 'destructive'
+      });
     }
-    
-    return isBruteForce;
   };
 
-  const detectDDoS = async (trafficPattern: TrafficPattern): Promise<boolean> => {
-    console.log('🔍 Analyzing DDoS attack patterns');
-    
-    const isDDoS = trafficPattern.requestsPerSecond > 1000 || 
-                   trafficPattern.suspiciousPatterns.length > 3;
-    
-    if (isDDoS) {
-      const threat: SecurityThreat = {
-        id: Date.now().toString(),
-        type: 'ddos',
-        severity: 'critical',
-        source: 'multiple',
-        timestamp: new Date(),
-        details: trafficPattern
-      };
-      
-      setThreats(prev => [threat, ...prev.slice(0, 49)]);
-      await blockSuspiciousTraffic(trafficPattern);
-    }
-    
-    return isDDoS;
-  };
-
-  const detectDataExfiltration = async (userId: string, dataVolume: number): Promise<boolean> => {
-    console.log(`🔍 Monitoring data exfiltration for user ${userId}`);
-    
-    const threshold = 100 * 1024 * 1024; // 100MB
-    const isExfiltration = dataVolume > threshold;
-    
-    if (isExfiltration) {
-      const threat: SecurityThreat = {
-        id: Date.now().toString(),
-        type: 'data_exfiltration',
-        severity: 'critical',
-        source: userId,
-        timestamp: new Date(),
-        details: { dataVolume, threshold }
-      };
-      
-      setThreats(prev => [threat, ...prev.slice(0, 49)]);
-      await quarantineUser(userId);
-    }
-    
-    return isExfiltration;
-  };
-
-  // Automated response system
-  const blockSuspiciousIP = async (ip: string, duration: number): Promise<void> => {
-    console.log(`🚫 Blocking suspicious IP ${ip} for ${duration} minutes`);
-    
-    // Simulate IP blocking
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const alert: SecurityAlert = {
-      id: Date.now().toString(),
-      threat: {
-        id: Date.now().toString(),
-        type: 'brute_force',
-        severity: 'medium',
-        source: ip,
-        timestamp: new Date(),
-        details: { duration }
-      },
-      message: `IP ${ip} has been blocked for ${duration} minutes`,
-      actionRequired: false,
-      resolved: true
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      await Promise.all([
+        fetchSecurityEvents(),
+        fetchDecryptionFailures()
+      ]);
+      setLoading(false);
     };
-    
-    setAlerts(prev => [alert, ...prev.slice(0, 49)]);
-  };
 
-  const triggerIncidentResponse = async (threat: SecurityThreat): Promise<void> => {
-    console.log(`🚨 Triggering incident response for ${threat.type}`);
-    
-    const alert: SecurityAlert = {
-      id: Date.now().toString(),
-      threat,
-      message: `Security incident detected: ${threat.type} from ${threat.source}`,
-      actionRequired: threat.severity === 'critical',
-      resolved: false
-    };
-    
-    setAlerts(prev => [alert, ...prev.slice(0, 49)]);
-    
-    // Auto-resolve low severity threats
-    if (threat.severity === 'low') {
-      setTimeout(() => {
-        setAlerts(prev => prev.map(a => 
-          a.id === alert.id ? { ...a, resolved: true } : a
-        ));
-      }, 5000);
-    }
-  };
+    fetchData();
+  }, [user]);
 
-  const notifySecurityTeam = async (alert: SecurityAlert): Promise<void> => {
-    console.log('📧 Notifying security team about critical alert');
-    
-    // Simulate notification
-    if (alert.threat.severity === 'critical') {
-      // Send email, SMS, push notification to security team
-      console.log('🚨 CRITICAL ALERT sent to security team');
-    }
-  };
-
-  // Compliance and audit logging
-  const logSecurityEvent = async (event: SecurityEvent): Promise<void> => {
-    console.log('📝 Logging security event');
-    setSecurityEvents(prev => [event, ...prev.slice(0, 99)]);
-  };
-
-  const generateComplianceReport = async (): Promise<ComplianceReport> => {
-    console.log('📊 Generating compliance report');
-    
-    // Simulate compliance calculation
-    const report: ComplianceReport = {
-      gdprCompliance: 95 + Math.random() * 5,
-      hipaCompliance: 96 + Math.random() * 4,
-      sox404Compliance: 94 + Math.random() * 6,
-      pciDssCompliance: 97 + Math.random() * 3,
-      vulnerabilities: Math.floor(Math.random() * 3),
-      securityScore: 95 + Math.random() * 5
-    };
-    
-    setComplianceStatus(report);
-    return report;
-  };
-
-  // Helper functions
-  const blockSuspiciousTraffic = async (pattern: TrafficPattern): Promise<void> => {
-    console.log('🛡️ Implementing DDoS mitigation measures');
-  };
-
-  const quarantineUser = async (userId: string): Promise<void> => {
-    console.log(`🔒 Quarantining user ${userId} due to suspicious activity`);
-  };
-
-  // Simulate real-time monitoring
+  // Subscribe to new security events
   useEffect(() => {
     if (!user) return;
 
-    const interval = setInterval(async () => {
-      // Simulate traffic monitoring
-      const trafficPattern: TrafficPattern = {
-        requestsPerSecond: Math.floor(Math.random() * 200),
-        uniqueIPs: Math.floor(Math.random() * 1000),
-        suspiciousPatterns: Math.random() > 0.9 ? ['bot-traffic'] : [],
-        geolocation: ['US', 'EU', 'ASIA']
-      };
-      
-      await detectDDoS(trafficPattern);
-      
-      // Random security events
-      if (Math.random() > 0.95) {
-        const event: SecurityEvent = {
-          id: Date.now().toString(),
-          userId: user.id,
-          eventType: 'login_attempt',
-          timestamp: new Date(),
-          ipAddress: `192.168.1.${Math.floor(Math.random() * 255)}`,
-          userAgent: 'SecureChat-App/1.0',
-          success: Math.random() > 0.1,
-          details: {}
-        };
-        
-        await logSecurityEvent(event);
-      }
-    }, 30000); // Check every 30 seconds
+    const subscription = supabase
+      .channel('security_events')
+      .on('postgres_changes',
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'security_events',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          setSecurityEvents(prev => [payload.new as SecurityEvent, ...prev]);
+        }
+      )
+      .subscribe();
 
-    return () => clearInterval(interval);
+    return () => {
+      supabase.removeChannel(subscription);
+    };
   }, [user]);
 
   return {
-    threats,
-    alerts,
     securityEvents,
-    complianceStatus,
-    detectBruteForce,
-    detectDDoS,
-    detectDataExfiltration,
-    blockSuspiciousIP,
-    triggerIncidentResponse,
-    notifySecurityTeam,
+    decryptionFailures,
+    loading,
     logSecurityEvent,
-    generateComplianceReport
+    logDecryptionFailure,
+    clearOldEvents,
+    refetch: () => Promise.all([fetchSecurityEvents(), fetchDecryptionFailures()])
   };
 };
