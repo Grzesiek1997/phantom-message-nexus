@@ -12,7 +12,11 @@ export const useConversations = () => {
   const { toast } = useToast();
 
   const fetchConversations = async () => {
-    if (!user) return;
+    if (!user) {
+      setConversations([]);
+      setLoading(false);
+      return;
+    }
 
     try {
       console.log('Fetching conversations for user:', user.id);
@@ -42,7 +46,8 @@ export const useConversations = () => {
       const { data: conversationsData, error: conversationsError } = await supabase
         .from('conversations')
         .select('*')
-        .in('id', conversationIds);
+        .in('id', conversationIds)
+        .order('updated_at', { ascending: false });
 
       if (conversationsError) {
         console.error('Error fetching conversations:', conversationsError);
@@ -117,13 +122,31 @@ export const useConversations = () => {
     try {
       console.log('Creating conversation with participants:', participantIds, 'type:', type);
 
-      // For direct conversations, check if one already exists
+      // Sprawdź czy użytkownicy są znajomymi (tylko dla direct chat)
       if (type === 'direct' && participantIds.length === 1) {
         const otherUserId = participantIds[0];
         
-        console.log('Checking for existing direct conversation with:', otherUserId);
+        console.log('Checking friendship status with:', otherUserId);
         
-        // Get current user's conversations
+        const { data: friendshipData, error: friendshipError } = await supabase
+          .rpc('are_users_friends', {
+            user1_id: user.id,
+            user2_id: otherUserId
+          });
+
+        if (friendshipError) {
+          console.error('Error checking friendship:', friendshipError);
+          throw new Error('Nie można sprawdzić statusu znajomości');
+        }
+
+        if (!friendshipData) {
+          console.log('Users are not friends');
+          throw new Error('Nie możesz rozpocząć czatu z osobą, która nie jest Twoim znajomym');
+        }
+
+        console.log('Users are friends, checking for existing conversation');
+        
+        // Sprawdź czy istnieje już konwersacja bezpośrednia
         const { data: myParticipants, error: myError } = await supabase
           .from('conversation_participants')
           .select('conversation_id')
@@ -133,7 +156,6 @@ export const useConversations = () => {
           console.error('Error checking my conversations:', myError);
         }
 
-        // Get other user's conversations
         const { data: otherParticipants, error: otherError } = await supabase
           .from('conversation_participants')
           .select('conversation_id')
@@ -144,14 +166,12 @@ export const useConversations = () => {
         }
 
         if (myParticipants && otherParticipants) {
-          // Find common conversations
           const myConvIds = new Set(myParticipants.map(p => p.conversation_id));
           const commonConvIds = otherParticipants
             .map(p => p.conversation_id)
             .filter(id => myConvIds.has(id));
 
           if (commonConvIds.length > 0) {
-            // Check if any of these is a direct conversation
             const { data: existingConversations, error: checkError } = await supabase
               .from('conversations')
               .select('*')
@@ -170,26 +190,27 @@ export const useConversations = () => {
         }
       }
 
-      // Create new conversation
+      // Utwórz nową konwersację
       console.log('Creating new conversation...');
       const { data: conversation, error } = await supabase
         .from('conversations')
         .insert({
           type,
           name,
-          created_by: user.id
+          created_by: user.id,
+          updated_at: new Date().toISOString()
         })
         .select()
         .single();
 
       if (error) {
         console.error('Error creating conversation:', error);
-        throw new Error(`Failed to create conversation: ${error.message}`);
+        throw new Error(`Nie udało się utworzyć konwersacji: ${error.message}`);
       }
 
       console.log('Conversation created:', conversation);
 
-      // Add participants (including current user)
+      // Dodaj uczestników (łącznie z obecnym użytkownikiem)
       const participants = [user.id, ...participantIds].map(userId => ({
         conversation_id: conversation.id,
         user_id: userId,
@@ -205,15 +226,15 @@ export const useConversations = () => {
       if (participantError) {
         console.error('Error adding participants:', participantError);
         
-        // Try to clean up the conversation if participants couldn't be added
+        // Spróbuj usunąć konwersację jeśli nie udało się dodać uczestników
         await supabase.from('conversations').delete().eq('id', conversation.id);
         
-        throw new Error(`Failed to add participants: ${participantError.message}`);
+        throw new Error(`Nie udało się dodać uczestników: ${participantError.message}`);
       }
 
       console.log('Participants added successfully');
       
-      // Refresh conversations list
+      // Odśwież listę konwersacji
       await fetchConversations();
       
       return conversation.id;
@@ -226,6 +247,9 @@ export const useConversations = () => {
   useEffect(() => {
     if (user) {
       fetchConversations();
+    } else {
+      setConversations([]);
+      setLoading(false);
     }
   }, [user]);
 

@@ -236,6 +236,7 @@ export type Database = {
           created_at: string
           created_by: string
           id: string
+          last_message_at: string | null
           name: string | null
           type: string
           updated_at: string
@@ -244,6 +245,7 @@ export type Database = {
           created_at?: string
           created_by: string
           id?: string
+          last_message_at?: string | null
           name?: string | null
           type?: string
           updated_at?: string
@@ -252,6 +254,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           id?: string
+          last_message_at?: string | null
           name?: string | null
           type?: string
           updated_at?: string
@@ -706,6 +709,10 @@ export type Database = {
       accept_friend_request: {
         Args: { request_id: string }
         Returns: undefined
+      }
+      are_users_friends: {
+        Args: { user1_id: string; user2_id: string }
+        Returns: boolean
       }
       cleanup_expired_messages: {
         Args: Record<PropertyKey, never>

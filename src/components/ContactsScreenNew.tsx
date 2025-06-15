@@ -58,7 +58,7 @@ const ContactsScreenNew: React.FC = () => {
         
         toast({
           title: 'Nie można rozpocząć czatu',
-          description: 'Poczekaj, aż użytkownik zaakceptuje zaproszenie do znajomych',
+          description: 'Osoba musi zaakceptować zaproszenie do znajomych',
           variant: 'destructive'
         });
         return;
@@ -71,10 +71,6 @@ const ContactsScreenNew: React.FC = () => {
       
       if (conversationId) {
         console.log('Conversation created/found successfully:', conversationId);
-        toast({
-          title: 'Czat gotowy',
-          description: 'Przekierowuję do czatu...'
-        });
         
         // Przekieruj do głównej aplikacji z wybraną konwersacją
         navigate('/', { 
@@ -89,14 +85,16 @@ const ContactsScreenNew: React.FC = () => {
     } catch (error) {
       console.error('Error creating conversation:', error);
       
-      let errorMessage = 'Nie udało się utworzyć czatu. Spróbuj ponownie.';
+      let errorMessage = 'Nie udało się utworzyć czatu.';
       
       if (error instanceof Error) {
         if (error.message.includes('User not authenticated')) {
           errorMessage = 'Musisz być zalogowany aby utworzyć czat.';
-        } else if (error.message.includes('Failed to create conversation')) {
+        } else if (error.message.includes('nie jest Twoim znajomym')) {
+          errorMessage = 'Nie można utworzyć czatu z osobą, która nie jest Twoim znajomym.';
+        } else if (error.message.includes('Nie udało się utworzyć konwersacji')) {
           errorMessage = 'Błąd podczas tworzenia konwersacji. Sprawdź połączenie z internetem.';
-        } else if (error.message.includes('Failed to add participants')) {
+        } else if (error.message.includes('Nie udało się dodać uczestników')) {
           errorMessage = 'Nie udało się dodać uczestników do czatu.';
         }
       }
@@ -119,6 +117,11 @@ const ContactsScreenNew: React.FC = () => {
       // Odśwież listę kontaktów po zaakceptowaniu zaproszenia
       await fetchContacts();
       await fetchFriendRequests();
+      
+      toast({
+        title: 'Zaproszenie zaakceptowane',
+        description: 'Możesz teraz rozpocząć czat z tą osobą'
+      });
     } catch (error) {
       console.error('Error accepting friend request:', error);
     }
@@ -169,7 +172,8 @@ const ContactsScreenNew: React.FC = () => {
 
   // Oblicz liczby dla zakładek
   const acceptedFriendsCount = filteredContacts.filter(c => c.can_chat).length;
-  const pendingRequestsCount = filteredContacts.filter(c => !c.can_chat).length + acceptedFriendsCount;
+  const pendingContactsCount = filteredContacts.filter(c => !c.can_chat).length;
+  const totalContactsCount = acceptedFriendsCount + pendingContactsCount;
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
@@ -181,7 +185,7 @@ const ContactsScreenNew: React.FC = () => {
       <ContactsTabNavigation 
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        friendsCount={pendingRequestsCount}
+        friendsCount={totalContactsCount}
         receivedCount={filteredReceivedRequests.length}
         sentCount={filteredSentRequests.length}
         groupsCount={0}
