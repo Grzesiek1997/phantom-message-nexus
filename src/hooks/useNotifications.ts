@@ -35,17 +35,34 @@ export const useNotifications = () => {
         return;
       }
 
-      // Map database fields to interface fields
-      const mappedNotifications = (data || []).map(item => ({
-        id: item.id,
-        user_id: item.user_id,
-        type: item.type as 'friend_request' | 'friend_accepted' | 'message' | 'call',
-        title: item.title || '',
-        message: item.message || '',
-        data: item.data,
-        is_read: item.is_read || false,
-        created_at: item.created_at || ''
-      }));
+      // Map database fields to interface fields - handle both old and new schema
+      const mappedNotifications = (data || []).map(item => {
+        // If the item has the new schema (type, title, message)
+        if ('type' in item && 'title' in item && 'message' in item) {
+          return {
+            id: item.id,
+            user_id: item.user_id,
+            type: item.type as 'friend_request' | 'friend_accepted' | 'message' | 'call',
+            title: item.title || '',
+            message: item.message || '',
+            data: item.data,
+            is_read: item.is_read || false,
+            created_at: item.created_at || ''
+          };
+        } else {
+          // Handle old schema with notification_type
+          return {
+            id: item.id,
+            user_id: item.user_id,
+            type: (item.notification_type || 'message') as 'friend_request' | 'friend_accepted' | 'message' | 'call',
+            title: 'Powiadomienie',
+            message: 'Masz nowe powiadomienie',
+            data: null,
+            is_read: item.is_read || false,
+            created_at: item.created_at || ''
+          };
+        }
+      });
 
       setNotifications(mappedNotifications);
       setUnreadCount(mappedNotifications.filter(n => !n.is_read).length);
