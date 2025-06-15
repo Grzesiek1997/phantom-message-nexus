@@ -14,13 +14,14 @@ interface NotificationPanelProps {
 
 const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, onClose }) => {
   const { notifications, markAsRead, markAllAsRead, fetchNotifications } = useNotifications();
-  const { acceptFriendRequest, rejectFriendRequest, receivedRequests } = useFriendRequests();
+  const { acceptFriendRequest, rejectFriendRequest, receivedRequests, fetchFriendRequests } = useFriendRequests();
 
   const handleAcceptFriendRequest = async (requestId: string, notificationId: string) => {
     try {
       await acceptFriendRequest(requestId);
       await markAsRead(notificationId);
       await fetchNotifications();
+      await fetchFriendRequests();
       
       // Zamknij panel powiadomień i przekieruj do kontaktów
       onClose();
@@ -43,6 +44,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, onClose }
       await rejectFriendRequest(requestId);
       await markAsRead(notificationId);
       await fetchNotifications();
+      await fetchFriendRequests();
     } catch (error) {
       console.error('Error rejecting friend request:', error);
     }
@@ -105,6 +107,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, onClose }
               <div className="text-center text-gray-400">
                 <Bell className="w-12 h-12 mx-auto mb-2 opacity-50" />
                 <p>Brak powiadomień</p>
+                <p className="text-sm mt-1">Nie masz nowych zaproszeń do znajomych</p>
               </div>
             </div>
           ) : (

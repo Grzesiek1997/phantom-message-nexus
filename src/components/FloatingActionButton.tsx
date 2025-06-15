@@ -1,64 +1,74 @@
 
 import React, { useState } from 'react';
-import { Plus, UserPlus, X } from 'lucide-react';
-import FriendSearchDialog from "./contacts/FriendSearchDialog";
+import { Button } from '@/components/ui/button';
+import { Plus, MessageCircle, Users, Search, UserPlus } from 'lucide-react';
 
-const FloatingActionButton: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [showAddFriend, setShowAddFriend] = useState(false);
+interface FloatingActionButtonProps {
+  onNewChat: () => void;
+  onGroupChat: () => void;
+  onSearchChats: () => void;
+  onAddContacts: () => void;
+}
 
-  const handleOpenSearch = () => {
-    setShowAddFriend(true);
-    setIsOpen(false);
+const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
+  onNewChat,
+  onGroupChat,
+  onSearchChats,
+  onAddContacts
+}) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const toggleExpanded = () => {
+    setIsExpanded(!isExpanded);
   };
 
   return (
-    <div className="fixed bottom-24 right-6 z-50">
-      {/* Tylko jeden przycisk - Dodaj znajomego */}
-      {isOpen && (
-        <div className="absolute bottom-16 right-0 space-y-3">
-          <div className="transform transition-all duration-300 delay-100 translate-y-0 opacity-100 scale-100">
-            <div className="flex items-center space-x-3">
-              <span className="bg-black/80 text-white px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap">
-                Dodaj znajomego
-              </span>
-              <button
-                onClick={handleOpenSearch}
-                className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform duration-200"
-              >
-                <UserPlus className="w-6 h-6 text-white" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Main FAB */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`w-14 h-14 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 ${
-          isOpen ? 'rotate-45 scale-110' : 'rotate-0 scale-100'
-        }`}
-      >
-        {isOpen ? (
-          <X className="w-6 h-6 text-white" />
-        ) : (
-          <Plus className="w-6 h-6 text-white" />
+    <div className="fixed bottom-20 right-4 z-50">
+      <div className="flex flex-col items-end space-y-2">
+        {isExpanded && (
+          <>
+            <Button
+              onClick={onAddContacts}
+              className="bg-green-500 hover:bg-green-600 text-white shadow-lg"
+              size="sm"
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              Dodaj kontakty
+            </Button>
+            <Button
+              onClick={onSearchChats}
+              className="bg-purple-500 hover:bg-purple-600 text-white shadow-lg"
+              size="sm"
+            >
+              <Search className="w-4 h-4 mr-2" />
+              Szukaj czatów
+            </Button>
+            <Button
+              onClick={onGroupChat}
+              className="bg-orange-500 hover:bg-orange-600 text-white shadow-lg"
+              size="sm"
+            >
+              <Users className="w-4 h-4 mr-2" />
+              Grupa
+            </Button>
+            <Button
+              onClick={onNewChat}
+              className="bg-blue-500 hover:bg-blue-600 text-white shadow-lg"
+              size="sm"
+            >
+              <MessageCircle className="w-4 h-4 mr-2" />
+              Nowy czat
+            </Button>
+          </>
         )}
-      </button>
-
-      {/* FRIEND SEARCH DIALOG */}
-      {showAddFriend && (
-        <FriendSearchDialog isOpen={showAddFriend} onClose={() => setShowAddFriend(false)} />
-      )}
-
-      {/* Background Overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm -z-10"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
+        
+        <Button
+          onClick={toggleExpanded}
+          className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-700 hover:to-purple-800 text-white rounded-full w-14 h-14 shadow-lg transform transition-transform duration-200 hover:scale-110"
+        >
+          <Plus className={`w-6 h-6 transition-transform duration-200 ${isExpanded ? 'rotate-45' : ''}`} />
+        </Button>
+      </div>
     </div>
   );
 };

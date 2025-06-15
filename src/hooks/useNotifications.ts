@@ -48,7 +48,20 @@ export const useNotifications = () => {
       }));
 
       setNotifications(mappedNotifications);
-      setUnreadCount(mappedNotifications.filter(n => !n.is_read).length);
+      
+      // Count unread notifications
+      const regularUnreadCount = mappedNotifications.filter(n => !n.is_read).length;
+      
+      // Add friend requests count
+      const { data: friendRequests } = await supabase
+        .from('friend_requests')
+        .select('id')
+        .eq('receiver_id', user.id)
+        .eq('status', 'pending');
+
+      const friendRequestsCount = friendRequests?.length || 0;
+      
+      setUnreadCount(regularUnreadCount + friendRequestsCount);
     } catch (error) {
       console.error('Error in fetchNotifications:', error);
     } finally {
