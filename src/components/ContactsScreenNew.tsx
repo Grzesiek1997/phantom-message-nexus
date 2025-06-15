@@ -7,10 +7,12 @@ import ContactsHeader from './contacts/ContactsHeader';
 import ContactsTabNavigation from './contacts/ContactsTabNavigation';
 import ContactsContent from './contacts/ContactsContent';
 import ContactsQuickActions from './contacts/ContactsQuickActions';
+import FriendSearch from './FriendSearch';
 
 const ContactsScreenNew: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'friends' | 'received' | 'sent' | 'groups'>('friends');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showFriendSearch, setShowFriendSearch] = useState(false);
 
   const { contacts, deleteContact } = useContacts();
   const { 
@@ -32,6 +34,10 @@ const ContactsScreenNew: React.FC = () => {
     } catch (error) {
       console.error('Error creating conversation:', error);
     }
+  };
+
+  const handleAddContact = () => {
+    setShowFriendSearch(true);
   };
 
   // Filtrowanie kontaktów na podstawie wyszukiwania
@@ -80,7 +86,15 @@ const ContactsScreenNew: React.FC = () => {
         />
       </div>
 
-      <ContactsQuickActions />
+      <ContactsQuickActions onAddContact={handleAddContact} />
+
+      {/* Modal wyszukiwania znajomych */}
+      {showFriendSearch && (
+        <FriendSearch
+          isOpen={showFriendSearch}
+          onClose={() => setShowFriendSearch(false)}
+        />
+      )}
     </div>
   );
 };
