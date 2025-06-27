@@ -128,11 +128,17 @@ const EnhancedAppHeader: React.FC<EnhancedAppHeaderProps> = ({
   };
 
   const itemVariants = {
-    hidden: { y: -20, opacity: 0 },
+    hidden: {
+      opacity: 0,
+      transform: "translateY(-10px)",
+    },
     visible: {
-      y: 0,
       opacity: 1,
-      transition: { type: "spring", stiffness: 300, damping: 20 },
+      transform: "translateY(0px)",
+      transition: {
+        duration: 0.4,
+        ease: "easeOut",
+      },
     },
   };
 
