@@ -251,44 +251,8 @@ const EnhancedAppHeader: React.FC<EnhancedAppHeaderProps> = ({
               </motion.div>
             </div>
 
-            {/* Center Section - Navigation (Hidden on Mobile) */}
-            <motion.nav
-              variants={itemVariants}
-              className="hidden md:flex items-center space-x-2"
-            >
-              {[
-                { icon: Home, label: "Główna", path: "/" },
-                { icon: MessageCircle, label: "Czaty", path: "/?tab=chats" },
-                { icon: Users, label: "Kontakty", path: "/?tab=contacts" },
-                { icon: Phone, label: "Połączenia", path: "/?tab=calls" },
-              ].map((item, index) => {
-                const IconComponent = item.icon;
-                const isActive =
-                  location.pathname === item.path ||
-                  location.hash.includes(item.label.toLowerCase());
-
-                return (
-                  <motion.div
-                    key={item.label}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => navigate(item.path)}
-                      className={cn(
-                        "text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200",
-                        isActive && "text-white bg-white/20",
-                      )}
-                    >
-                      <IconComponent className="w-4 h-4 mr-2" />
-                      {item.label}
-                    </Button>
-                  </motion.div>
-                );
-              })}
-            </motion.nav>
+            {/* Center Section - Empty for cleaner look */}
+            <div className="flex-1" />
 
             {/* Right Section */}
             <div className="flex items-center space-x-3">
