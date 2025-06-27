@@ -319,6 +319,20 @@ export const useEnhancedFriendRequests = () => {
           duration: 4000,
         });
 
+        // Show push notification for friendship milestone
+        if (friendshipNotifications.isPermissionGranted()) {
+          // Find the request to get sender info
+          const request = receivedRequests.find((r) => r.id === requestId);
+          if (request?.sender_profile) {
+            showFriendshipNotification("friend_accepted", {
+              friendName:
+                request.sender_profile.display_name ||
+                request.sender_profile.username,
+              friendId: request.sender_profile.id,
+            });
+          }
+        }
+
         return true;
       } catch (error) {
         console.error("💥 Error in acceptFriendRequest:", error);
