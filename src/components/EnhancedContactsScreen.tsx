@@ -25,6 +25,7 @@ import { useEnhancedFriendRequests } from "@/hooks/useEnhancedFriendRequests";
 import { useContactsLogic } from "@/hooks/useContactsLogic";
 import EnhancedFriendSearch from "./EnhancedFriendSearch";
 import EnhancedFriendRequestCard from "./EnhancedFriendRequestCard";
+import EnhancedLoadingAnimations from "./EnhancedLoadingAnimations";
 import { cn } from "@/lib/utils";
 
 const EnhancedContactsScreen: React.FC = () => {
