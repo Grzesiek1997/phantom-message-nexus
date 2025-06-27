@@ -178,9 +178,11 @@ export const useConversations = () => {
       setConversations(formattedConversations);
     } catch (error) {
       console.error("Error in fetchConversations:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Nieznany błąd";
       toast({
         title: "Błąd",
-        description: "Nie udało się pobrać listy konwersacji",
+        description: `Nie udało się pobrać listy konwersacji: ${errorMessage}`,
         variant: "destructive",
       });
     } finally {
