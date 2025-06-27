@@ -287,6 +287,8 @@ const EnhancedFloatingActionButton: React.FC<
           animate={isOpen ? "open" : "closed"}
           whileHover="hover"
           whileTap={{ scale: 0.95 }}
+          className="relative"
+          style={{ transformOrigin: "center center" }}
         >
           <Button
             onClick={toggleOpen}
