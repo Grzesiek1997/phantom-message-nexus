@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import BottomNavigation from "./BottomNavigation";
-import FloatingActionButton from "./FloatingActionButton";
-import AppHeader from "./layout/AppHeader";
+import EnhancedFloatingActionButton from "./EnhancedFloatingActionButton";
+import EnhancedAppHeader from "./layout/EnhancedAppHeader";
 import AppContent from "./layout/AppContent";
 import AppModals from "./layout/AppModals";
 import FriendshipNotifications from "./FriendshipNotifications";
