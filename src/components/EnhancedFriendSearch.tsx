@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { useContacts } from "@/hooks/useContacts";
+import { useEnhancedContacts } from "@/hooks/useEnhancedContacts";
 import { useEnhancedFriendRequests } from "@/hooks/useEnhancedFriendRequests";
 import { cn } from "@/lib/utils";
 
