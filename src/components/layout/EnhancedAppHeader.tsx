@@ -73,7 +73,7 @@ const EnhancedAppHeader: React.FC<EnhancedAppHeaderProps> = ({
 
     // Based on current route
     if (path === "/" || hash.includes("chats")) {
-      return { title: "SecureChat", subtitle: "Bezpieczne wiadomości" };
+      return { title: "SecureChat Quantum", subtitle: "Bezpieczne wiadomości" };
     }
     if (hash.includes("contacts")) {
       return {
