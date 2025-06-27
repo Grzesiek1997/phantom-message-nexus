@@ -37,7 +37,14 @@ const EnhancedContactsScreen: React.FC = () => {
     "friends" | "received" | "sent" | "stats"
   >("friends");
 
-  const { contacts, loading: contactsLoading } = useContacts();
+  const {
+    contacts,
+    stats: contactsStats,
+    loading: contactsLoading,
+    searchUsers,
+    deleteContact,
+    isProcessing: isContactProcessing,
+  } = useEnhancedContacts();
   const {
     receivedRequests,
     sentRequests,
