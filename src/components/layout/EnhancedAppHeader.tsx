@@ -112,14 +112,16 @@ const EnhancedAppHeader: React.FC<EnhancedAppHeaderProps> = ({
   };
 
   const headerVariants = {
-    hidden: { y: -100, opacity: 0 },
+    hidden: {
+      opacity: 0,
+      transform: "translateY(-20px)",
+    },
     visible: {
-      y: 0,
       opacity: 1,
+      transform: "translateY(0px)",
       transition: {
-        type: "spring",
-        stiffness: 260,
-        damping: 20,
+        duration: 0.6,
+        ease: "easeOut",
         staggerChildren: 0.1,
       },
     },
