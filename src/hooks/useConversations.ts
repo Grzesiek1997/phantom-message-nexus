@@ -89,6 +89,11 @@ export const useConversations = () => {
 
       if (allParticipantsError) {
         console.error("Error fetching all participants:", allParticipantsError);
+        toast({
+          title: "Błąd",
+          description: `Nie udało się pobrać uczestników: ${allParticipantsError.message || "Nieznany błąd"}`,
+          variant: "destructive",
+        });
         setLoading(false);
         return;
       }
