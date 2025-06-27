@@ -107,6 +107,11 @@ export const useConversations = () => {
 
       if (profilesError) {
         console.error("Error fetching profiles:", profilesError);
+        toast({
+          title: "Błąd",
+          description: `Nie udało się pobrać profili: ${profilesError.message || "Nieznany błąd"}`,
+          variant: "destructive",
+        });
         setLoading(false);
         return;
       }
