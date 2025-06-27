@@ -2,6 +2,10 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { useToast } from "./use-toast";
+import {
+  friendshipNotifications,
+  showFriendshipNotification,
+} from "@/utils/friendshipNotifications";
 
 export interface EnhancedFriendRequest {
   id: string;
