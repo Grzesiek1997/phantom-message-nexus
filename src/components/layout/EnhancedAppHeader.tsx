@@ -16,6 +16,7 @@ import {
   Shield,
   Crown,
 } from "lucide-react";
+import SpectacularLogo from "../SpectacularLogo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
