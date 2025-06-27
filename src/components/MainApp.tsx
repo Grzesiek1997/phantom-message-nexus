@@ -64,22 +64,22 @@ const MainApp: React.FC = () => {
 
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
-      <AppHeader
+      <EnhancedAppHeader
         totalUnreadCount={totalUnreadCount}
         onNotificationClick={handleNotificationClick}
         onSignOut={handleSignOut}
+        showBackButton={true}
       />
 
       <AppContent activeTab={activeTab} />
 
-      {activeTab === "chats" && (
-        <FloatingActionButton
-          onNewChat={handleNewChat}
-          onGroupChat={handleGroupChat}
-          onSearchChats={handleSearchChats}
-          onAddContacts={handleAddContacts}
-        />
-      )}
+      {/* Enhanced Floating Action Button - Always Visible */}
+      <EnhancedFloatingActionButton
+        onNewChat={handleNewChat}
+        onGroupChat={handleGroupChat}
+        onSearchChats={handleSearchChats}
+        onAddContacts={handleAddContacts}
+      />
 
       <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
 
