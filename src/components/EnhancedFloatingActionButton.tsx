@@ -180,7 +180,8 @@ const EnhancedFloatingActionButton: React.FC<
                     initial="closed"
                     animate="open"
                     exit="closed"
-                    className="flex items-center space-x-3"
+                    className="flex items-center space-x-3 relative"
+                    style={{ transformOrigin: "right center" }}
                   >
                     {/* Action Label */}
                     <AnimatePresence>
