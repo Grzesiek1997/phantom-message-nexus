@@ -242,38 +242,35 @@ const EnhancedFloatingActionButton: React.FC<
                       </motion.div>
                     </motion.div>
 
-                    {/* Stable Particle Effect */}
+                    {/* Enhanced Particle Effect - Non-interfering */}
                     <AnimatePresence>
                       {isHovered && (
-                        <motion.div
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0, opacity: 0 }}
-                          className="absolute -inset-4 pointer-events-none z-0"
-                        >
-                          {[...Array(6)].map((_, i) => (
+                        <div className="absolute -inset-2 pointer-events-none z-0">
+                          {[...Array(4)].map((_, i) => (
                             <motion.div
                               key={i}
+                              initial={{ scale: 0, opacity: 0 }}
                               animate={{
-                                rotate: [0, 360],
-                                scale: [0.5, 1, 0.5],
-                                opacity: [0.3, 0.8, 0.3],
+                                scale: [0, 1, 0],
+                                opacity: [0, 0.6, 0],
+                                rotate: [0, 180],
                               }}
+                              exit={{ scale: 0, opacity: 0 }}
                               transition={{
-                                duration: 2,
-                                delay: i * 0.1,
+                                duration: 1.5,
+                                delay: i * 0.2,
                                 repeat: Infinity,
-                                ease: "easeInOut",
+                                ease: "easeOut",
                               }}
-                              className="absolute w-2 h-2 bg-white/60 rounded-full"
+                              className="absolute w-1 h-1 bg-white rounded-full"
                               style={{
                                 left: "50%",
                                 top: "50%",
-                                transform: `rotate(${i * 60}deg) translateY(-30px) translateX(-50%)`,
+                                transform: `translate(-50%, -50%) rotate(${i * 90}deg) translateY(-25px)`,
                               }}
                             />
                           ))}
-                        </motion.div>
+                        </div>
                       )}
                     </AnimatePresence>
                   </motion.div>
