@@ -93,6 +93,9 @@ const MainApp: React.FC = () => {
         onSelectContact={handleSelectContact}
         onCreateGroup={handleCreateGroup}
       />
+
+      {/* Enhanced Friendship Notifications */}
+      <FriendshipNotifications />
     </div>
   );
 };
