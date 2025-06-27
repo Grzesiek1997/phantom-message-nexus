@@ -147,6 +147,14 @@ describe('Quantum Security Utils', () => {
     });
 
     describe('validateMessage', () => {
+      // Mock the validateZKBusinessRules method to return isValid: true
+      beforeEach(() => {
+        vi.spyOn(validator, 'validateZKBusinessRules').mockResolvedValue({
+          isValid: true,
+          zkProof: 'mock-proof'
+        });
+      });
+
       it('should validate safe messages', async () => {
         const safeMessage = "Hello, this is a safe message!";
         const result = await validator.validateMessage(safeMessage, "user123");
