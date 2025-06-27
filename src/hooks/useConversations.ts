@@ -61,7 +61,10 @@ export const useConversations = () => {
           .order("updated_at", { ascending: false });
 
       if (conversationsError) {
-        console.error("Error fetching conversations:", conversationsError);
+        console.error(
+          "Error fetching conversations:",
+          conversationsError.message || conversationsError,
+        );
         toast({
           title: "Błąd",
           description: `Nie udało się pobrać konwersacji: ${conversationsError.message || "Nieznany błąd"}`,
