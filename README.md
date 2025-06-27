@@ -44,9 +44,11 @@ npm run test:coverage
 ```
 
 Current test coverage focuses on utility functions in the `src/utils` directory:
-- `typeGuards.ts` - Type guard functions for better type safety
-- `contactHelpers.ts` - Helper functions for contact management
-- `encryption.ts` - Client-side encryption utilities
+- `typeGuards.ts` - Type guard functions for better type safety (100% coverage)
+- `contactHelpers.ts` - Helper functions for contact management (100% coverage)
+- `storyHelpers.ts` - Helper functions for story management (100% coverage)
+- `quantumSecurity.ts` - Quantum-enhanced security utilities (76% coverage)
+- `encryption.ts` - Client-side encryption utilities (partial coverage)
 
 ## Building
 
