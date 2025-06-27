@@ -20,7 +20,23 @@ on:
     branches: [ "main" ]
 
 jobs:
+  check-secrets:
+    runs-on: ubuntu-latest
+    outputs:
+      has-secrets: ${{ steps.check.outputs.has-secrets }}
+    steps:
+      - id: check
+        run: |
+          if [ -n "${{ secrets.DD_API_KEY }}" ] && [ -n "${{ secrets.DD_APP_KEY }}" ]; then
+            echo "has-secrets=true" >> $GITHUB_OUTPUT
+          else
+            echo "has-secrets=false" >> $GITHUB_OUTPUT
+            echo "::warning::Datadog API or APP keys are not set. Skipping Datadog Synthetic tests."
+          fi
+
   build:
+    needs: check-secrets
+    if: needs.check-secrets.outputs.has-secrets == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -34,5 +50,13 @@ jobs:
         api_key: ${{secrets.DD_API_KEY}}
         app_key: ${{secrets.DD_APP_KEY}}
         test_search_query: 'tag:e2e-tests' #Modify this tag to suit your tagging strategy
+
+  skip-build:
+    needs: check-secrets
+    if: needs.check-secrets.outputs.has-secrets == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Skip Datadog tests
+        run: echo "Skipping Datadog Synthetic tests due to missing API or APP keys."
 
 
