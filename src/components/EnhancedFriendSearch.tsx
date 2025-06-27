@@ -42,7 +42,7 @@ const EnhancedFriendSearch: React.FC<EnhancedFriendSearchProps> = ({
   const [isSearching, setIsSearching] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
 
-  const { searchUsers } = useContacts();
+  const { searchUsers } = useEnhancedContacts();
   const {
     sendFriendRequest,
     sentRequests,
