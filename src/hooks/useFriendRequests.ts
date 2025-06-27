@@ -257,8 +257,84 @@ export const useFriendRequests = () => {
   useEffect(() => {
     if (!user) return;
 
+    const refreshData = async () => {
+      if (!user) return;
+
+      try {
+        setLoading(true);
+        console.log("Fetching friend requests for user:", user.id);
+
+        const { data: receivedData, error: receivedError } = await supabase
+          .from("friend_requests")
+          .select("*")
+          .eq("receiver_id", user.id);
+
+        if (receivedError) {
+          console.log("Error fetching received requests:", receivedError);
+        }
+
+        const { data: sentData, error: sentError } = await supabase
+          .from("friend_requests")
+          .select("*")
+          .eq("sender_id", user.id);
+
+        if (sentError) {
+          console.log("Error fetching sent requests:", sentError);
+        }
+
+        // Profile untuk otrzymanych zaproszeń (niezależnie od statusu)
+        if (receivedData && receivedData.length > 0) {
+          const senderIds = receivedData.map((req) => req.sender_id);
+          const { data: senderProfiles } = await supabase
+            .from("profiles")
+            .select("id, username, display_name, avatar_url")
+            .in("id", senderIds);
+
+          const requestsWithProfiles = receivedData.map((req) => ({
+            ...req,
+            status: req.status as "pending" | "accepted" | "rejected",
+            attempt_count: req.attempt_count || 1,
+            created_at: req.created_at || new Date().toISOString(),
+            updated_at: req.updated_at || new Date().toISOString(),
+            sender_profile: senderProfiles?.find((p) => p.id === req.sender_id),
+          }));
+
+          setReceivedRequests(requestsWithProfiles);
+        } else {
+          setReceivedRequests([]);
+        }
+
+        if (sentData && sentData.length > 0) {
+          const receiverIds = sentData.map((req) => req.receiver_id);
+          const { data: receiverProfiles } = await supabase
+            .from("profiles")
+            .select("id, username, display_name, avatar_url")
+            .in("id", receiverIds);
+
+          const sentWithProfiles = sentData.map((req) => ({
+            ...req,
+            status: req.status as "pending" | "accepted" | "rejected",
+            attempt_count: req.attempt_count || 1,
+            created_at: req.created_at || new Date().toISOString(),
+            updated_at: req.updated_at || new Date().toISOString(),
+            receiver_profile: receiverProfiles?.find(
+              (p) => p.id === req.receiver_id,
+            ),
+          }));
+
+          setSentRequests(sentWithProfiles);
+        } else {
+          setSentRequests([]);
+        }
+      } catch (error) {
+        console.log("Error in refreshData:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     const friendRequestsChannel = supabase
-      .channel("friend-requests-updates")
+      .channel(`friend-requests-updates-${user.id}`)
       .on(
         "postgres_changes",
         {
@@ -269,7 +345,7 @@ export const useFriendRequests = () => {
         },
         () => {
           console.log("Received friend requests updated, refreshing...");
-          fetchFriendRequests();
+          refreshData();
         },
       )
       .on(
@@ -282,7 +358,7 @@ export const useFriendRequests = () => {
         },
         () => {
           console.log("Sent friend requests updated, refreshing...");
-          fetchFriendRequests();
+          refreshData();
         },
       )
       .subscribe();
