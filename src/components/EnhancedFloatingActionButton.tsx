@@ -240,34 +240,34 @@ const EnhancedFloatingActionButton: React.FC<
                       </Button>
                     </motion.div>
 
-                    {/* Particle Effect */}
+                    {/* Stable Particle Effect */}
                     <AnimatePresence>
                       {isHovered && (
                         <motion.div
                           initial={{ scale: 0, opacity: 0 }}
                           animate={{ scale: 1, opacity: 1 }}
                           exit={{ scale: 0, opacity: 0 }}
-                          className="absolute inset-0 pointer-events-none"
+                          className="absolute -inset-4 pointer-events-none z-0"
                         >
                           {[...Array(6)].map((_, i) => (
                             <motion.div
                               key={i}
                               animate={{
-                                x: [0, Math.random() * 40 - 20],
-                                y: [0, Math.random() * 40 - 20],
-                                opacity: [1, 0],
-                                scale: [0, 1, 0],
+                                rotate: [0, 360],
+                                scale: [0.5, 1, 0.5],
+                                opacity: [0.3, 0.8, 0.3],
                               }}
                               transition={{
-                                duration: 1,
+                                duration: 2,
                                 delay: i * 0.1,
                                 repeat: Infinity,
-                                repeatDelay: 0.5,
+                                ease: "easeInOut",
                               }}
-                              className="absolute w-1 h-1 bg-white rounded-full"
+                              className="absolute w-2 h-2 bg-white/60 rounded-full"
                               style={{
                                 left: "50%",
                                 top: "50%",
+                                transform: `rotate(${i * 60}deg) translateY(-30px) translateX(-50%)`,
                               }}
                             />
                           ))}
