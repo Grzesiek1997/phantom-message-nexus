@@ -235,9 +235,43 @@ const EnhancedFriendSearch: React.FC<EnhancedFriendSearchProps> = ({
                   exit={{ opacity: 0 }}
                   className="flex items-center justify-center p-12"
                 >
-                  <div className="text-center">
-                    <Loader2 className="w-8 h-8 animate-spin text-blue-400 mx-auto mb-3" />
-                    <p className="text-gray-400">Szukam użytkowników...</p>
+                  <div className="text-center py-8">
+                    <motion.div
+                      animate={{
+                        rotate: 360,
+                        scale: [1, 1.2, 1],
+                      }}
+                      transition={{
+                        rotate: {
+                          duration: 2,
+                          repeat: Infinity,
+                          ease: "linear",
+                        },
+                        scale: {
+                          duration: 1.5,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                        },
+                      }}
+                      className="w-12 h-12 mx-auto mb-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center"
+                    >
+                      <Search className="w-6 h-6 text-white" />
+                    </motion.div>
+                    <motion.p
+                      animate={{ opacity: [0.5, 1, 0.5] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="text-gray-400 text-lg font-medium"
+                    >
+                      Szukam idealnych znajomych...
+                    </motion.p>
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.5 }}
+                      className="text-gray-500 text-sm mt-2"
+                    >
+                      Analizuję profile użytkowników
+                    </motion.p>
                   </div>
                 </motion.div>
               ) : searchResults.length === 0 ? (
