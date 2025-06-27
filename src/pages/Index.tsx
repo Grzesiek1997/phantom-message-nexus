@@ -34,7 +34,7 @@ const Index = () => {
   return (
     <>
       <LandingPage onGetStarted={() => setShowAuth(true)} />
-      {showAuth && <LoginForm onClose={() => setShowAuth(false)} />}
+      {showAuth && <EnhancedAuthForm onClose={() => setShowAuth(false)} />}
     </>
   );
 };
