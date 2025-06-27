@@ -130,39 +130,12 @@ const EnhancedContactsScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="flex flex-col h-full items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900"
-      >
-        <motion.div
-          animate={{
-            rotate: 360,
-            scale: [1, 1.2, 1],
-          }}
-          transition={{
-            rotate: { duration: 2, repeat: Infinity, ease: "linear" },
-            scale: { duration: 1, repeat: Infinity, ease: "easeInOut" },
-          }}
-          className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full mb-6"
-        />
-        <motion.h2
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="text-white text-xl font-semibold mb-2"
-        >
-          Ładowanie kontaktów...
-        </motion.h2>
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="text-gray-400"
-        >
-          Przygotowujemy Twoją listę znajomych
-        </motion.p>
-      </motion.div>
+      <EnhancedLoadingAnimations
+        type="contacts"
+        message="Synchronizujemy Twoją społeczność..."
+        showProgress={true}
+        progress={Math.min(95, Date.now() % 100)}
+      />
     );
   }
 
