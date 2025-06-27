@@ -217,31 +217,29 @@ const EnhancedAppHeader: React.FC<EnhancedAppHeaderProps> = ({
                 )}
               </AnimatePresence>
 
-              {/* App Logo/Title */}
-              <motion.div
-                variants={itemVariants}
-                className="flex items-center space-x-3"
-              >
-                <motion.div
-                  whileHover={{ scale: 1.05, rotate: 5 }}
-                  className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg"
-                >
-                  <MessageCircle className="w-6 h-6 text-white" />
-                </motion.div>
+              {/* Spectacular Logo */}
+              <motion.div variants={itemVariants} className="flex items-center">
+                <SpectacularLogo
+                  size="small"
+                  showText={pageInfo.title === "SecureChat Quantum"}
+                  animated={true}
+                />
 
-                <div className="hidden sm:block">
-                  <motion.h1 className="text-xl font-bold text-white bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
-                    {pageInfo.title}
-                  </motion.h1>
-                  {pageInfo.subtitle && (
-                    <motion.p
-                      variants={itemVariants}
-                      className="text-sm text-gray-300"
-                    >
-                      {pageInfo.subtitle}
-                    </motion.p>
-                  )}
-                </div>
+                {pageInfo.title !== "SecureChat Quantum" && (
+                  <div className="ml-3 hidden sm:block">
+                    <motion.h1 className="text-xl font-bold text-white bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
+                      {pageInfo.title}
+                    </motion.h1>
+                    {pageInfo.subtitle && (
+                      <motion.p
+                        variants={itemVariants}
+                        className="text-sm text-gray-300"
+                      >
+                        {pageInfo.subtitle}
+                      </motion.p>
+                    )}
+                  </div>
+                )}
               </motion.div>
             </div>
 
