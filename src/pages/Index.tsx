@@ -1,10 +1,10 @@
-
-import React, { useState, useEffect } from 'react';
-import Layout from '@/components/Layout';
-import LandingPage from '@/components/LandingPage';
-import LoginForm from '@/components/auth/LoginForm';
-import MainApp from '@/components/MainApp';
-import { useAuth } from '@/hooks/useAuth';
+import React, { useState, useEffect } from "react";
+import Layout from "@/components/Layout";
+import LandingPage from "@/components/LandingPage";
+import EnhancedAuthForm from "@/components/EnhancedAuthForm";
+import MainApp from "@/components/MainApp";
+import { useAuth } from "@/hooks/useAuth";
+import { databaseUtils } from "@/utils/databaseTroubleshoot";
 
 const Index = () => {
   const [showAuth, setShowAuth] = useState(false);
