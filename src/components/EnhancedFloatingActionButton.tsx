@@ -203,18 +203,40 @@ const EnhancedFloatingActionButton: React.FC<
                       whileHover="hover"
                       onHoverStart={() => setHoveredAction(action.id)}
                       onHoverEnd={() => setHoveredAction(null)}
+                      className="relative"
                     >
                       <Button
                         onClick={() => handleActionClick(action)}
                         className={cn(
                           "w-14 h-14 rounded-full shadow-lg border-2 border-white/20 backdrop-blur-sm",
-                          "bg-gradient-to-r transition-all duration-200",
+                          "bg-gradient-to-r transition-all duration-200 relative",
                           action.color,
                           "hover:border-white/40 hover:shadow-xl",
                         )}
                         size="icon"
                       >
-                        <IconComponent className="w-6 h-6 text-white" />
+                        <IconComponent className="w-6 h-6 text-white relative z-10" />
+
+                        {/* Stable hover glow effect */}
+                        <motion.div
+                          initial={{ opacity: 0, scale: 1 }}
+                          animate={
+                            isHovered
+                              ? {
+                                  opacity: 0.3,
+                                  scale: 1.2,
+                                }
+                              : {
+                                  opacity: 0,
+                                  scale: 1,
+                                }
+                          }
+                          transition={{ duration: 0.2 }}
+                          className={cn(
+                            "absolute inset-0 rounded-full bg-gradient-to-r",
+                            action.color,
+                          )}
+                        />
                       </Button>
                     </motion.div>
 
