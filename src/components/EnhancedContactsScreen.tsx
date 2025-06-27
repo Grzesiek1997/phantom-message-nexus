@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useContacts } from "@/hooks/useContacts";
+import { useEnhancedContacts } from "@/hooks/useEnhancedContacts";
 import { useEnhancedFriendRequests } from "@/hooks/useEnhancedFriendRequests";
 import { useContactsLogic } from "@/hooks/useContactsLogic";
 import EnhancedFriendSearch from "./EnhancedFriendSearch";
