@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/32</span>
+                <span class='fraction'>32/32</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>1/1</span>
+                <span class='fraction'>10/10</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>1/1</span>
+                <span class='fraction'>2/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/32</span>
+                <span class='fraction'>32/32</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -102,75 +102,75 @@
 <a name='L37'></a><a href='#L37'>37</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">&nbsp;
 import type { UserStory } from '@/hooks/useStories';
 &nbsp;
-<span class="cstat-no" title="statement not covered" >export const mapToUserStory = (story: any): UserStory =&gt; ({</span>
-<span class="cstat-no" title="statement not covered" >  id: story.id,</span>
-<span class="cstat-no" title="statement not covered" >  user_id: story.user_id,</span>
-<span class="cstat-no" title="statement not covered" >  content_type: (story.content_type as 'text' | 'image' | 'video') || 'text',</span>
-<span class="cstat-no" title="statement not covered" >  content_encrypted: story.content_encrypted || '',</span>
-<span class="cstat-no" title="statement not covered" >  background_color: story.background_color,</span>
-<span class="cstat-no" title="statement not covered" >  media_url: story.media_url,</span>
-<span class="cstat-no" title="statement not covered" >  media_thumbnail: story.media_thumbnail,</span>
-<span class="cstat-no" title="statement not covered" >  duration: story.duration,</span>
-<span class="cstat-no" title="statement not covered" >  visibility: (story.visibility as 'public' | 'contacts' | 'close_friends' | 'custom') || 'contacts',</span>
-<span class="cstat-no" title="statement not covered" >  allowed_viewers: story.allowed_viewers,</span>
-<span class="cstat-no" title="statement not covered" >  blocked_viewers: story.blocked_viewers,</span>
-<span class="cstat-no" title="statement not covered" >  view_count: story.view_count || 0,</span>
-<span class="cstat-no" title="statement not covered" >  allow_replies: story.allow_replies !== false,</span>
-<span class="cstat-no" title="statement not covered" >  allow_reactions: story.allow_reactions !== false,</span>
-<span class="cstat-no" title="statement not covered" >  expires_at: story.expires_at,</span>
-<span class="cstat-no" title="statement not covered" >  created_at: story.created_at,</span>
-<span class="cstat-no" title="statement not covered" >  viewed_by_user: false</span>
-<span class="cstat-no" title="statement not covered" >});</span>
+export const mapToUserStory = (story: any): UserStory =&gt; ({
+  id: story.id,
+  user_id: story.user_id,
+  content_type: (story.content_type as 'text' | 'image' | 'video') || 'text',
+  content_encrypted: story.content_encrypted || '',
+  background_color: story.background_color,
+  media_url: story.media_url,
+  media_thumbnail: story.media_thumbnail,
+  duration: story.duration,
+  visibility: (story.visibility as 'public' | 'contacts' | 'close_friends' | 'custom') || 'contacts',
+  allowed_viewers: story.allowed_viewers,
+  blocked_viewers: story.blocked_viewers,
+  view_count: story.view_count || 0,
+  allow_replies: story.allow_replies !== false,
+  allow_reactions: story.allow_reactions !== false,
+  expires_at: story.expires_at,
+  created_at: story.created_at,
+  viewed_by_user: false
+});
 &nbsp;
-<span class="cstat-no" title="statement not covered" >export const formatStoryWithAuthor = (story: any, author: any, isViewed: boolean = false): UserStory =&gt; ({</span>
-<span class="cstat-no" title="statement not covered" >  ...mapToUserStory(story),</span>
-<span class="cstat-no" title="statement not covered" >  author: author ? {</span>
-<span class="cstat-no" title="statement not covered" >    username: author.username,</span>
-<span class="cstat-no" title="statement not covered" >    display_name: author.display_name || author.username,</span>
-<span class="cstat-no" title="statement not covered" >    avatar_url: author.avatar_url || ''</span>
-<span class="cstat-no" title="statement not covered" >  } : { </span>
-<span class="cstat-no" title="statement not covered" >    username: 'Unknown', </span>
-<span class="cstat-no" title="statement not covered" >    display_name: 'Unknown User', </span>
-<span class="cstat-no" title="statement not covered" >    avatar_url: '' </span>
-<span class="cstat-no" title="statement not covered" >  },</span>
-<span class="cstat-no" title="statement not covered" >  viewed_by_user: isViewed</span>
-<span class="cstat-no" title="statement not covered" >});</span>
+export const formatStoryWithAuthor = (story: any, author: any, isViewed: boolean = false): UserStory =&gt; ({
+  ...mapToUserStory(story),
+  author: author ? {
+    username: author.username,
+    display_name: author.display_name || author.username,
+    avatar_url: author.avatar_url || ''
+  } : { 
+    username: 'Unknown', 
+    display_name: 'Unknown User', 
+    avatar_url: '' 
+  },
+  viewed_by_user: isViewed
+});
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -178,7 +178,7 @@ import type { UserStory } from '@/hooks/useStories';
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-06-27T21:51:10.035Z
+                at 2025-06-27T22:14:08.896Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>
