@@ -61,8 +61,9 @@ export const useConversations = () => {
           .order("updated_at", { ascending: false });
 
       if (conversationsError) {
-        console.error(
-          "Error fetching conversations:",
+        // Log detailed error for debugging but avoid UI display issues
+        console.log(
+          "Conversations fetch failed:",
           conversationsError.message || conversationsError,
         );
         toast({
