@@ -94,14 +94,12 @@ const EnhancedFloatingActionButton: React.FC<
     closed: {
       scale: 0,
       opacity: 0,
-      y: 20,
-      rotate: -90,
+      y: 10,
     },
     open: (delay: number) => ({
       scale: 1,
       opacity: 1,
       y: 0,
-      rotate: 0,
       transition: {
         type: "spring",
         stiffness: 260,
@@ -109,14 +107,6 @@ const EnhancedFloatingActionButton: React.FC<
         delay: delay,
       },
     }),
-    hover: {
-      scale: 1.05,
-      transition: {
-        type: "spring",
-        stiffness: 400,
-        damping: 15,
-      },
-    },
   };
 
   const labelVariants = {
