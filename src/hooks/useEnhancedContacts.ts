@@ -76,7 +76,7 @@ export const useEnhancedContacts = () => {
         .select("*")
         .eq("user_id", user.id)
         .eq("status", "accepted")
-        .order("updated_at", { ascending: false });
+        .order("created_at", { ascending: false });
 
       if (contactsError) {
         console.error(
