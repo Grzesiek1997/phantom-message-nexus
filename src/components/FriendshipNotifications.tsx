@@ -175,24 +175,31 @@ const FriendshipNotifications: React.FC = () => {
     [acceptFriendRequest],
   );
 
-  const handleReject = async (requestId: string) => {
-    const success = await rejectFriendRequest(requestId);
-    if (success) {
-      setNotifications((prev) =>
-        prev.filter((n) => n.id !== `request-${requestId}`),
-      );
-    }
-  };
+  const handleReject = useCallback(
+    async (requestId: string) => {
+      try {
+        const success = await rejectFriendRequest(requestId);
+        if (success) {
+          setNotifications((prev) =>
+            prev.filter((n) => n.id !== `request-${requestId}`),
+          );
+        }
+      } catch (error) {
+        console.error("Error rejecting friend request:", error);
+      }
+    },
+    [rejectFriendRequest],
+  );
 
-  const markAsRead = (notificationId: string) => {
+  const markAsRead = useCallback((notificationId: string) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n)),
     );
-  };
+  }, []);
 
-  const dismissNotification = (notificationId: string) => {
+  const dismissNotification = useCallback((notificationId: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
-  };
+  }, []);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
