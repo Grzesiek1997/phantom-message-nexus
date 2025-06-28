@@ -542,9 +542,14 @@ export const useEnhancedContacts = () => {
           console.log("📝 Contact update:", payload);
           // Refresh data on real-time updates
           setLoading(true);
-          setTimeout(() => {
+          setTimeout(async () => {
             if (user?.id) {
-              fetchEnhancedContacts();
+              try {
+                await fetchEnhancedContacts();
+              } catch (error) {
+                console.error("Error refreshing contacts:", error);
+                setLoading(false);
+              }
             }
           }, 100);
         },
