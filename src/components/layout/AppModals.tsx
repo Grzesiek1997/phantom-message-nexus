@@ -1,8 +1,7 @@
-
-import React from 'react';
-import ContactSearch from '../ContactSearch';
-import GroupManagement from '../GroupManagement';
-import NotificationPanel from '../NotificationPanel';
+import React from "react";
+import EnhancedFriendSearch from "../EnhancedFriendSearch";
+import GroupManagement from "../GroupManagement";
+import FriendshipNotifications from "../FriendshipNotifications";
 
 interface AppModalsProps {
   showContactSearch: boolean;
@@ -23,15 +22,14 @@ const AppModals: React.FC<AppModalsProps> = ({
   onCloseGroupManagement,
   onCloseNotifications,
   onSelectContact,
-  onCreateGroup
+  onCreateGroup,
 }) => {
   return (
     <>
       {showContactSearch && (
-        <ContactSearch
+        <EnhancedFriendSearch
           isOpen={showContactSearch}
           onClose={onCloseContactSearch}
-          onSelectContact={onSelectContact}
         />
       )}
 
@@ -44,12 +42,8 @@ const AppModals: React.FC<AppModalsProps> = ({
         />
       )}
 
-      {showNotifications && (
-        <NotificationPanel 
-          isOpen={showNotifications} 
-          onClose={onCloseNotifications} 
-        />
-      )}
+      {/* FriendshipNotifications is always rendered and manages its own visibility */}
+      <FriendshipNotifications />
     </>
   );
 };
