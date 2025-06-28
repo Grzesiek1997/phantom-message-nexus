@@ -540,10 +540,13 @@ export const useEnhancedContacts = () => {
         },
         (payload) => {
           console.log("📝 Contact update:", payload);
-          // Call fetchEnhancedContacts directly to avoid dependency issues
-          if (user) {
-            fetchEnhancedContacts();
-          }
+          // Refresh data on real-time updates
+          setLoading(true);
+          setTimeout(() => {
+            if (user?.id) {
+              fetchEnhancedContacts();
+            }
+          }, 100);
         },
       )
       .on(
