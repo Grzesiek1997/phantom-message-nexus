@@ -292,14 +292,15 @@ const EnhancedContactsScreen: React.FC = () => {
           {/* Tab Contents */}
           <div className="flex-1 overflow-y-auto">
             <AnimatePresence mode="wait">
-              <TabsContent value="friends" className="mt-0 p-6 space-y-4">
-                <motion.div
-                  key="friends"
-                  variants={tabVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="hidden"
-                >
+              {activeTab === "friends" && (
+                <TabsContent key="friends-tab" value="friends" className="mt-0 p-6 space-y-4">
+                  <motion.div
+                    key="friends-content"
+                    variants={tabVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="hidden"
+                  >
                   {filteredContacts.length === 0 ? (
                     <motion.div
                       initial={{ opacity: 0, scale: 0.9 }}
@@ -368,17 +369,19 @@ const EnhancedContactsScreen: React.FC = () => {
                       ))}
                     </motion.div>
                   )}
-                </motion.div>
-              </TabsContent>
+                  </motion.div>
+                </TabsContent>
+              )}
 
-              <TabsContent value="received" className="mt-0 p-6 space-y-4">
-                <motion.div
-                  key="received"
-                  variants={tabVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="hidden"
-                >
+              {activeTab === "received" && (
+                <TabsContent key="received-tab" value="received" className="mt-0 p-6 space-y-4">
+                  <motion.div
+                    key="received-content"
+                    variants={tabVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="hidden"
+                  >
                   {receivedRequests.length === 0 ? (
                     <motion.div
                       initial={{ opacity: 0, scale: 0.9 }}
@@ -418,17 +421,19 @@ const EnhancedContactsScreen: React.FC = () => {
                       ))}
                     </motion.div>
                   )}
-                </motion.div>
-              </TabsContent>
+                  </motion.div>
+                </TabsContent>
+              )}
 
-              <TabsContent value="sent" className="mt-0 p-6 space-y-4">
-                <motion.div
-                  key="sent"
-                  variants={tabVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="hidden"
-                >
+              {activeTab === "sent" && (
+                <TabsContent key="sent-tab" value="sent" className="mt-0 p-6 space-y-4">
+                  <motion.div
+                    key="sent-content"
+                    variants={tabVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="hidden"
+                  >
                   {sentRequests.length === 0 ? (
                     <motion.div
                       initial={{ opacity: 0, scale: 0.9 }}
@@ -466,18 +471,20 @@ const EnhancedContactsScreen: React.FC = () => {
                       ))}
                     </motion.div>
                   )}
-                </motion.div>
-              </TabsContent>
+                  </motion.div>
+                </TabsContent>
+              )}
 
-              <TabsContent value="stats" className="mt-0 p-6 space-y-6">
-                <motion.div
-                  key="stats"
-                  variants={tabVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="hidden"
-                  className="grid gap-6"
-                >
+              {activeTab === "stats" && (
+                <TabsContent key="stats-tab" value="stats" className="mt-0 p-6 space-y-6">
+                  <motion.div
+                    key="stats-content"
+                    variants={tabVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="hidden"
+                    className="grid gap-6"
+                  >
                   {/* Stats Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {[
@@ -556,8 +563,8 @@ const EnhancedContactsScreen: React.FC = () => {
                       </CardContent>
                     </Card>
                   </motion.div>
-                </motion.div>
-              </TabsContent>
+                </TabsContent>
+              )}
             </AnimatePresence>
           </div>
         </Tabs>
