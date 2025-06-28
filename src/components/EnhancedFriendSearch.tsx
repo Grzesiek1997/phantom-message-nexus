@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useEnhancedContacts } from "@/hooks/useEnhancedContacts";
 import { useEnhancedFriendRequests } from "@/hooks/useEnhancedFriendRequests";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -43,6 +44,7 @@ const EnhancedFriendSearch: React.FC<EnhancedFriendSearchProps> = ({
   const [isSearching, setIsSearching] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
 
+  const { user } = useAuth();
   const { searchUsers } = useEnhancedContacts();
   const {
     sendFriendRequest,
@@ -57,6 +59,8 @@ const EnhancedFriendSearch: React.FC<EnhancedFriendSearchProps> = ({
     const testConnection = async () => {
       try {
         console.log("🧪 Testing database connection...");
+        console.log("👤 Current user:", user?.id);
+
         const { data, error } = await supabase
           .from("profiles")
           .select("id, username")
@@ -70,14 +74,17 @@ const EnhancedFriendSearch: React.FC<EnhancedFriendSearchProps> = ({
             data?.length,
             "profiles found",
           );
+          console.log("📊 Sample profiles:", data);
         }
       } catch (err) {
         console.error("💥 Database connection error:", err);
       }
     };
 
-    testConnection();
-  }, []);
+    if (user) {
+      testConnection();
+    }
+  }, [user]);
 
   // Enhanced debounced search
   const debouncedSearch = useCallback(
