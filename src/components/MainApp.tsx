@@ -8,7 +8,7 @@ import FriendshipNotifications from "./FriendshipNotifications";
 import EnhancedFriendSearch from "./EnhancedFriendSearch";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotifications } from "@/hooks/useNotifications";
-import { useFriendRequests } from "@/hooks/useFriendRequests";
+import { useEnhancedFriendRequests } from "@/hooks/useEnhancedFriendRequests";
 import { useUserStatus } from "@/hooks/useUserStatus";
 
 const MainApp: React.FC = () => {
@@ -20,7 +20,7 @@ const MainApp: React.FC = () => {
 
   const { signOut } = useAuth();
   const { unreadCount } = useNotifications();
-  const { receivedRequests } = useFriendRequests();
+  const { receivedRequests } = useEnhancedFriendRequests();
   const { updateMyStatus } = useUserStatus();
 
   const totalUnreadCount = unreadCount + receivedRequests.length;
