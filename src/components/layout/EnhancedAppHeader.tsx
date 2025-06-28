@@ -24,6 +24,7 @@ interface EnhancedAppHeaderProps {
   totalUnreadCount?: number;
   onNotificationClick?: () => void;
   onSignOut?: () => void;
+  onSearchClick?: () => void;
   showBackButton?: boolean;
   title?: string;
   subtitle?: string;
@@ -35,6 +36,7 @@ const EnhancedAppHeader: React.FC<EnhancedAppHeaderProps> = ({
   totalUnreadCount = 0,
   onNotificationClick,
   onSignOut,
+  onSearchClick,
   showBackButton = true,
   title,
   subtitle,
@@ -267,6 +269,7 @@ const EnhancedAppHeader: React.FC<EnhancedAppHeaderProps> = ({
                 <Button
                   variant="ghost"
                   size="icon"
+                  onClick={onSearchClick}
                   className="text-gray-300 hover:text-white hover:bg-white/10 rounded-xl"
                 >
                   <Search className="w-5 h-5" />
