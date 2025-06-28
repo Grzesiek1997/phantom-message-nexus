@@ -70,21 +70,10 @@ export const useEnhancedContacts = () => {
       setLoading(true);
       console.log("🔄 Fetching enhanced contacts for user:", user.id);
 
-      // Fetch contacts with enhanced profile data and friend request info
+      // Fetch contacts data only
       const { data: contactsData, error: contactsError } = await supabase
         .from("contacts")
-        .select(
-          `
-          *,
-          profile:profiles (
-            id,
-            username,
-            display_name,
-            avatar_url,
-            bio
-          )
-        `,
-        )
+        .select("*")
         .eq("user_id", user.id)
         .eq("status", "accepted")
         .order("updated_at", { ascending: false });
@@ -116,6 +105,24 @@ export const useEnhancedContacts = () => {
         (contact) => contact.contact_user_id,
       );
 
+      // Fetch profiles for contacts
+      let profilesData: any[] = [];
+      if (contactUserIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from("profiles")
+          .select("id, username, display_name, avatar_url, bio")
+          .in("id", contactUserIds);
+
+        if (profilesError) {
+          console.warn(
+            "⚠️ Could not fetch contact profiles:",
+            profilesError.message,
+          );
+        } else {
+          profilesData = profiles || [];
+        }
+      }
+
       // Fetch friend request information
       const { data: friendRequestsData } = await supabase
         .from("friend_requests")
@@ -139,9 +146,13 @@ export const useEnhancedContacts = () => {
         )
         .eq("type", "direct");
 
-      // Simulate online status and additional data (in real app, this would come from presence system)
+      // Process contacts with separate profile lookups
       const enhancedContacts: EnhancedContact[] = contactsData.map(
         (contact) => {
+          const profile = profilesData.find(
+            (p) => p.id === contact.contact_user_id,
+          );
+
           const friendRequest = friendRequestsData?.find(
             (fr) =>
               (fr.sender_id === user.id &&
@@ -171,9 +182,9 @@ export const useEnhancedContacts = () => {
 
           return {
             ...contact,
-            profile: contact.profile
+            profile: profile
               ? {
-                  ...contact.profile,
+                  ...profile,
                   is_online: isOnline,
                   last_seen: lastSeen,
                   mutual_friends: mutualFriends,
