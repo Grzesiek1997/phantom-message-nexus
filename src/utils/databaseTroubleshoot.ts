@@ -146,9 +146,10 @@ export class DatabaseTroubleshoot {
     };
 
     try {
-      results.connection = await this.testConnection();
-      results.rls = await this.checkRLSPolicies();
-      results.conversations = await this.repairConversationsTable();
+      results.connection = await DatabaseTroubleshoot.testConnection();
+      results.rls = await DatabaseTroubleshoot.checkRLSPolicies();
+      results.conversations =
+        await DatabaseTroubleshoot.repairConversationsTable();
 
       results.overall =
         results.connection && results.rls && results.conversations;
