@@ -76,7 +76,7 @@ export const useEnhancedContacts = () => {
         .select(
           `
           *,
-          profile:profiles!contacts_contact_user_id_fkey (
+          profile:profiles (
             id,
             username,
             display_name,
@@ -90,7 +90,10 @@ export const useEnhancedContacts = () => {
         .order("updated_at", { ascending: false });
 
       if (contactsError) {
-        console.error("❌ Error fetching contacts:", contactsError);
+        console.error(
+          "❌ Error fetching contacts:",
+          contactsError?.message || contactsError,
+        );
         throw contactsError;
       }
 
@@ -235,8 +238,11 @@ export const useEnhancedContacts = () => {
         online: onlineCount,
         stats: newStats,
       });
-    } catch (error) {
-      console.error("💥 Critical error in fetchEnhancedContacts:", error);
+    } catch (error: any) {
+      console.error(
+        "💥 Critical error in fetchEnhancedContacts:",
+        error?.message || error,
+      );
       toast({
         title: "Błąd ładowania kontaktów",
         description: "Nie udało się pobrać listy kontaktów",
@@ -316,8 +322,8 @@ export const useEnhancedContacts = () => {
           "results",
         );
         return enhancedResults;
-      } catch (error) {
-        console.error("💥 Search error:", error);
+      } catch (error: any) {
+        console.error("💥 Search error:", error?.message || error);
 
         // Try fallback search with simpler query
         try {
@@ -354,8 +360,11 @@ export const useEnhancedContacts = () => {
             );
             return enhancedFallback;
           }
-        } catch (fallbackError) {
-          console.error("💥 Fallback search also failed:", fallbackError);
+        } catch (fallbackError: any) {
+          console.error(
+            "💥 Fallback search also failed:",
+            fallbackError?.message || fallbackError,
+          );
         }
 
         toast({
@@ -408,7 +417,7 @@ export const useEnhancedContacts = () => {
         });
 
         if (error) {
-          console.error("❌ Error deleting contact:", error);
+          console.error("❌ Error deleting contact:", error?.message || error);
           throw error;
         }
 
@@ -426,8 +435,8 @@ export const useEnhancedContacts = () => {
         });
 
         return true;
-      } catch (error) {
-        console.error("💥 Error in deleteContact:", error);
+      } catch (error: any) {
+        console.error("💥 Error in deleteContact:", error?.message || error);
         toast({
           title: "Błąd usuwania",
           description: "Nie udało się usunąć kontaktu",
@@ -453,7 +462,10 @@ export const useEnhancedContacts = () => {
           .update({ status: "blocked" })
           .eq("id", contactId);
 
-        if (error) throw error;
+        if (error) {
+          console.error("❌ Error blocking contact:", error?.message || error);
+          throw error;
+        }
 
         await fetchEnhancedContacts();
 
@@ -464,8 +476,8 @@ export const useEnhancedContacts = () => {
         });
 
         return true;
-      } catch (error) {
-        console.error("💥 Error blocking contact:", error);
+      } catch (error: any) {
+        console.error("💥 Error blocking contact:", error?.message || error);
         toast({
           title: "Błąd blokowania",
           description: "Nie udało się zablokować kontaktu",
