@@ -558,9 +558,14 @@ export const useEnhancedFriendRequests = () => {
           console.log("📨 Received request update:", payload);
           // Refresh data on real-time updates
           setLoading(true);
-          setTimeout(() => {
+          setTimeout(async () => {
             if (user?.id) {
-              fetchFriendRequests();
+              try {
+                await fetchFriendRequests();
+              } catch (error) {
+                console.error("Error refreshing friend requests:", error);
+                setLoading(false);
+              }
             }
           }, 100);
         },
@@ -577,9 +582,14 @@ export const useEnhancedFriendRequests = () => {
           console.log("📤 Sent request update:", payload);
           // Refresh data on real-time updates
           setLoading(true);
-          setTimeout(() => {
+          setTimeout(async () => {
             if (user?.id) {
-              fetchFriendRequests();
+              try {
+                await fetchFriendRequests();
+              } catch (error) {
+                console.error("Error refreshing friend requests:", error);
+                setLoading(false);
+              }
             }
           }, 100);
         },
