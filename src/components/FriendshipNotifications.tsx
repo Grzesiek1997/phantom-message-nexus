@@ -125,23 +125,45 @@ const FriendshipNotifications: React.FC = () => {
 
     // Only update if there are actual changes
     const newNotifications = generateNotifications();
-    const requestIds = receivedRequests.map((r) => r.id);
+    const requestIds = receivedRequests.map((r) => r.id).sort();
     const currentRequestIds = notifications
       .filter((n) => n.type === "friend_request")
-      .map((n) => n.id.replace("request-", ""));
+      .map((n) => n.id.replace("request-", ""))
+      .sort();
 
     // Check if requests have changed
     const requestsChanged =
-      JSON.stringify(requestIds.sort()) !==
-      JSON.stringify(currentRequestIds.sort());
+      requestIds.join(",") !== currentRequestIds.join(",");
+    const celebrationNotifications = newNotifications.filter(
+      (n) => n.type === "celebration",
+    );
 
-    if (
-      requestsChanged ||
-      newNotifications.some((n) => n.type === "celebration")
-    ) {
-      setNotifications(newNotifications);
+    if (requestsChanged || celebrationNotifications.length > 0) {
+      setNotifications((prev) => {
+        // Keep existing celebration notifications and add new ones
+        const existingCelebrations = prev.filter(
+          (n) => n.type === "celebration",
+        );
+        const newCelebrations = celebrationNotifications.filter(
+          (newNotif) =>
+            !existingCelebrations.some(
+              (existing) => existing.id === newNotif.id,
+            ),
+        );
+
+        return [
+          ...newNotifications.filter((n) => n.type === "friend_request"),
+          ...existingCelebrations,
+          ...newCelebrations,
+        ];
+      });
     }
-  }, [receivedRequests.length, stats.total_contacts, stats.success_rate]);
+  }, [
+    receivedRequests.length,
+    stats.total_contacts,
+    stats.success_rate,
+    stats.total_sent,
+  ]);
 
   const handleAccept = useCallback(
     async (requestId: string) => {
