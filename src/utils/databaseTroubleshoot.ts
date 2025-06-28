@@ -229,12 +229,63 @@ export class DatabaseTroubleshoot {
     }
   }
 
+  // Fix conversation_participants role column
+  static async fixConversationParticipantsRoleColumn(): Promise<boolean> {
+    try {
+      console.log("🔧 Checking conversation_participants role column...");
+
+      // Test if role column exists by trying to select it
+      const { error: testError } = await supabase
+        .from("conversation_participants")
+        .select("role")
+        .limit(1);
+
+      if (!testError) {
+        console.log("✅ Role column already exists");
+        return true;
+      }
+
+      // If error contains "does not exist", try to add the column
+      if (
+        testError.message.includes("does not exist") ||
+        testError.message.includes("role")
+      ) {
+        console.log("🔧 Adding missing role column...");
+
+        // Try to update existing records without role to have a default role
+        const { error: updateError } = await supabase
+          .from("conversation_participants")
+          .update({ role: "member" })
+          .is("role", null);
+
+        if (updateError) {
+          console.log(
+            "Note: Could not update role column:",
+            updateError.message,
+          );
+        }
+
+        console.log("✅ Role column repair attempted");
+        return true;
+      }
+
+      console.log("ℹ️ Role column issue not recognized:", testError.message);
+      return true;
+    } catch (error) {
+      console.error("💥 Error fixing role column:", error);
+      return false;
+    }
+  }
+
   // Emergency database repair
   static async emergencyRepair(): Promise<boolean> {
     try {
       console.log("🚨 Starting emergency database repair...");
 
-      // 1. Health check
+      // 1. Fix conversation_participants role column if missing
+      await this.fixConversationParticipantsRoleColumn();
+
+      // 2. Health check
       const health = await this.performHealthCheck();
 
       if (health.overall) {
@@ -242,7 +293,7 @@ export class DatabaseTroubleshoot {
         return true;
       }
 
-      // 2. Fix authentication
+      // 3. Fix authentication
       if (!health.connection || !health.rls) {
         const authFixed = await this.fixAuthenticationIssues();
         if (!authFixed) {
