@@ -556,10 +556,13 @@ export const useEnhancedFriendRequests = () => {
         },
         (payload) => {
           console.log("📨 Received request update:", payload);
-          // Call fetchFriendRequests directly here to avoid dependency issues
-          if (user) {
-            fetchFriendRequests();
-          }
+          // Refresh data on real-time updates
+          setLoading(true);
+          setTimeout(() => {
+            if (user?.id) {
+              fetchFriendRequests();
+            }
+          }, 100);
         },
       )
       .on(
@@ -572,10 +575,13 @@ export const useEnhancedFriendRequests = () => {
         },
         (payload) => {
           console.log("📤 Sent request update:", payload);
-          // Call fetchFriendRequests directly here to avoid dependency issues
-          if (user) {
-            fetchFriendRequests();
-          }
+          // Refresh data on real-time updates
+          setLoading(true);
+          setTimeout(() => {
+            if (user?.id) {
+              fetchFriendRequests();
+            }
+          }, 100);
         },
       )
       .subscribe();
