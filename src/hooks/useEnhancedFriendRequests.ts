@@ -362,6 +362,33 @@ export const useEnhancedFriendRequests = () => {
           throw error;
         }
 
+        // Manually create notification for sender (since RPC might fail with notifications)
+        try {
+          const request = receivedRequests.find((r) => r.id === requestId);
+          if (request) {
+            const { error: notifError } = await supabase.rpc(
+              "create_notification_safe",
+              {
+                target_user_id: request.sender_id,
+                notification_type: "friend_accepted",
+                notification_title: "Zaproszenie zaakceptowane!",
+                notification_message:
+                  "Twoje zaproszenie do znajomych zostało zaakceptowane",
+                notification_data: { friend_id: user.id },
+              },
+            );
+
+            if (notifError) {
+              console.warn(
+                "⚠️ Could not create acceptance notification:",
+                notifError.message,
+              );
+            }
+          }
+        } catch (notifErr) {
+          console.warn("⚠️ Acceptance notification creation failed:", notifErr);
+        }
+
         await fetchFriendRequests();
 
         toast({
