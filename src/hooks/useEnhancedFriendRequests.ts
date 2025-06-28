@@ -84,7 +84,10 @@ export const useEnhancedFriendRequests = () => {
         .order("created_at", { ascending: false });
 
       if (receivedError) {
-        console.error("❌ Error fetching received requests:", receivedError);
+        console.error(
+          "❌ Error fetching received requests:",
+          receivedError.message || receivedError,
+        );
         throw receivedError;
       }
 
@@ -106,7 +109,10 @@ export const useEnhancedFriendRequests = () => {
         .order("created_at", { ascending: false });
 
       if (sentError) {
-        console.error("❌ Error fetching sent requests:", sentError);
+        console.error(
+          "❌ Error fetching sent requests:",
+          sentError.message || sentError,
+        );
         throw sentError;
       }
 
@@ -161,11 +167,14 @@ export const useEnhancedFriendRequests = () => {
         sent: enhancedSent.length,
         stats: newStats,
       });
-    } catch (error) {
-      console.error("💥 Critical error in fetchFriendRequests:", error);
+    } catch (error: any) {
+      console.error(
+        "💥 Critical error in fetchFriendRequests:",
+        error?.message || error,
+      );
       toast({
         title: "Błąd ładowania",
-        description: "Nie udało się pobrać zaproszeń do znajomych",
+        description: `Nie udało się pobrać zaproszeń: ${error?.message || "Nieznany błąd"}`,
         variant: "destructive",
       });
     } finally {
@@ -264,7 +273,10 @@ export const useEnhancedFriendRequests = () => {
         });
 
         if (error) {
-          console.error("❌ Error sending friend request:", error);
+          console.error(
+            "❌ Error sending friend request:",
+            error.message || error,
+          );
           throw error;
         }
 
@@ -279,11 +291,14 @@ export const useEnhancedFriendRequests = () => {
 
         console.log("✅ Friend request sent successfully");
         return true;
-      } catch (error) {
-        console.error("💥 Error in sendFriendRequest:", error);
+      } catch (error: any) {
+        console.error(
+          "💥 Error in sendFriendRequest:",
+          error?.message || error,
+        );
         toast({
           title: "Błąd wysyłania",
-          description: "Nie udało się wysłać zaproszenia do znajomych",
+          description: `Nie udało się wysłać zaproszenia: ${error?.message || "Nieznany błąd"}`,
           variant: "destructive",
         });
         return false;
@@ -306,7 +321,10 @@ export const useEnhancedFriendRequests = () => {
         });
 
         if (error) {
-          console.error("❌ Error accepting friend request:", error);
+          console.error(
+            "❌ Error accepting friend request:",
+            error.message || error,
+          );
           throw error;
         }
 
