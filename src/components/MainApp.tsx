@@ -15,6 +15,7 @@ const MainApp: React.FC = () => {
   const [showContactSearch, setShowContactSearch] = useState(false);
   const [showGroupManagement, setShowGroupManagement] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showFriendSearch, setShowFriendSearch] = useState(false);
 
   const { signOut } = useAuth();
   const { unreadCount } = useNotifications();
@@ -52,6 +53,10 @@ const MainApp: React.FC = () => {
     setShowNotifications(true);
   };
 
+  const handleSearchClick = () => {
+    setShowFriendSearch(true);
+  };
+
   const handleSelectContact = (contactId: string) => {
     console.log("Selected contact:", contactId);
     setShowContactSearch(false);
@@ -67,6 +72,7 @@ const MainApp: React.FC = () => {
       <EnhancedAppHeader
         totalUnreadCount={totalUnreadCount}
         onNotificationClick={handleNotificationClick}
+        onSearchClick={handleSearchClick}
         onSignOut={handleSignOut}
         showBackButton={true}
       />
