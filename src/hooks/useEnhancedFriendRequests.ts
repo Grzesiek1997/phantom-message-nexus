@@ -66,22 +66,11 @@ export const useEnhancedFriendRequests = () => {
       setLoading(true);
       console.log("🔄 Fetching enhanced friend requests for user:", user.id);
 
-      // Fetch received requests with enhanced profile data
+      // Fetch received requests
       const { data: receivedData, error: receivedError } = await supabase
         .from("friend_requests")
-        .select(
-          `
-          *,
-          sender_profile:profiles!inner (
-            id,
-            username,
-            display_name,
-            avatar_url
-          )
-        `,
-        )
+        .select("*")
         .eq("receiver_id", user.id)
-        .eq("profiles.id", "friend_requests.sender_id")
         .order("created_at", { ascending: false });
 
       if (receivedError) {
@@ -92,22 +81,11 @@ export const useEnhancedFriendRequests = () => {
         throw receivedError;
       }
 
-      // Fetch sent requests with enhanced profile data
+      // Fetch sent requests
       const { data: sentData, error: sentError } = await supabase
         .from("friend_requests")
-        .select(
-          `
-          *,
-          receiver_profile:profiles!inner (
-            id,
-            username,
-            display_name,
-            avatar_url
-          )
-        `,
-        )
+        .select("*")
         .eq("sender_id", user.id)
-        .eq("profiles.id", "friend_requests.receiver_id")
         .order("created_at", { ascending: false });
 
       if (sentError) {
@@ -118,30 +96,61 @@ export const useEnhancedFriendRequests = () => {
         throw sentError;
       }
 
-      // Process and enhance the data
-      const enhancedReceived = (receivedData || []).map((req) => ({
-        ...req,
-        status: req.status as "pending" | "accepted" | "rejected",
-        attempt_count: req.attempt_count || 1,
-        sender_profile: req.sender_profile
-          ? {
-              ...req.sender_profile,
-              is_online: false, // Will be enhanced with real-time status
-            }
-          : undefined,
-      }));
+      // Get unique user IDs for profile fetching
+      const senderIds = receivedData?.map((req) => req.sender_id) || [];
+      const receiverIds = sentData?.map((req) => req.receiver_id) || [];
+      const allUserIds = [...new Set([...senderIds, ...receiverIds])];
 
-      const enhancedSent = (sentData || []).map((req) => ({
-        ...req,
-        status: req.status as "pending" | "accepted" | "rejected",
-        attempt_count: req.attempt_count || 1,
-        receiver_profile: req.receiver_profile
-          ? {
-              ...req.receiver_profile,
-              is_online: false, // Will be enhanced with real-time status
-            }
-          : undefined,
-      }));
+      // Fetch all relevant profiles
+      let profilesData: any[] = [];
+      if (allUserIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from("profiles")
+          .select("id, username, display_name, avatar_url")
+          .in("id", allUserIds);
+
+        if (profilesError) {
+          console.warn(
+            "⚠️ Could not fetch profiles, continuing without them:",
+            profilesError.message,
+          );
+        } else {
+          profilesData = profiles || [];
+        }
+      }
+
+      // Process and enhance the data with profile lookups
+      const enhancedReceived = (receivedData || []).map((req) => {
+        const senderProfile = profilesData.find((p) => p.id === req.sender_id);
+        return {
+          ...req,
+          status: req.status as "pending" | "accepted" | "rejected",
+          attempt_count: req.attempt_count || 1,
+          sender_profile: senderProfile
+            ? {
+                ...senderProfile,
+                is_online: false, // Will be enhanced with real-time status
+              }
+            : undefined,
+        };
+      });
+
+      const enhancedSent = (sentData || []).map((req) => {
+        const receiverProfile = profilesData.find(
+          (p) => p.id === req.receiver_id,
+        );
+        return {
+          ...req,
+          status: req.status as "pending" | "accepted" | "rejected",
+          attempt_count: req.attempt_count || 1,
+          receiver_profile: receiverProfile
+            ? {
+                ...receiverProfile,
+                is_online: false, // Will be enhanced with real-time status
+              }
+            : undefined,
+        };
+      });
 
       // Calculate advanced statistics
       const newStats: FriendRequestStats = {
