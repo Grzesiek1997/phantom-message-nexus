@@ -439,9 +439,18 @@ const EnhancedFriendSearch: React.FC<EnhancedFriendSearchProps> = ({
                                 className="text-yellow-400 border-yellow-400/50 bg-yellow-400/10"
                               >
                                 <Clock className="w-3 h-3 mr-1" />
-                                Oczekuje
+                                Wysłano
                               </Badge>
-                            ) : requestStatus === "accepted" ? (
+                            ) : requestStatus === "received_pending" ? (
+                              <Badge
+                                variant="outline"
+                                className="text-blue-400 border-blue-400/50 bg-blue-400/10"
+                              >
+                                <Clock className="w-3 h-3 mr-1" />
+                                Otrzymano zaproszenie
+                              </Badge>
+                            ) : requestStatus === "accepted" ||
+                              requestStatus === "received_accepted" ? (
                               <Badge
                                 variant="outline"
                                 className="text-green-400 border-green-400/50 bg-green-400/10"
