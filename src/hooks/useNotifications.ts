@@ -142,9 +142,13 @@ export const useNotifications = () => {
           filter: `user_id=eq.${user.id}`,
         },
         () => {
-          setTimeout(() => {
+          setTimeout(async () => {
             if (user?.id) {
-              fetchNotifications();
+              try {
+                await fetchNotifications();
+              } catch (error) {
+                console.error("Error refreshing notifications:", error);
+              }
             }
           }, 100);
         },
@@ -158,9 +162,13 @@ export const useNotifications = () => {
           filter: `receiver_id=eq.${user.id}`,
         },
         () => {
-          setTimeout(() => {
+          setTimeout(async () => {
             if (user?.id) {
-              fetchNotifications();
+              try {
+                await fetchNotifications();
+              } catch (error) {
+                console.error("Error refreshing notifications:", error);
+              }
             }
           }, 100);
         },
