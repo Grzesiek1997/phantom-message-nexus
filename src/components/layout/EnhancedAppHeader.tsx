@@ -421,10 +421,6 @@ const EnhancedAppHeader: React.FC<EnhancedAppHeaderProps> = ({
             >
               <div className="p-4 space-y-2">
                 {[
-                  { icon: Home, label: "Główna", path: "/" },
-                  { icon: MessageCircle, label: "Czaty", path: "/?tab=chats" },
-                  { icon: Users, label: "Kontakty", path: "/?tab=contacts" },
-                  { icon: Phone, label: "Połączenia", path: "/?tab=calls" },
                   { icon: Search, label: "Szukaj", action: () => {} },
                   { icon: Settings, label: "Ustawienia", path: "/settings" },
                   {
