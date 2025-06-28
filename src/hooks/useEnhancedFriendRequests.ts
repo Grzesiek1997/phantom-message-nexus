@@ -512,7 +512,10 @@ export const useEnhancedFriendRequests = () => {
         },
         (payload) => {
           console.log("📨 Received request update:", payload);
-          fetchFriendRequests();
+          // Call fetchFriendRequests directly here to avoid dependency issues
+          if (user) {
+            fetchFriendRequests();
+          }
         },
       )
       .on(
@@ -525,7 +528,10 @@ export const useEnhancedFriendRequests = () => {
         },
         (payload) => {
           console.log("📤 Sent request update:", payload);
-          fetchFriendRequests();
+          // Call fetchFriendRequests directly here to avoid dependency issues
+          if (user) {
+            fetchFriendRequests();
+          }
         },
       )
       .subscribe();
@@ -534,7 +540,7 @@ export const useEnhancedFriendRequests = () => {
       console.log("🔌 Cleaning up friend requests subscriptions");
       supabase.removeChannel(friendRequestsChannel);
     };
-  }, [user, fetchFriendRequests]);
+  }, [user?.id]); // Only depend on user.id, not the whole user object or fetchFriendRequests
 
   return {
     // Data
