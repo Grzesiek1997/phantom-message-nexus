@@ -572,5 +572,24 @@ export const useEnhancedFriendRequests = () => {
       );
       return !existingRequest && receiverId !== user?.id;
     },
+    getRequestStatus: (userId: string) => {
+      // Check sent requests
+      const sentRequest = sentRequests.find(
+        (req) => req.receiver_id === userId,
+      );
+      if (sentRequest) {
+        return sentRequest.status;
+      }
+
+      // Check received requests
+      const receivedRequest = receivedRequests.find(
+        (req) => req.sender_id === userId,
+      );
+      if (receivedRequest) {
+        return `received_${receivedRequest.status}`;
+      }
+
+      return null;
+    },
   };
 };
