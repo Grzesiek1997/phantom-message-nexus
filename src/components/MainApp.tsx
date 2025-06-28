@@ -5,6 +5,7 @@ import EnhancedAppHeader from "./layout/EnhancedAppHeader";
 import AppContent from "./layout/AppContent";
 import AppModals from "./layout/AppModals";
 import FriendshipNotifications from "./FriendshipNotifications";
+import EnhancedFriendSearch from "./EnhancedFriendSearch";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useFriendRequests } from "@/hooks/useFriendRequests";
@@ -98,6 +99,12 @@ const MainApp: React.FC = () => {
         onCloseNotifications={() => setShowNotifications(false)}
         onSelectContact={handleSelectContact}
         onCreateGroup={handleCreateGroup}
+      />
+
+      {/* Enhanced Friend Search Modal */}
+      <EnhancedFriendSearch
+        isOpen={showFriendSearch}
+        onClose={() => setShowFriendSearch(false)}
       />
 
       {/* Enhanced Friendship Notifications */}
