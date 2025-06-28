@@ -428,7 +428,10 @@ export const useEnhancedFriendRequests = () => {
         });
 
         if (error) {
-          console.error("❌ Error deleting friend request:", error);
+          console.error(
+            "❌ Error deleting friend request:",
+            error.message || error,
+          );
           throw error;
         }
 
@@ -441,11 +444,14 @@ export const useEnhancedFriendRequests = () => {
         });
 
         return true;
-      } catch (error) {
-        console.error("💥 Error in deleteFriendRequest:", error);
+      } catch (error: any) {
+        console.error(
+          "💥 Error in deleteFriendRequest:",
+          error?.message || error,
+        );
         toast({
           title: "Błąd usuwania",
-          description: "Nie udało się usunąć zaproszenia",
+          description: `Nie udało się usunąć zaproszenia: ${error?.message || "Nieznany błąd"}`,
           variant: "destructive",
         });
         return false;
