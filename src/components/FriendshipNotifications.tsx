@@ -55,59 +55,93 @@ const FriendshipNotifications: React.FC = () => {
 
   // Generate notifications based on friend requests and achievements
   useEffect(() => {
-    const newNotifications: NotificationData[] = [];
+    const generateNotifications = () => {
+      const newNotifications: NotificationData[] = [];
 
-    // Friend request notifications
-    receivedRequests.forEach((request) => {
-      if (request.sender_profile) {
-        newNotifications.push({
-          id: `request-${request.id}`,
-          type: "friend_request",
-          title: "Nowe zaproszenie do znajomych!",
-          message: `${request.sender_profile.display_name || request.sender_profile.username} chce dodać Cię do znajomych`,
-          user: request.sender_profile,
-          timestamp: new Date(request.created_at),
-          read: false,
-          actionable: true,
-        });
-      }
-    });
-
-    // Achievement notifications
-    if (stats.total_contacts > 0) {
-      const milestones = [1, 5, 10, 25, 50, 100];
-      milestones.forEach((milestone) => {
-        if (stats.total_contacts === milestone) {
+      // Friend request notifications
+      receivedRequests.forEach((request) => {
+        if (request.sender_profile) {
           newNotifications.push({
-            id: `milestone-${milestone}`,
-            type: "celebration",
-            title: "🎉 Kamień milowy osiągnięty!",
-            message: `Gratulacje! Masz już ${milestone} znajomych`,
-            timestamp: new Date(),
+            id: `request-${request.id}`,
+            type: "friend_request",
+            title: "Nowe zaproszenie do znajomych!",
+            message: `${request.sender_profile.display_name || request.sender_profile.username} chce dodać Cię do znajomych`,
+            user: request.sender_profile,
+            timestamp: new Date(request.created_at),
             read: false,
-            actionable: false,
-            celebrationType: "milestone",
+            actionable: true,
           });
         }
       });
-    }
 
-    // Success rate achievements
-    if (stats.success_rate >= 80 && stats.total_sent >= 5) {
-      newNotifications.push({
-        id: "achievement-social",
-        type: "celebration",
-        title: "👑 Mistrz społeczności!",
-        message: `Twoja skuteczność zaproszeń wynosi ${stats.success_rate.toFixed(0)}%`,
-        timestamp: new Date(),
-        read: false,
-        actionable: false,
-        celebrationType: "achievement",
-      });
-    }
+      // Achievement notifications - only if changed
+      if (stats.total_contacts > 0) {
+        const milestones = [1, 5, 10, 25, 50, 100];
+        milestones.forEach((milestone) => {
+          if (stats.total_contacts === milestone) {
+            const milestoneId = `milestone-${milestone}`;
+            // Check if this milestone notification already exists
+            const existingMilestone = notifications.find(
+              (n) => n.id === milestoneId,
+            );
+            if (!existingMilestone) {
+              newNotifications.push({
+                id: milestoneId,
+                type: "celebration",
+                title: "🎉 Kamień milowy osiągnięty!",
+                message: `Gratulacje! Masz już ${milestone} znajomych`,
+                timestamp: new Date(),
+                read: false,
+                actionable: false,
+                celebrationType: "milestone",
+              });
+            }
+          }
+        });
+      }
 
-    setNotifications(newNotifications);
-  }, [receivedRequests, stats]);
+      // Success rate achievements - only if changed
+      if (stats.success_rate >= 80 && stats.total_sent >= 5) {
+        const achievementId = "achievement-social";
+        const existingAchievement = notifications.find(
+          (n) => n.id === achievementId,
+        );
+        if (!existingAchievement) {
+          newNotifications.push({
+            id: achievementId,
+            type: "celebration",
+            title: "👑 Mistrz społeczności!",
+            message: `Twoja skuteczność zaproszeń wynosi ${stats.success_rate.toFixed(0)}%`,
+            timestamp: new Date(),
+            read: false,
+            actionable: false,
+            celebrationType: "achievement",
+          });
+        }
+      }
+
+      return newNotifications;
+    };
+
+    // Only update if there are actual changes
+    const newNotifications = generateNotifications();
+    const requestIds = receivedRequests.map((r) => r.id);
+    const currentRequestIds = notifications
+      .filter((n) => n.type === "friend_request")
+      .map((n) => n.id.replace("request-", ""));
+
+    // Check if requests have changed
+    const requestsChanged =
+      JSON.stringify(requestIds.sort()) !==
+      JSON.stringify(currentRequestIds.sort());
+
+    if (
+      requestsChanged ||
+      newNotifications.some((n) => n.type === "celebration")
+    ) {
+      setNotifications(newNotifications);
+    }
+  }, [receivedRequests.length, stats.total_contacts, stats.success_rate]);
 
   const handleAccept = async (requestId: string) => {
     const success = await acceptFriendRequest(requestId);
