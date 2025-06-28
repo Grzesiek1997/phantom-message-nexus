@@ -81,9 +81,7 @@ const FriendshipNotifications: React.FC = () => {
           if (stats.total_contacts === milestone) {
             const milestoneId = `milestone-${milestone}`;
             // Check if this milestone notification already exists
-            const existingMilestone = notifications.find(
-              (n) => n.id === milestoneId,
-            );
+            const existingMilestone = notifications.find(n => n.id === milestoneId);
             if (!existingMilestone) {
               newNotifications.push({
                 id: milestoneId,
@@ -93,7 +91,7 @@ const FriendshipNotifications: React.FC = () => {
                 timestamp: new Date(),
                 read: false,
                 actionable: false,
-                celebrationType: "milestone",
+                celebrationType: "milestone"
               });
             }
           }
@@ -103,9 +101,7 @@ const FriendshipNotifications: React.FC = () => {
       // Success rate achievements - only if changed
       if (stats.success_rate >= 80 && stats.total_sent >= 5) {
         const achievementId = "achievement-social";
-        const existingAchievement = notifications.find(
-          (n) => n.id === achievementId,
-        );
+        const existingAchievement = notifications.find(n => n.id === achievementId);
         if (!existingAchievement) {
           newNotifications.push({
             id: achievementId,
@@ -115,7 +111,7 @@ const FriendshipNotifications: React.FC = () => {
             timestamp: new Date(),
             read: false,
             actionable: false,
-            celebrationType: "achievement",
+            celebrationType: "achievement"
           });
         }
       }
@@ -125,42 +121,42 @@ const FriendshipNotifications: React.FC = () => {
 
     // Only update if there are actual changes
     const newNotifications = generateNotifications();
-    const requestIds = receivedRequests.map((r) => r.id);
-    const currentRequestIds = notifications
-      .filter((n) => n.type === "friend_request")
-      .map((n) => n.id.replace("request-", ""));
+    const requestIds = receivedRequests.map(r => r.id);
+    const currentRequestIds = notifications.filter(n => n.type === 'friend_request').map(n => n.id.replace('request-', ''));
 
     // Check if requests have changed
-    const requestsChanged =
-      JSON.stringify(requestIds.sort()) !==
-      JSON.stringify(currentRequestIds.sort());
+    const requestsChanged = JSON.stringify(requestIds.sort()) !== JSON.stringify(currentRequestIds.sort());
 
-    if (
-      requestsChanged ||
-      newNotifications.some((n) => n.type === "celebration")
-    ) {
+    if (requestsChanged || newNotifications.some(n => n.type === 'celebration')) {
       setNotifications(newNotifications);
     }
   }, [receivedRequests.length, stats.total_contacts, stats.success_rate]);
 
-  const handleAccept = async (requestId: string) => {
-    const success = await acceptFriendRequest(requestId);
-    if (success) {
-      // Add celebration notification
-      setNotifications((prev) => [
-        ...prev.filter((n) => n.id !== `request-${requestId}`),
-        {
-          id: `accepted-${requestId}`,
-          type: "friend_accepted",
-          title: "✨ Nowy znajomy!",
-          message:
-            "Zaproszenie zostało zaakceptowane. Możesz teraz rozpocząć czat!",
-          timestamp: new Date(),
-          read: false,
-          actionable: false,
-        },
-      ]);
+  const handleAccept = useCallback(async (requestId: string) => {
+    try {
+      const success = await acceptFriendRequest(requestId);
+      if (success) {
+        // Remove the request notification and add celebration
+        setNotifications(prev => {
+          const filtered = prev.filter(n => n.id !== `request-${requestId}`);
+          return [
+            ...filtered,
+            {
+              id: `accepted-${requestId}-${Date.now()}`,
+              type: 'friend_accepted',
+              title: '✨ Nowy znajomy!',
+              message: 'Zaproszenie zostało zaakceptowane. Możesz teraz rozpocząć czat!',
+              timestamp: new Date(),
+              read: false,
+              actionable: false
+            }
+          ];
+        });
+      }
+    } catch (error) {
+      console.error('Error accepting friend request:', error);
     }
+  }, [acceptFriendRequest]);
   };
 
   const handleReject = async (requestId: string) => {
