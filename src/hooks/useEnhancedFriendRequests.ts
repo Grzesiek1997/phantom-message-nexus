@@ -291,6 +291,29 @@ export const useEnhancedFriendRequests = () => {
           throw error;
         }
 
+        // Manually create notification (since trigger is disabled)
+        try {
+          const { error: notifError } = await supabase.rpc(
+            "create_notification_safe",
+            {
+              target_user_id: receiverId,
+              notification_type: "friend_request",
+              notification_title: "Nowe zaproszenie do znajomych",
+              notification_message: "Otrzymałeś nowe zaproszenie do znajomych",
+              notification_data: { sender_id: user.id },
+            },
+          );
+
+          if (notifError) {
+            console.warn(
+              "⚠️ Could not create notification:",
+              notifError.message,
+            );
+          }
+        } catch (notifErr) {
+          console.warn("⚠️ Notification creation failed:", notifErr);
+        }
+
         // Refresh data
         await fetchFriendRequests();
 
