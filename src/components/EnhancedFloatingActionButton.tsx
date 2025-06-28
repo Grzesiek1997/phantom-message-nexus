@@ -194,43 +194,31 @@ const EnhancedFloatingActionButton: React.FC<
                       onHoverStart={() => setHoveredAction(action.id)}
                       onHoverEnd={() => setHoveredAction(null)}
                       className="relative flex-shrink-0"
-                      style={{ transformOrigin: "center center" }}
                     >
-                      <motion.div
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.95 }}
-                        transition={{
-                          type: "spring",
-                          stiffness: 400,
-                          damping: 25,
-                        }}
-                        className="relative"
+                      <Button
+                        onClick={() => handleActionClick(action)}
+                        className={cn(
+                          "w-14 h-14 rounded-full shadow-lg border-2 border-white/20 backdrop-blur-sm",
+                          "bg-gradient-to-r transition-colors duration-200 relative overflow-hidden",
+                          action.color,
+                          "hover:border-white/40 hover:shadow-xl",
+                        )}
+                        size="icon"
                       >
-                        <Button
-                          onClick={() => handleActionClick(action)}
-                          className={cn(
-                            "w-14 h-14 rounded-full shadow-lg border-2 border-white/20 backdrop-blur-sm",
-                            "bg-gradient-to-r transition-all duration-200 relative overflow-hidden",
-                            action.color,
-                            "hover:border-white/40 hover:shadow-xl",
-                          )}
-                          size="icon"
-                        >
-                          {/* Icon - Fixed in center */}
-                          <IconComponent className="w-6 h-6 text-white relative z-10" />
+                        {/* Icon - Fixed in center */}
+                        <IconComponent className="w-6 h-6 text-white relative z-10" />
 
-                          {/* Stable glow effect */}
-                          {isHovered && (
-                            <motion.div
-                              initial={{ opacity: 0, scale: 0.8 }}
-                              animate={{ opacity: 0.2, scale: 1.1 }}
-                              exit={{ opacity: 0, scale: 0.8 }}
-                              transition={{ duration: 0.2 }}
-                              className="absolute inset-0 bg-white rounded-full"
-                            />
-                          )}
-                        </Button>
-                      </motion.div>
+                        {/* Stable glow effect */}
+                        {isHovered && (
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 0.2 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="absolute inset-0 bg-white rounded-full"
+                          />
+                        )}
+                      </Button>
                     </motion.div>
 
                     {/* Enhanced Particle Effect - Non-interfering */}
