@@ -352,11 +352,14 @@ export const useEnhancedFriendRequests = () => {
         }
 
         return true;
-      } catch (error) {
-        console.error("💥 Error in acceptFriendRequest:", error);
+      } catch (error: any) {
+        console.error(
+          "💥 Error in acceptFriendRequest:",
+          error?.message || error,
+        );
         toast({
           title: "Błąd akceptacji",
-          description: "Nie udało się zaakceptować zaproszenia",
+          description: `Nie udało się zaakceptować zaproszenia: ${error?.message || "Nieznany błąd"}`,
           variant: "destructive",
         });
         return false;
