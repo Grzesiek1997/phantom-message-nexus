@@ -7,7 +7,6 @@ import AppModals from "./layout/AppModals";
 import EnhancedFriendSearch from "./EnhancedFriendSearch";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotifications } from "@/hooks/useNotifications";
-import { useEnhancedFriendRequests } from "@/hooks/useEnhancedFriendRequests";
 import { useUserStatus } from "@/hooks/useUserStatus";
 
 const MainApp: React.FC = () => {
@@ -19,10 +18,10 @@ const MainApp: React.FC = () => {
 
   const { signOut } = useAuth();
   const { unreadCount } = useNotifications();
-  const { receivedRequests } = useEnhancedFriendRequests();
   const { updateMyStatus } = useUserStatus();
 
-  const totalUnreadCount = unreadCount + receivedRequests.length;
+  // Note: friend request count will be handled by FriendshipNotifications component
+  const totalUnreadCount = unreadCount;
 
   const handleNewChat = () => {
     setShowContactSearch(true);
