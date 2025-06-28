@@ -319,9 +319,50 @@ export const useEnhancedContacts = () => {
         return enhancedResults;
       } catch (error) {
         console.error("💥 Search error:", error);
+
+        // Try fallback search with simpler query
+        try {
+          console.log("🔄 Attempting fallback search...");
+
+          const { data: fallbackResults, error: fallbackError } = await supabase
+            .from("profiles")
+            .select("id, username, display_name, avatar_url")
+            .neq("id", user.id)
+            .ilike("username", `%${query}%`)
+            .limit(10);
+
+          if (fallbackError) {
+            throw fallbackError;
+          }
+
+          console.log(
+            "✅ Fallback search successful:",
+            fallbackResults?.length || 0,
+            "results",
+          );
+
+          if (fallbackResults && fallbackResults.length > 0) {
+            const enhancedFallback = fallbackResults.map((result) => ({
+              ...result,
+              is_online: false,
+              mutual_friends: 0,
+              last_seen: new Date().toISOString(),
+              match_score: 50,
+            }));
+
+            setSearchCache(
+              (prev) => new Map(prev.set(query, enhancedFallback)),
+            );
+            return enhancedFallback;
+          }
+        } catch (fallbackError) {
+          console.error("💥 Fallback search also failed:", fallbackError);
+        }
+
         toast({
           title: "Błąd wyszukiwania",
-          description: "Nie udało się wyszukać użytkowników",
+          description:
+            "Nie udało się wyszukać użytkowników. Sprawdź połączenie internetowe.",
           variant: "destructive",
         });
         return [];
