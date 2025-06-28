@@ -291,22 +291,7 @@ export const useEnhancedFriendRequests = () => {
           throw error;
         }
 
-        // Manually create notification (since trigger is disabled)
-        try {
-          const { error: notifError } = await supabase.rpc(
-            "create_notification_safe",
-            {
-              target_user_id: receiverId,
-              notification_type: "friend_request",
-              notification_title: "Nowe zaproszenie do znajomych",
-              notification_message: "Otrzymałeś nowe zaproszenie do znajomych",
-              notification_data: { sender_id: user.id },
-            },
-          );
-
-          if (notifError) {
-            console.warn(
-              "⚠️ Could not create notification:",
+        // Notification will be created automatically by trigger
               notifError.message,
             );
           }
@@ -356,22 +341,13 @@ export const useEnhancedFriendRequests = () => {
 
         // If main function fails, try simple version
         if (error) {
-          console.warn(
-            "⚠️ Main accept function failed, trying simple version:",
-            error.message,
-          );
-          const { error: simpleError } = await supabase.rpc(
-            "accept_friend_request_simple",
-            {
-              request_id: requestId,
-            },
-          );
+          console.warn("⚠️ Main accept function failed, trying simple version:", error.message);
+          const { error: simpleError } = await supabase.rpc("accept_friend_request_simple", {
+            request_id: requestId,
+          });
 
           if (simpleError) {
-            console.error(
-              "❌ Both accept functions failed:",
-              simpleError.message || simpleError,
-            );
+            console.error("❌ Both accept functions failed:", simpleError.message || simpleError);
             throw simpleError;
           }
 
@@ -379,30 +355,12 @@ export const useEnhancedFriendRequests = () => {
           const request = receivedRequests.find((r) => r.id === requestId);
           if (request) {
             await supabase.rpc("create_friendship_safe", {
-              friend_id: request.sender_id,
+              friend_id: request.sender_id
             });
           }
         }
 
-        // Manually create notification for sender (since RPC might fail with notifications)
-        try {
-          const request = receivedRequests.find((r) => r.id === requestId);
-          if (request) {
-            const { error: notifError } = await supabase.rpc(
-              "create_notification_safe",
-              {
-                target_user_id: request.sender_id,
-                notification_type: "friend_accepted",
-                notification_title: "Zaproszenie zaakceptowane!",
-                notification_message:
-                  "Twoje zaproszenie do znajomych zostało zaakceptowane",
-                notification_data: { friend_id: user.id },
-              },
-            );
-
-            if (notifError) {
-              console.warn(
-                "⚠️ Could not create acceptance notification:",
+        // Notification will be created automatically by the RPC function
                 notifError.message,
               );
             }
@@ -466,52 +424,18 @@ export const useEnhancedFriendRequests = () => {
 
         // If main function fails, try simple version
         if (error) {
-          console.warn(
-            "⚠️ Main reject function failed, trying simple version:",
-            error.message,
-          );
-          const { error: simpleError } = await supabase.rpc(
-            "reject_friend_request_simple",
-            {
-              request_id: requestId,
-            },
-          );
+          console.warn("⚠️ Main reject function failed, trying simple version:", error.message);
+          const { error: simpleError } = await supabase.rpc("reject_friend_request_simple", {
+            request_id: requestId,
+          });
 
           if (simpleError) {
-            console.error(
-              "❌ Both reject functions failed:",
-              simpleError.message || simpleError,
-            );
+            console.error("❌ Both reject functions failed:", simpleError.message || simpleError);
             throw simpleError;
           }
         }
 
-        // Manually create notification for sender (since RPC might fail with notifications)
-        try {
-          const request = receivedRequests.find((r) => r.id === requestId);
-          if (request) {
-            const { error: notifError } = await supabase.rpc(
-              "create_notification_safe",
-              {
-                target_user_id: request.sender_id,
-                notification_type: "friend_rejected",
-                notification_title: "Zaproszenie odrzucone",
-                notification_message:
-                  "Twoje zaproszenie do znajomych zostało odrzucone",
-                notification_data: { friend_id: user.id },
-              },
-            );
-
-            if (notifError) {
-              console.warn(
-                "⚠️ Could not create rejection notification:",
-                notifError.message,
-              );
-            }
-          }
-        } catch (notifErr) {
-          console.warn("⚠️ Rejection notification creation failed:", notifErr);
-        }
+        // Notification will be created automatically by the RPC function
 
         await fetchFriendRequests();
 
