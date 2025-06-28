@@ -518,7 +518,7 @@ export const useEnhancedContacts = () => {
       });
       setLoading(false);
     }
-  }, [user, fetchEnhancedContacts]);
+  }, [user?.id]); // Only depend on user.id
 
   // Enhanced real-time subscriptions
   useEffect(() => {
@@ -538,7 +538,10 @@ export const useEnhancedContacts = () => {
         },
         (payload) => {
           console.log("📝 Contact update:", payload);
-          fetchEnhancedContacts();
+          // Call fetchEnhancedContacts directly to avoid dependency issues
+          if (user) {
+            fetchEnhancedContacts();
+          }
         },
       )
       .on(
@@ -571,7 +574,7 @@ export const useEnhancedContacts = () => {
       console.log("🔌 Cleaning up enhanced contacts subscriptions");
       supabase.removeChannel(contactsChannel);
     };
-  }, [user, fetchEnhancedContacts]);
+  }, [user?.id]); // Only depend on user.id, not fetchEnhancedContacts
 
   // Clear search cache when contacts change
   useEffect(() => {
