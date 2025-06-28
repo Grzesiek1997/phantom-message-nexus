@@ -42,8 +42,8 @@ const AppModals: React.FC<AppModalsProps> = ({
         />
       )}
 
-      {/* FriendshipNotifications is always rendered and manages its own visibility */}
-      <FriendshipNotifications />
+      {/* Conditionally render FriendshipNotifications */}
+      {showNotifications && <FriendshipNotifications />}
     </>
   );
 };
