@@ -335,13 +335,22 @@ export const useEnhancedFriendRequests = () => {
 
         // If main function fails, try simple version
         if (error) {
-          console.warn("⚠️ Main accept function failed, trying simple version:", error.message);
-          const { error: simpleError } = await supabase.rpc("accept_friend_request_simple", {
-            request_id: requestId,
-          });
+          console.warn(
+            "⚠️ Main accept function failed, trying simple version:",
+            error.message,
+          );
+          const { error: simpleError } = await supabase.rpc(
+            "accept_friend_request_simple",
+            {
+              request_id: requestId,
+            },
+          );
 
           if (simpleError) {
-            console.error("❌ Both accept functions failed:", simpleError.message || simpleError);
+            console.error(
+              "❌ Both accept functions failed:",
+              simpleError.message || simpleError,
+            );
             throw simpleError;
           }
 
@@ -349,19 +358,12 @@ export const useEnhancedFriendRequests = () => {
           const request = receivedRequests.find((r) => r.id === requestId);
           if (request) {
             await supabase.rpc("create_friendship_safe", {
-              friend_id: request.sender_id
+              friend_id: request.sender_id,
             });
           }
         }
 
         // Notification will be created automatically by the RPC function
-                notifError.message,
-              );
-            }
-          }
-        } catch (notifErr) {
-          console.warn("⚠️ Acceptance notification creation failed:", notifErr);
-        }
 
         await fetchFriendRequests();
 
@@ -418,13 +420,22 @@ export const useEnhancedFriendRequests = () => {
 
         // If main function fails, try simple version
         if (error) {
-          console.warn("⚠️ Main reject function failed, trying simple version:", error.message);
-          const { error: simpleError } = await supabase.rpc("reject_friend_request_simple", {
-            request_id: requestId,
-          });
+          console.warn(
+            "⚠️ Main reject function failed, trying simple version:",
+            error.message,
+          );
+          const { error: simpleError } = await supabase.rpc(
+            "reject_friend_request_simple",
+            {
+              request_id: requestId,
+            },
+          );
 
           if (simpleError) {
-            console.error("❌ Both reject functions failed:", simpleError.message || simpleError);
+            console.error(
+              "❌ Both reject functions failed:",
+              simpleError.message || simpleError,
+            );
             throw simpleError;
           }
         }
