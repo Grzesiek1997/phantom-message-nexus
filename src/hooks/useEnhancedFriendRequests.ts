@@ -449,7 +449,7 @@ export const useEnhancedFriendRequests = () => {
         await fetchFriendRequests();
 
         toast({
-          title: "Zaproszenie usunięte",
+          title: "Zaproszenie usuni��te",
           description: "Zaproszenie zostało usunięte pomyślnie",
           duration: 2000,
         });
@@ -501,7 +501,9 @@ export const useEnhancedFriendRequests = () => {
     );
 
     const friendRequestsChannel = supabase
-      .channel(`enhanced-friend-requests-${user.id}-${Date.now()}`)
+      .channel(
+        `enhanced-friend-requests-${user.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      )
       .on(
         "postgres_changes",
         {

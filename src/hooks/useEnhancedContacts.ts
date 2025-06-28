@@ -527,7 +527,9 @@ export const useEnhancedContacts = () => {
     console.log("🔄 Setting up enhanced contacts subscriptions");
 
     const contactsChannel = supabase
-      .channel(`enhanced-contacts-${user.id}-${Date.now()}`)
+      .channel(
+        `enhanced-contacts-${user.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      )
       .on(
         "postgres_changes",
         {
