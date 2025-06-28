@@ -142,9 +142,11 @@ export const useNotifications = () => {
           filter: `user_id=eq.${user.id}`,
         },
         () => {
-          if (user) {
-            fetchNotifications();
-          }
+          setTimeout(() => {
+            if (user?.id) {
+              fetchNotifications();
+            }
+          }, 100);
         },
       )
       .on(
@@ -156,9 +158,11 @@ export const useNotifications = () => {
           filter: `receiver_id=eq.${user.id}`,
         },
         () => {
-          if (user) {
-            fetchNotifications();
-          }
+          setTimeout(() => {
+            if (user?.id) {
+              fetchNotifications();
+            }
+          }, 100);
         },
       )
       .subscribe();
