@@ -350,16 +350,38 @@ export const useEnhancedFriendRequests = () => {
         setProcessing(requestId);
         console.log("✅ Accepting friend request:", requestId);
 
-        const { error } = await supabase.rpc("accept_friend_request", {
+        let { error } = await supabase.rpc("accept_friend_request", {
           request_id: requestId,
         });
 
+        // If main function fails, try simple version
         if (error) {
-          console.error(
-            "❌ Error accepting friend request:",
-            error.message || error,
+          console.warn(
+            "⚠️ Main accept function failed, trying simple version:",
+            error.message,
           );
-          throw error;
+          const { error: simpleError } = await supabase.rpc(
+            "accept_friend_request_simple",
+            {
+              request_id: requestId,
+            },
+          );
+
+          if (simpleError) {
+            console.error(
+              "❌ Both accept functions failed:",
+              simpleError.message || simpleError,
+            );
+            throw simpleError;
+          }
+
+          // Manually create friendship if simple function succeeded
+          const request = receivedRequests.find((r) => r.id === requestId);
+          if (request) {
+            await supabase.rpc("create_friendship_safe", {
+              friend_id: request.sender_id,
+            });
+          }
         }
 
         // Manually create notification for sender (since RPC might fail with notifications)
@@ -438,16 +460,30 @@ export const useEnhancedFriendRequests = () => {
         setProcessing(requestId);
         console.log("❌ Rejecting friend request:", requestId);
 
-        const { error } = await supabase.rpc("reject_friend_request", {
+        let { error } = await supabase.rpc("reject_friend_request", {
           request_id: requestId,
         });
 
+        // If main function fails, try simple version
         if (error) {
-          console.error(
-            "❌ Error rejecting friend request:",
-            error.message || error,
+          console.warn(
+            "⚠️ Main reject function failed, trying simple version:",
+            error.message,
           );
-          throw error;
+          const { error: simpleError } = await supabase.rpc(
+            "reject_friend_request_simple",
+            {
+              request_id: requestId,
+            },
+          );
+
+          if (simpleError) {
+            console.error(
+              "❌ Both reject functions failed:",
+              simpleError.message || simpleError,
+            );
+            throw simpleError;
+          }
         }
 
         // Manually create notification for sender (since RPC might fail with notifications)
