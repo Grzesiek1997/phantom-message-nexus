@@ -55,14 +55,17 @@ const EnhancedFriendSearch: React.FC<EnhancedFriendSearchProps> = ({
   const debouncedSearch = useCallback(
     async (query: string) => {
       if (query.trim().length < 2) {
+        console.log("❌ Query too short:", query);
         setSearchResults([]);
         return;
       }
 
+      console.log("🔍 Starting search for query:", query);
       setIsSearching(true);
       try {
-        console.log("🔍 Searching for users with query:", query);
+        console.log("📞 Calling searchUsers function...");
         const results = await searchUsers(query);
+        console.log("✅ Search completed, results:", results);
 
         // Enhanced results with additional metadata
         const enhancedResults = results.map((user: any) => ({
