@@ -72,7 +72,7 @@ export const useEnhancedFriendRequests = () => {
         .select(
           `
           *,
-          sender_profile:profiles!friend_requests_sender_id_fkey (
+          sender_profile:profiles!inner (
             id,
             username,
             display_name,
@@ -81,6 +81,7 @@ export const useEnhancedFriendRequests = () => {
         `,
         )
         .eq("receiver_id", user.id)
+        .eq("profiles.id", "friend_requests.sender_id")
         .order("created_at", { ascending: false });
 
       if (receivedError) {
@@ -97,7 +98,7 @@ export const useEnhancedFriendRequests = () => {
         .select(
           `
           *,
-          receiver_profile:profiles!friend_requests_receiver_id_fkey (
+          receiver_profile:profiles!inner (
             id,
             username,
             display_name,
@@ -106,6 +107,7 @@ export const useEnhancedFriendRequests = () => {
         `,
         )
         .eq("sender_id", user.id)
+        .eq("profiles.id", "friend_requests.receiver_id")
         .order("created_at", { ascending: false });
 
       if (sentError) {
