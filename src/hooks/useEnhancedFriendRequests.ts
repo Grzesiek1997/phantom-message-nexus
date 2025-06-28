@@ -292,12 +292,6 @@ export const useEnhancedFriendRequests = () => {
         }
 
         // Notification will be created automatically by trigger
-              notifError.message,
-            );
-          }
-        } catch (notifErr) {
-          console.warn("⚠️ Notification creation failed:", notifErr);
-        }
 
         // Refresh data
         await fetchFriendRequests();
