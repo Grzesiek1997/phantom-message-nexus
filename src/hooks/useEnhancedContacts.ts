@@ -260,18 +260,33 @@ export const useEnhancedContacts = () => {
 
       try {
         console.log("🔍 Searching users with enhanced query:", query);
+        console.log("👤 Current user ID:", user.id);
 
         const { data: searchResults, error } = await supabase
           .from("profiles")
-          .select("id, username, display_name, avatar_url, bio")
+          .select(
+            "id, username, display_name, avatar_url, bio, is_online, last_seen",
+          )
           .neq("id", user.id)
           .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
           .limit(20);
 
         if (error) {
-          console.error("❌ Search error:", error);
+          console.error("❌ Search error details:", {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code,
+          });
           throw error;
         }
+
+        console.log(
+          "📊 Raw search results:",
+          searchResults?.length || 0,
+          "users found",
+        );
+        console.log("🔍 Search results data:", searchResults);
 
         // Filter out existing contacts
         const existingContactIds = contacts.map((c) => c.contact_user_id);
