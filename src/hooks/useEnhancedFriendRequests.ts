@@ -382,7 +382,10 @@ export const useEnhancedFriendRequests = () => {
         });
 
         if (error) {
-          console.error("❌ Error rejecting friend request:", error);
+          console.error(
+            "❌ Error rejecting friend request:",
+            error.message || error,
+          );
           throw error;
         }
 
@@ -395,11 +398,14 @@ export const useEnhancedFriendRequests = () => {
         });
 
         return true;
-      } catch (error) {
-        console.error("💥 Error in rejectFriendRequest:", error);
+      } catch (error: any) {
+        console.error(
+          "💥 Error in rejectFriendRequest:",
+          error?.message || error,
+        );
         toast({
           title: "Błąd odrzucania",
-          description: "Nie udało się odrzucić zaproszenia",
+          description: `Nie udało się odrzucić zaproszenia: ${error?.message || "Nieznany błąd"}`,
           variant: "destructive",
         });
         return false;
