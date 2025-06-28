@@ -469,11 +469,14 @@ const EnhancedFriendSearch: React.FC<EnhancedFriendSearchProps> = ({
                                 size="sm"
                               >
                                 {processing ? (
-                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                  <>
+                                    <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                                    Wysyłanie...
+                                  </>
                                 ) : (
                                   <>
                                     <UserPlus className="w-4 h-4 mr-1" />
-                                    Dodaj
+                                    Wyślij zaproszenie
                                   </>
                                 )}
                               </Button>
