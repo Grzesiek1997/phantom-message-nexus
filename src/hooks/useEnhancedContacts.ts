@@ -262,13 +262,12 @@ export const useEnhancedContacts = () => {
         console.log("🔍 Searching users with enhanced query:", query);
         console.log("👤 Current user ID:", user.id);
 
+        // Try simple search first
         const { data: searchResults, error } = await supabase
           .from("profiles")
-          .select(
-            "id, username, display_name, avatar_url, bio, is_online, last_seen",
-          )
+          .select("id, username, display_name, avatar_url")
           .neq("id", user.id)
-          .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
+          .ilike("username", `%${query}%`)
           .limit(20);
 
         if (error) {
