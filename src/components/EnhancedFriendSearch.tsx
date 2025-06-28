@@ -51,6 +51,7 @@ const EnhancedFriendSearch: React.FC<EnhancedFriendSearchProps> = ({
     sentRequests,
     isProcessing,
     canSendRequest,
+    getRequestStatus: hookGetRequestStatus,
     stats,
   } = useEnhancedFriendRequests();
 
@@ -166,8 +167,7 @@ const EnhancedFriendSearch: React.FC<EnhancedFriendSearchProps> = ({
   };
 
   const getRequestStatus = (userId: string) => {
-    const request = sentRequests.find((req) => req.receiver_id === userId);
-    return request?.status || null;
+    return hookGetRequestStatus ? hookGetRequestStatus(userId) : null;
   };
 
   const formatLastSeen = (lastSeen?: string) => {
