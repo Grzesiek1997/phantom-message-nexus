@@ -61,9 +61,22 @@ const EnhancedFriendSearch: React.FC<EnhancedFriendSearchProps> = ({
         console.log("🧪 Testing database connection...");
         console.log("👤 Current user:", user?.id);
 
+        // First test - count all profiles
+        const { count, error: countError } = await supabase
+          .from("profiles")
+          .select("*", { count: "exact", head: true });
+
+        console.log("📊 Total profiles in database:", count);
+
+        if (countError) {
+          console.error("❌ Count error:", countError);
+          return;
+        }
+
+        // Second test - get some profiles
         const { data, error } = await supabase
           .from("profiles")
-          .select("id, username")
+          .select("id, username, display_name")
           .limit(5);
 
         if (error) {
