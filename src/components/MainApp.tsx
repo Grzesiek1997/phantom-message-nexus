@@ -4,7 +4,6 @@ import EnhancedFloatingActionButton from "./EnhancedFloatingActionButton";
 import EnhancedAppHeader from "./layout/EnhancedAppHeader";
 import AppContent from "./layout/AppContent";
 import AppModals from "./layout/AppModals";
-import FriendshipNotifications from "./FriendshipNotifications";
 import EnhancedFriendSearch from "./EnhancedFriendSearch";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -106,9 +105,6 @@ const MainApp: React.FC = () => {
         isOpen={showFriendSearch}
         onClose={() => setShowFriendSearch(false)}
       />
-
-      {/* Enhanced Friendship Notifications */}
-      <FriendshipNotifications />
     </div>
   );
 };
