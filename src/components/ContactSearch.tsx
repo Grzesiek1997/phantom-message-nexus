@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, UserPlus, X, Check, UserX, Clock } from "lucide-react";
 import { useContacts } from "@/hooks/useContacts";
-import { useFriendRequests } from "@/hooks/useFriendRequests";
+import { useEnhancedFriendRequests } from "@/hooks/useEnhancedFriendRequests";
 import { useToast } from "@/hooks/use-toast";
 
 interface ContactSearchProps {
@@ -34,8 +34,21 @@ const ContactSearch: React.FC<ContactSearchProps> = ({
     sendFriendRequest,
     acceptFriendRequest,
     rejectFriendRequest,
-  } = useFriendRequests();
+    canSendRequest,
+    isProcessing,
+  } = useEnhancedFriendRequests();
   const { toast } = useToast();
+
+  const getRequestStatus = (userId: string) => {
+    const sentRequest = sentRequests.find((req) => req.receiver_id === userId);
+    const receivedRequest = receivedRequests.find(
+      (req) => req.sender_id === userId,
+    );
+
+    if (sentRequest) return sentRequest.status;
+    if (receivedRequest) return "received";
+    return null;
+  };
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -141,10 +154,10 @@ const ContactSearch: React.FC<ContactSearchProps> = ({
                     (contact) => contact.contact_user_id === user.id,
                   );
 
-                  // Check if invitation was already sent
-                  const sentRequest = sentRequests.find(
-                    (request) => request.receiver_id === user.id,
-                  );
+                  // Get comprehensive request status
+                  const requestStatus = getRequestStatus(user.id);
+                  const canSend = canSendRequest(user.id);
+                  const processing = isProcessing(user.id);
 
                   // Check if we received invitation from this user
                   const receivedRequest = receivedRequests.find(
@@ -154,10 +167,10 @@ const ContactSearch: React.FC<ContactSearchProps> = ({
                   return (
                     <div
                       key={user.id}
-                      className="flex items-center justify-between p-2 bg-gray-800 rounded-lg"
+                      className="flex items-center justify-between p-3 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
                     >
                       <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                        <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                           <span className="text-white text-sm font-bold">
                             {user.display_name?.charAt(0).toUpperCase() ||
                               user.username?.charAt(0).toUpperCase() ||
@@ -174,26 +187,41 @@ const ContactSearch: React.FC<ContactSearchProps> = ({
                         </div>
                       </div>
 
-                      {/* Status indicators */}
+                      {/* Enhanced Status indicators */}
                       <div className="flex items-center space-x-2">
                         {isContact ? (
-                          <div className="flex items-center space-x-1 text-green-400">
+                          <div className="flex items-center space-x-1 text-green-400 bg-green-400/10 px-3 py-1 rounded-lg border border-green-400/30">
                             <Check className="w-4 h-4" />
-                            <span className="text-xs">Znajomy</span>
+                            <span className="text-xs font-medium">Znajomy</span>
                           </div>
-                        ) : sentRequest ? (
-                          <div className="flex items-center space-x-1 text-yellow-400">
+                        ) : requestStatus === "pending" ? (
+                          <div className="flex items-center space-x-1 text-yellow-400 bg-yellow-400/10 px-3 py-1 rounded-lg border border-yellow-400/30">
                             <Clock className="w-4 h-4" />
-                            <span className="text-xs">Wysłano</span>
+                            <span className="text-xs font-medium">Wysłano</span>
                           </div>
-                        ) : receivedRequest ? (
-                          <div className="flex items-center space-x-2">
+                        ) : requestStatus === "accepted" ? (
+                          <div className="flex items-center space-x-1 text-green-400 bg-green-400/10 px-3 py-1 rounded-lg border border-green-400/30">
+                            <Check className="w-4 h-4" />
+                            <span className="text-xs font-medium">
+                              Zaakceptowano
+                            </span>
+                          </div>
+                        ) : requestStatus === "rejected" ? (
+                          <div className="flex items-center space-x-1 text-red-400 bg-red-400/10 px-3 py-1 rounded-lg border border-red-400/30">
+                            <UserX className="w-4 h-4" />
+                            <span className="text-xs font-medium">
+                              Odrzucono
+                            </span>
+                          </div>
+                        ) : requestStatus === "received" && receivedRequest ? (
+                          <div className="flex items-center space-x-1">
                             <Button
                               size="sm"
                               onClick={() =>
                                 handleAcceptContact(receivedRequest.id)
                               }
-                              className="bg-green-500 hover:bg-green-600"
+                              disabled={processing}
+                              className="bg-green-500 hover:bg-green-600 h-8 px-3"
                             >
                               <Check className="w-4 h-4" />
                             </Button>
@@ -202,19 +230,32 @@ const ContactSearch: React.FC<ContactSearchProps> = ({
                               onClick={() =>
                                 handleRejectContact(receivedRequest.id)
                               }
-                              className="bg-red-500 hover:bg-red-600"
+                              disabled={processing}
+                              className="bg-red-500 hover:bg-red-600 h-8 px-3"
                             >
                               <UserX className="w-4 h-4" />
                             </Button>
                           </div>
-                        ) : (
+                        ) : canSend ? (
                           <Button
                             size="sm"
                             onClick={() => handleAddContact(user.id)}
-                            className="bg-green-500 hover:bg-green-600"
+                            disabled={processing}
+                            className="bg-green-500 hover:bg-green-600 h-8 px-3"
                           >
-                            <UserPlus className="w-4 h-4" />
+                            {processing ? (
+                              <Clock className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <UserPlus className="w-4 h-4" />
+                            )}
                           </Button>
+                        ) : (
+                          <div className="flex items-center space-x-1 text-gray-500 bg-gray-500/10 px-3 py-1 rounded-lg border border-gray-500/30">
+                            <UserX className="w-4 h-4" />
+                            <span className="text-xs font-medium">
+                              Niedostępne
+                            </span>
+                          </div>
                         )}
                       </div>
                     </div>
