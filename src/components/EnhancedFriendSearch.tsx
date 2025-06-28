@@ -51,6 +51,33 @@ const EnhancedFriendSearch: React.FC<EnhancedFriendSearchProps> = ({
     stats,
   } = useEnhancedFriendRequests();
 
+  // Test database connection on mount
+  useEffect(() => {
+    const testConnection = async () => {
+      try {
+        console.log("🧪 Testing database connection...");
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id, username")
+          .limit(5);
+
+        if (error) {
+          console.error("❌ Database test failed:", error);
+        } else {
+          console.log(
+            "✅ Database test successful:",
+            data?.length,
+            "profiles found",
+          );
+        }
+      } catch (err) {
+        console.error("💥 Database connection error:", err);
+      }
+    };
+
+    testConnection();
+  }, []);
+
   // Enhanced debounced search
   const debouncedSearch = useCallback(
     async (query: string) => {
