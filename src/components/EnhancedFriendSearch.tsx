@@ -88,6 +88,13 @@ const EnhancedFriendSearch: React.FC<EnhancedFriendSearchProps> = ({
             "profiles found",
           );
           console.log("📊 Sample profiles:", data);
+
+          // If no profiles found, maybe we need to create current user profile
+          if (count === 0 || (data && data.length === 0)) {
+            console.log(
+              "⚠️ No profiles found - user may need to create profile",
+            );
+          }
         }
       } catch (err) {
         console.error("💥 Database connection error:", err);
