@@ -1,12 +1,16 @@
-
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Search, UserPlus, X, Check, UserX, Clock } from 'lucide-react';
-import { useContacts } from '@/hooks/useContacts';
-import { useFriendRequests } from '@/hooks/useFriendRequests';
-import { useToast } from '@/hooks/use-toast';
+import React, { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Search, UserPlus, X, Check, UserX, Clock } from "lucide-react";
+import { useContacts } from "@/hooks/useContacts";
+import { useFriendRequests } from "@/hooks/useFriendRequests";
+import { useToast } from "@/hooks/use-toast";
 
 interface ContactSearchProps {
   isOpen: boolean;
@@ -14,34 +18,38 @@ interface ContactSearchProps {
   onSelectContact: (contactId: string) => void;
 }
 
-const ContactSearch: React.FC<ContactSearchProps> = ({ isOpen, onClose, onSelectContact }) => {
-  const [searchQuery, setSearchQuery] = useState('');
+const ContactSearch: React.FC<ContactSearchProps> = ({
+  isOpen,
+  onClose,
+  onSelectContact,
+}) => {
+  const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
-  
+
   const { contacts, searchUsers, deleteContact } = useContacts();
-  const { 
-    receivedRequests, 
-    sentRequests, 
-    sendFriendRequest, 
-    acceptFriendRequest, 
-    rejectFriendRequest 
+  const {
+    receivedRequests,
+    sentRequests,
+    sendFriendRequest,
+    acceptFriendRequest,
+    rejectFriendRequest,
   } = useFriendRequests();
   const { toast } = useToast();
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
-    
+
     setSearching(true);
     try {
       const results = await searchUsers(searchQuery);
       setSearchResults(results);
     } catch (error) {
-      console.error('Search error:', error);
+      console.error("Search error:", error);
       toast({
-        title: 'Błąd wyszukiwania',
-        description: 'Nie udało się wyszukać użytkowników',
-        variant: 'destructive'
+        title: "Błąd wyszukiwania",
+        description: "Nie udało się wyszukać użytkowników",
+        variant: "destructive",
       });
     } finally {
       setSearching(false);
@@ -52,9 +60,9 @@ const ContactSearch: React.FC<ContactSearchProps> = ({ isOpen, onClose, onSelect
     try {
       await sendFriendRequest(userId);
       // Remove from search results after adding
-      setSearchResults(prev => prev.filter(user => user.id !== userId));
+      setSearchResults((prev) => prev.filter((user) => user.id !== userId));
     } catch (error) {
-      console.error('Add contact error:', error);
+      console.error("Add contact error:", error);
     }
   };
 
@@ -67,7 +75,7 @@ const ContactSearch: React.FC<ContactSearchProps> = ({ isOpen, onClose, onSelect
     try {
       await acceptFriendRequest(requestId);
     } catch (error) {
-      console.error('Accept contact error:', error);
+      console.error("Accept contact error:", error);
     }
   };
 
@@ -75,7 +83,7 @@ const ContactSearch: React.FC<ContactSearchProps> = ({ isOpen, onClose, onSelect
     try {
       await rejectFriendRequest(requestId);
     } catch (error) {
-      console.error('Reject contact error:', error);
+      console.error("Reject contact error:", error);
     }
   };
 
@@ -106,7 +114,7 @@ const ContactSearch: React.FC<ContactSearchProps> = ({ isOpen, onClose, onSelect
                   placeholder="Szukaj użytkowników..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                  onKeyPress={(e) => e.key === "Enter" && handleSearch()}
                   className="pl-10 bg-gray-800 border-gray-600 text-white"
                 />
               </div>
@@ -115,7 +123,7 @@ const ContactSearch: React.FC<ContactSearchProps> = ({ isOpen, onClose, onSelect
                 disabled={searching || !searchQuery.trim()}
                 className="bg-blue-500 hover:bg-blue-600"
               >
-                {searching ? 'Szukam...' : 'Szukaj'}
+                {searching ? "Szukam..." : "Szukaj"}
               </Button>
             </div>
           </div>
@@ -123,33 +131,95 @@ const ContactSearch: React.FC<ContactSearchProps> = ({ isOpen, onClose, onSelect
           {/* Search Results */}
           {searchResults.length > 0 && (
             <div className="space-y-2">
-              <h3 className="text-sm font-medium text-gray-300">Wyniki wyszukiwania:</h3>
+              <h3 className="text-sm font-medium text-gray-300">
+                Wyniki wyszukiwania:
+              </h3>
               <div className="max-h-40 overflow-y-auto space-y-1">
-                {searchResults.map((user) => (
-                  <div
-                    key={user.id}
-                    className="flex items-center justify-between p-2 bg-gray-800 rounded-lg"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                        <span className="text-white text-sm font-bold">
-                          {user.display_name?.charAt(0).toUpperCase() || user.username?.charAt(0).toUpperCase() || '?'}
-                        </span>
+                {searchResults.map((user) => {
+                  // Check if user is already a contact
+                  const isContact = contacts.some(
+                    (contact) => contact.contact_user_id === user.id,
+                  );
+
+                  // Check if invitation was already sent
+                  const sentRequest = sentRequests.find(
+                    (request) => request.receiver_id === user.id,
+                  );
+
+                  // Check if we received invitation from this user
+                  const receivedRequest = receivedRequests.find(
+                    (request) => request.sender_id === user.id,
+                  );
+
+                  return (
+                    <div
+                      key={user.id}
+                      className="flex items-center justify-between p-2 bg-gray-800 rounded-lg"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                          <span className="text-white text-sm font-bold">
+                            {user.display_name?.charAt(0).toUpperCase() ||
+                              user.username?.charAt(0).toUpperCase() ||
+                              "?"}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-white">
+                            {user.display_name || user.username}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            @{user.username}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-white">{user.display_name || user.username}</p>
-                        <p className="text-xs text-gray-400">@{user.username}</p>
+
+                      {/* Status indicators */}
+                      <div className="flex items-center space-x-2">
+                        {isContact ? (
+                          <div className="flex items-center space-x-1 text-green-400">
+                            <Check className="w-4 h-4" />
+                            <span className="text-xs">Znajomy</span>
+                          </div>
+                        ) : sentRequest ? (
+                          <div className="flex items-center space-x-1 text-yellow-400">
+                            <Clock className="w-4 h-4" />
+                            <span className="text-xs">Wysłano</span>
+                          </div>
+                        ) : receivedRequest ? (
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              size="sm"
+                              onClick={() =>
+                                handleAcceptContact(receivedRequest.id)
+                              }
+                              className="bg-green-500 hover:bg-green-600"
+                            >
+                              <Check className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() =>
+                                handleRejectContact(receivedRequest.id)
+                              }
+                              className="bg-red-500 hover:bg-red-600"
+                            >
+                              <UserX className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() => handleAddContact(user.id)}
+                            className="bg-green-500 hover:bg-green-600"
+                          >
+                            <UserPlus className="w-4 h-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
-                    <Button
-                      size="sm"
-                      onClick={() => handleAddContact(user.id)}
-                      className="bg-green-500 hover:bg-green-600"
-                    >
-                      <UserPlus className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -157,7 +227,9 @@ const ContactSearch: React.FC<ContactSearchProps> = ({ isOpen, onClose, onSelect
           {/* Received Pending Requests */}
           {receivedRequests.length > 0 && (
             <div className="space-y-2">
-              <h3 className="text-sm font-medium text-gray-300">Otrzymane zaproszenia:</h3>
+              <h3 className="text-sm font-medium text-gray-300">
+                Otrzymane zaproszenia:
+              </h3>
               <div className="max-h-40 overflow-y-auto space-y-1">
                 {receivedRequests.map((request) => (
                   <div
@@ -167,12 +239,18 @@ const ContactSearch: React.FC<ContactSearchProps> = ({ isOpen, onClose, onSelect
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center">
                         <span className="text-white text-sm font-bold">
-                          {request.sender_profile?.display_name?.charAt(0).toUpperCase() || '?'}
+                          {request.sender_profile?.display_name
+                            ?.charAt(0)
+                            .toUpperCase() || "?"}
                         </span>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-white">{request.sender_profile?.display_name}</p>
-                        <p className="text-xs text-gray-400">@{request.sender_profile?.username}</p>
+                        <p className="text-sm font-medium text-white">
+                          {request.sender_profile?.display_name}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          @{request.sender_profile?.username}
+                        </p>
                       </div>
                     </div>
                     <div className="flex space-x-1">
@@ -200,7 +278,9 @@ const ContactSearch: React.FC<ContactSearchProps> = ({ isOpen, onClose, onSelect
           {/* Sent Pending Requests */}
           {sentRequests.length > 0 && (
             <div className="space-y-2">
-              <h3 className="text-sm font-medium text-gray-300">Wysłane zaproszenia:</h3>
+              <h3 className="text-sm font-medium text-gray-300">
+                Wysłane zaproszenia:
+              </h3>
               <div className="max-h-40 overflow-y-auto space-y-1">
                 {sentRequests.map((request) => (
                   <div
@@ -210,12 +290,18 @@ const ContactSearch: React.FC<ContactSearchProps> = ({ isOpen, onClose, onSelect
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-full flex items-center justify-center">
                         <span className="text-white text-sm font-bold">
-                          {request.receiver_profile?.display_name?.charAt(0).toUpperCase() || '?'}
+                          {request.receiver_profile?.display_name
+                            ?.charAt(0)
+                            .toUpperCase() || "?"}
                         </span>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-white">{request.receiver_profile?.display_name}</p>
-                        <p className="text-xs text-gray-400">@{request.receiver_profile?.username}</p>
+                        <p className="text-sm font-medium text-white">
+                          {request.receiver_profile?.display_name}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          @{request.receiver_profile?.username}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -230,7 +316,9 @@ const ContactSearch: React.FC<ContactSearchProps> = ({ isOpen, onClose, onSelect
 
           {/* Existing Contacts */}
           <div className="space-y-2">
-            <h3 className="text-sm font-medium text-gray-300">Twoje kontakty:</h3>
+            <h3 className="text-sm font-medium text-gray-300">
+              Twoje kontakty:
+            </h3>
             {contacts.length === 0 ? (
               <p className="text-gray-400 text-sm">Brak kontaktów</p>
             ) : (
@@ -243,12 +331,18 @@ const ContactSearch: React.FC<ContactSearchProps> = ({ isOpen, onClose, onSelect
                   >
                     <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                       <span className="text-white text-sm font-bold">
-                        {contact.profile.display_name?.charAt(0).toUpperCase() || '?'}
+                        {contact.profile.display_name
+                          ?.charAt(0)
+                          .toUpperCase() || "?"}
                       </span>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-white">{contact.profile.display_name}</p>
-                      <p className="text-xs text-gray-400">@{contact.profile.username}</p>
+                      <p className="text-sm font-medium text-white">
+                        {contact.profile.display_name}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        @{contact.profile.username}
+                      </p>
                     </div>
                   </div>
                 ))}
