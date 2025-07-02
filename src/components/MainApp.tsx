@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import BottomNavigation from "./BottomNavigation";
-import EnhancedFloatingActionButton from "./EnhancedFloatingActionButton";
+import SimpleFloatingActionButton from "./SimpleFloatingActionButton";
 import EnhancedAppHeader from "./layout/EnhancedAppHeader";
 import AppContent from "./layout/AppContent";
 import AppModals from "./layout/AppModals";
@@ -78,8 +78,8 @@ const MainApp: React.FC = () => {
 
       <AppContent activeTab={activeTab} />
 
-      {/* Enhanced Floating Action Button - Always Visible */}
-      <EnhancedFloatingActionButton
+      {/* Simple Floating Action Button - Always Visible */}
+      <SimpleFloatingActionButton
         onNewChat={handleNewChat}
         onGroupChat={handleGroupChat}
         onSearchChats={handleSearchChats}

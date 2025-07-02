@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, UserPlus, X, Check, UserX, Clock } from "lucide-react";
 import { useContacts } from "@/hooks/useContacts";
-import { useEnhancedFriendRequests } from "@/hooks/useEnhancedFriendRequests";
+import { useFixedFriendRequests } from "@/hooks/useFixedFriendRequests";
 import { useToast } from "@/hooks/use-toast";
 
 interface ContactSearchProps {
@@ -36,7 +36,7 @@ const ContactSearch: React.FC<ContactSearchProps> = ({
     rejectFriendRequest,
     canSendRequest,
     isProcessing,
-  } = useEnhancedFriendRequests();
+  } = useFixedFriendRequests();
   const { toast } = useToast();
 
   const getRequestStatus = (userId: string) => {

@@ -23,11 +23,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { EnhancedFriendRequest } from "@/hooks/useEnhancedFriendRequests";
+import { FixedFriendRequest } from "@/hooks/useFixedFriendRequests";
 import { cn } from "@/lib/utils";
 
 interface EnhancedFriendRequestCardProps {
-  request: EnhancedFriendRequest;
+  request: FixedFriendRequest;
   type: "received" | "sent";
   onAccept?: (requestId: string) => Promise<boolean>;
   onReject?: (requestId: string) => Promise<boolean>;

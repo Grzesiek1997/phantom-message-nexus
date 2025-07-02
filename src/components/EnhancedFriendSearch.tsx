@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useEnhancedContacts } from "@/hooks/useEnhancedContacts";
-import { useEnhancedFriendRequests } from "@/hooks/useEnhancedFriendRequests";
+import { useFixedFriendRequests } from "@/hooks/useFixedFriendRequests";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -53,7 +53,7 @@ const EnhancedFriendSearch: React.FC<EnhancedFriendSearchProps> = ({
     canSendRequest,
     getRequestStatus: hookGetRequestStatus,
     stats,
-  } = useEnhancedFriendRequests();
+  } = useFixedFriendRequests();
 
   // Test database connection on mount
   useEffect(() => {

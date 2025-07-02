@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { useEnhancedFriendRequests } from "@/hooks/useEnhancedFriendRequests";
+import { useFixedFriendRequests } from "@/hooks/useFixedFriendRequests";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
@@ -51,7 +51,7 @@ const FriendshipNotifications: React.FC = () => {
     acceptFriendRequest,
     rejectFriendRequest,
     isProcessing,
-  } = useEnhancedFriendRequests();
+  } = useFixedFriendRequests();
 
   // Generate notifications based on friend requests and achievements
   useEffect(() => {

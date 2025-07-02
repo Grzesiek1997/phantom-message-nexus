@@ -21,7 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEnhancedContacts } from "@/hooks/useEnhancedContacts";
-import { useEnhancedFriendRequests } from "@/hooks/useEnhancedFriendRequests";
+import { useFixedFriendRequests } from "@/hooks/useFixedFriendRequests";
 import { useContactsLogic } from "@/hooks/useContactsLogic";
 import EnhancedFriendSearch from "./EnhancedFriendSearch";
 import EnhancedFriendRequestCard from "./EnhancedFriendRequestCard";
@@ -56,7 +56,7 @@ const EnhancedContactsScreen: React.FC = () => {
     rejectFriendRequest,
     deleteFriendRequest,
     isProcessing,
-  } = useEnhancedFriendRequests();
+  } = useFixedFriendRequests();
 
   const { handleSelectContact } = useContactsLogic();
 
