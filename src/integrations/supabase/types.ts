@@ -38,6 +38,39 @@ export type Database = {
           },
         ]
       }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          entity_id: number
+          entity_type: string
+          id: number
+          new_value: Json | null
+          old_value: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          entity_id: number
+          entity_type: string
+          id?: never
+          new_value?: Json | null
+          old_value?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          entity_id?: number
+          entity_type?: string
+          id?: never
+          new_value?: Json | null
+          old_value?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       biometric_auth_attempts: {
         Row: {
           attempted_at: string | null
@@ -654,16 +687,22 @@ export type Database = {
         Row: {
           conversation_id: string | null
           id: string
+          is_admin: boolean | null
+          nickname: string | null
           user_id: string | null
         }
         Insert: {
           conversation_id?: string | null
           id?: string
+          is_admin?: boolean | null
+          nickname?: string | null
           user_id?: string | null
         }
         Update: {
           conversation_id?: string | null
           id?: string
+          is_admin?: boolean | null
+          nickname?: string | null
           user_id?: string | null
         }
         Relationships: [
@@ -689,18 +728,27 @@ export type Database = {
           creator_id: string | null
           id: string
           is_group: boolean | null
+          last_message_id: number | null
+          message_count: number | null
+          metadata: Json | null
         }
         Insert: {
           created_at?: string | null
           creator_id?: string | null
           id?: string
           is_group?: boolean | null
+          last_message_id?: number | null
+          message_count?: number | null
+          metadata?: Json | null
         }
         Update: {
           created_at?: string | null
           creator_id?: string | null
           id?: string
           is_group?: boolean | null
+          last_message_id?: number | null
+          message_count?: number | null
+          metadata?: Json | null
         }
         Relationships: [
           {
@@ -1356,6 +1404,7 @@ export type Database = {
           content: string | null
           conversation_id: string | null
           id: string
+          metadata: Json | null
           sender_id: string | null
           sent_at: string | null
         }
@@ -1363,6 +1412,7 @@ export type Database = {
           content?: string | null
           conversation_id?: string | null
           id?: string
+          metadata?: Json | null
           sender_id?: string | null
           sent_at?: string | null
         }
@@ -1370,6 +1420,7 @@ export type Database = {
           content?: string | null
           conversation_id?: string | null
           id?: string
+          metadata?: Json | null
           sender_id?: string | null
           sent_at?: string | null
         }
@@ -1644,9 +1695,11 @@ export type Database = {
         Row: {
           avatar_url: string | null
           backup_phrase_hash: string | null
+          bio: string | null
           created_at: string
           disappearing_messages_ttl: number | null
           display_name: string | null
+          email_verified: boolean | null
           id: string
           identity_key: string | null
           is_online: boolean | null
@@ -1659,6 +1712,7 @@ export type Database = {
           prekey_signature: string | null
           premium_expires_at: string | null
           privacy_settings: Json | null
+          role: string | null
           signed_prekey: string | null
           status: string | null
           two_factor_secret: string | null
@@ -1668,9 +1722,11 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           backup_phrase_hash?: string | null
+          bio?: string | null
           created_at?: string
           disappearing_messages_ttl?: number | null
           display_name?: string | null
+          email_verified?: boolean | null
           id: string
           identity_key?: string | null
           is_online?: boolean | null
@@ -1683,6 +1739,7 @@ export type Database = {
           prekey_signature?: string | null
           premium_expires_at?: string | null
           privacy_settings?: Json | null
+          role?: string | null
           signed_prekey?: string | null
           status?: string | null
           two_factor_secret?: string | null
@@ -1692,9 +1749,11 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           backup_phrase_hash?: string | null
+          bio?: string | null
           created_at?: string
           disappearing_messages_ttl?: number | null
           display_name?: string | null
+          email_verified?: boolean | null
           id?: string
           identity_key?: string | null
           is_online?: boolean | null
@@ -1707,6 +1766,7 @@ export type Database = {
           prekey_signature?: string | null
           premium_expires_at?: string | null
           privacy_settings?: Json | null
+          role?: string | null
           signed_prekey?: string | null
           status?: string | null
           two_factor_secret?: string | null
@@ -2117,6 +2177,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string | null
+          id: number
+          reason: string | null
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string | null
+          id?: never
+          reason?: string | null
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string | null
+          id?: never
+          reason?: string | null
+        }
+        Relationships: []
+      }
       user_devices: {
         Row: {
           device_info: string | null
@@ -2172,6 +2256,24 @@ export type Database = {
           is_active?: boolean
           key_type?: string
           public_key?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_presence: {
+        Row: {
+          last_active_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          last_active_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          last_active_at?: string | null
+          status?: string
           user_id?: string
         }
         Relationships: []
@@ -2577,6 +2679,15 @@ export type Database = {
         Args: { group_name: string; user_id: string }
         Returns: string
       }
+      create_group_conversation: {
+        Args: {
+          p_name: string
+          p_description?: string
+          p_avatar_url?: string
+          p_member_ids?: string[]
+        }
+        Returns: number
+      }
       decrement_subscriber_count: {
         Args: { p_channel_id: string }
         Returns: undefined
@@ -2592,6 +2703,10 @@ export type Database = {
       generate_safety_number: {
         Args: { user1_uuid: string; user2_uuid: string }
         Returns: string
+      }
+      get_or_create_dm_conversation: {
+        Args: { other_user_id: string }
+        Returns: number
       }
       get_user_role: {
         Args: { check_user_id: string }
@@ -2625,6 +2740,10 @@ export type Database = {
         Args: { login_or_email: string; password: string }
         Returns: undefined
       }
+      mark_conversation_as_read: {
+        Args: { p_conversation_id: number }
+        Returns: undefined
+      }
       process_scheduled_messages: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -2639,8 +2758,22 @@ export type Database = {
         Args: { request_id: string }
         Returns: undefined
       }
+      save_message_draft: {
+        Args: { p_conversation_id: number; p_content: string }
+        Returns: undefined
+      }
       send_message: {
-        Args: { conversation_id: string; sender_id: string; content: string }
+        Args:
+          | { conversation_id: string; sender_id: string; content: string }
+          | {
+              p_conversation_id: number
+              p_content: string
+              p_reply_to_id?: number
+            }
+        Returns: undefined
+      }
+      update_user_presence: {
+        Args: { p_status: string }
         Returns: undefined
       }
     }

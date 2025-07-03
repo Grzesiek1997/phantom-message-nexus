@@ -25,7 +25,7 @@ import { useFixedFriendRequests } from "@/hooks/useFixedFriendRequests";
 import { useContactsLogic } from "@/hooks/useContactsLogic";
 import EnhancedFriendSearch from "./EnhancedFriendSearch";
 import EnhancedFriendRequestCard from "./EnhancedFriendRequestCard";
-import EnhancedLoadingAnimations from "./EnhancedLoadingAnimations";
+import SimpleLoadingAnimation from "./SimpleLoadingAnimation";
 import { cn } from "@/lib/utils";
 
 const EnhancedContactsScreen: React.FC = () => {
@@ -106,7 +106,7 @@ const EnhancedContactsScreen: React.FC = () => {
     visible: {
       opacity: 1,
       y: 0,
-      transition: { type: "spring", duration: 0.5 },
+      transition: { type: "spring" as const, duration: 0.5 },
     },
   };
 
@@ -115,7 +115,7 @@ const EnhancedContactsScreen: React.FC = () => {
     visible: {
       opacity: 1,
       y: 0,
-      transition: { type: "spring", duration: 0.8, bounce: 0.4 },
+      transition: { type: "spring" as const, duration: 0.8, bounce: 0.4 },
     },
   };
 
@@ -124,19 +124,12 @@ const EnhancedContactsScreen: React.FC = () => {
     visible: {
       opacity: 1,
       scale: 1,
-      transition: { type: "spring", duration: 0.5 },
+      transition: { type: "spring" as const, duration: 0.5 },
     },
   };
 
   if (loading) {
-    return (
-      <EnhancedLoadingAnimations
-        type="contacts"
-        message="Synchronizujemy Twoją społeczność..."
-        showProgress={true}
-        progress={Math.min(95, Date.now() % 100)}
-      />
-    );
+    return <SimpleLoadingAnimation message="Ładowanie kontaktów..." />;
   }
 
   return (
@@ -523,12 +516,12 @@ const EnhancedContactsScreen: React.FC = () => {
                           icon: Send,
                           color: "from-purple-500 to-purple-600",
                         },
-                        {
-                          title: "Skuteczność",
-                          value: `${stats.success_rate.toFixed(0)}%`,
-                          icon: TrendingUp,
-                          color: "from-green-500 to-green-600",
-                        },
+                         {
+                           title: "Skuteczność",
+                           value: `${Math.round((stats.total_sent > 0 ? (contacts.length / stats.total_sent) * 100 : 0))}%`,
+                           icon: TrendingUp,
+                           color: "from-green-500 to-green-600",
+                         },
                       ].map((stat, index) => (
                         <motion.div
                           key={stat.title}

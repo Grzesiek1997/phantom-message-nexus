@@ -190,7 +190,7 @@ const EnhancedAuthForm: React.FC<EnhancedAuthFormProps> = ({ onClose }) => {
       opacity: 1,
       y: 0,
       transition: {
-        type: "spring",
+        type: "spring" as const,
         stiffness: 300,
         damping: 25,
         staggerChildren: 0.1,

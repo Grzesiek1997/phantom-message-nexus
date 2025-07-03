@@ -136,7 +136,7 @@ const EnhancedFriendRequestCard: React.FC<EnhancedFriendRequestCardProps> = ({
       y: 0,
       scale: 1,
       transition: {
-        type: "spring",
+        type: "spring" as const,
         duration: 0.5,
         bounce: 0.3,
       },
@@ -183,8 +183,8 @@ const EnhancedFriendRequestCard: React.FC<EnhancedFriendRequestCardProps> = ({
                   </AvatarFallback>
                 </Avatar>
 
-                {/* Online indicator */}
-                {profile?.is_online && (
+                {/* Online indicator - removed is_online check as it's not in the type */}
+                {false && (
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
