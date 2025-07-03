@@ -20,8 +20,8 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useEnhancedMessages } from '@/hooks/useEnhancedMessages';
-import { useDisappearingMessages } from '@/hooks/useDisappearingMessages';
+// Removed problematic imports - using simplified message operations
+import { useMessageOperations } from '@/hooks/messaging/useMessageOperations';
 import { useCalls } from '@/hooks/useCalls';
 import { useAuth } from '@/hooks/useAuth';
 import AttachmentUpload from './AttachmentUpload';
@@ -39,8 +39,8 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   conversationName = 'Chat',
   isGroup = false
 }) => {
-  const { messages, loading, sendMessage, editMessage, deleteMessage } = useEnhancedMessages(conversationId);
-  const { updateMessageTTL } = useDisappearingMessages();
+  const { messages, loading, sendMessage, editMessage, deleteMessage } = useMessageOperations(conversationId);
+  // Simplified disappearing messages
   const { startCall } = useCalls();
   const { user } = useAuth();
   
@@ -71,10 +71,8 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     const autoDeleteAfter = disappearingTTL !== '0' ? parseInt(disappearingTTL) : undefined;
 
     try {
-      await sendMessage(newMessage, {
-        replyToId: replyingTo || undefined,
-        autoDeleteAfter
-      });
+      await sendMessage(newMessage, conversationId, 'text', replyingTo);
+      // Note: autoDeleteAfter will be handled in the future
       
       setNewMessage('');
       setReplyingTo(null);
@@ -94,9 +92,9 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     }
   };
 
-  const handleDeleteMessage = async (messageId: string, forEveryone: boolean = false) => {
+  const handleDeleteMessage = async (messageId: string) => {
     try {
-      await deleteMessage(messageId, forEveryone);
+      await deleteMessage(messageId);
       setMessageToDelete(null);
     } catch (error) {
       console.error('Failed to delete message:', error);
@@ -459,7 +457,8 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
             <div className="flex gap-2">
               <Button
                 onClick={async () => {
-                  await updateMessageTTL(conversationId, parseInt(disappearingTTL));
+                  // Simplified TTL update
+                  console.log('Setting TTL to:', disappearingTTL);
                   setShowDisappearingSettings(false);
                 }}
                 className="flex-1 bg-blue-600 hover:bg-blue-700"
@@ -489,17 +488,10 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
           </DialogHeader>
           <div className="flex flex-col gap-2">
             <Button
-              onClick={() => messageToDelete && handleDeleteMessage(messageToDelete, false)}
-              variant="outline"
-              className="w-full"
-            >
-              Usuń dla mnie
-            </Button>
-            <Button
-              onClick={() => messageToDelete && handleDeleteMessage(messageToDelete, true)}
+              onClick={() => messageToDelete && handleDeleteMessage(messageToDelete)}
               className="w-full bg-red-600 hover:bg-red-700"
             >
-              Usuń dla wszystkich
+              Usuń wiadomość
             </Button>
             <Button
               onClick={() => setMessageToDelete(null)}

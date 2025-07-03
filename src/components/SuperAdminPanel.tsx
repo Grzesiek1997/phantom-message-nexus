@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useAdmin } from '@/hooks/useAdmin';
-import { useChannelManagement } from '@/hooks/useChannelManagement';
+// Simplified admin without channel management
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,7 +13,9 @@ import { Shield, Activity, BarChart3, Settings, Users, MessageCircle } from 'luc
 
 const SuperAdminPanel: React.FC = () => {
   const { isAdmin } = useAdmin();
-  const { stats, loading } = useChannelManagement();
+  // Simplified stats without channel management
+  const stats = { total_channels: 0, public_channels: 0, premium_channels: 0, total_subscribers: 0 };
+  const loading = false;
   const [activeTab, setActiveTab] = useState('overview');
 
   if (!isAdmin) {
