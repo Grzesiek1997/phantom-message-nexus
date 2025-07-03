@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import BottomNavigation from "./BottomNavigation";
 import SimpleFloatingActionButton from "./SimpleFloatingActionButton";
-import EnhancedAppHeader from "./layout/EnhancedAppHeader";
+import SimpleAppHeader from "./layout/SimpleAppHeader";
 import AppContent from "./layout/AppContent";
 import AppModals from "./layout/AppModals";
 import EnhancedFriendSearch from "./EnhancedFriendSearch";
@@ -68,7 +68,7 @@ const MainApp: React.FC = () => {
 
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
-      <EnhancedAppHeader
+      <SimpleAppHeader
         totalUnreadCount={totalUnreadCount}
         onNotificationClick={handleNotificationClick}
         onSearchClick={handleSearchClick}

@@ -119,7 +119,7 @@ const EnhancedAppHeader: React.FC<EnhancedAppHeaderProps> = ({
       transform: "translateY(0px)",
       transition: {
         duration: 0.6,
-        ease: "easeOut",
+        ease: "easeOut" as const,
         staggerChildren: 0.1,
       },
     },
@@ -135,7 +135,7 @@ const EnhancedAppHeader: React.FC<EnhancedAppHeaderProps> = ({
       transform: "translateY(0px)",
       transition: {
         duration: 0.4,
-        ease: "easeOut",
+        ease: "easeOut" as const,
       },
     },
   };
@@ -145,7 +145,7 @@ const EnhancedAppHeader: React.FC<EnhancedAppHeaderProps> = ({
     visible: {
       x: 0,
       opacity: 1,
-      transition: { type: "spring", stiffness: 400, damping: 25 },
+      transition: { type: "spring" as const, stiffness: 400, damping: 25 },
     },
     exit: {
       x: -30,
@@ -165,7 +165,7 @@ const EnhancedAppHeader: React.FC<EnhancedAppHeaderProps> = ({
       y: 0,
       scale: 1,
       transition: {
-        type: "spring",
+        type: "spring" as const,
         stiffness: 300,
         damping: 25,
         staggerChildren: 0.05,

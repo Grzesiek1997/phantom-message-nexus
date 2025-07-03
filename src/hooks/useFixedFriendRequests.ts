@@ -478,6 +478,8 @@ export const useFixedFriendRequests = () => {
       pending_received: receivedRequests.filter(req => req.status === "pending").length,
       total_sent: sentRequests.length,
       total_received: receivedRequests.length,
+      total_contacts: 0, // This should come from a contacts hook
+      success_rate: sentRequests.length > 0 ? (sentRequests.filter(req => req.status === "accepted").length / sentRequests.length) * 100 : 0,
     }
   };
 };
