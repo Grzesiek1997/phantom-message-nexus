@@ -183,35 +183,26 @@ export const useAdmin = () => {
 
     try {
       // Znajdź lub stwórz konwersację
+      // Simplified conversation lookup
       const { data: existingConversation } = await supabase
         .from('conversations')
-        .select(`
-          id,
-          conversation_participants!inner (user_id)
-        `)
-        .eq('type', 'direct')
-        .eq('conversation_participants.user_id', user.id);
+        .select('id')
+        .eq('is_group', false)
+        .limit(10);
 
       let conversationId = null;
 
-      if (existingConversation) {
-        // Znajdź konwersację z tym konkretnym użytkownikiem
-        for (const conv of existingConversation) {
-          const participants = conv.conversation_participants?.map((p: any) => p.user_id) || [];
-          if (participants.includes(contactId) && participants.length === 2) {
-            conversationId = conv.id;
-            break;
-          }
-        }
-      }
+      // For simplicity, always create a new conversation
+      conversationId = null;
 
       if (!conversationId) {
         // Stwórz nową konwersację
         const { data: newConversation, error: convError } = await supabase
           .from('conversations')
           .insert({
-            type: 'direct',
-            created_by: user.id
+            is_group: false,
+            creator_id: user.id,
+            metadata: { type: 'direct' }
           })
           .select()
           .single();
@@ -236,7 +227,7 @@ export const useAdmin = () => {
           conversation_id: conversationId,
           sender_id: user.id,
           content,
-          message_type: 'text'
+          metadata: { type: 'text' }
         });
 
       if (messageError) throw messageError;

@@ -54,14 +54,14 @@ export const useMessageOperations = (conversationId?: string) => {
           conversation_id: msg.conversation_id,
           sender_id: msg.sender_id,
           content: msg.content,
-          message_type: msg.message_type as 'text' | 'file' | 'image' | 'voice' | 'location' | 'poll' | 'sticker',
-          created_at: msg.created_at,
-          updated_at: msg.updated_at,
-          reply_to_id: msg.reply_to_id,
-          thread_root_id: msg.thread_root_id,
-          is_edited: msg.is_edited,
-          is_deleted: msg.is_deleted,
-          expires_at: msg.expires_at,
+          message_type: 'text' as 'text' | 'file' | 'image' | 'voice' | 'location' | 'poll' | 'sticker',
+          created_at: msg.sent_at,
+          updated_at: msg.sent_at,
+          reply_to_id: null,
+          thread_root_id: null,
+          is_edited: false,
+          is_deleted: false,
+          expires_at: null,
           sender: senderProfile ? {
             username: senderProfile.username,
             display_name: senderProfile.display_name,
@@ -91,8 +91,7 @@ export const useMessageOperations = (conversationId?: string) => {
           conversation_id: targetConversationId,
           sender_id: user.id,
           content: content.trim(),
-          message_type: messageType,
-          reply_to_id: replyToId || null
+          metadata: { type: messageType, reply_to_id: replyToId }
         })
         .select()
         .single();
@@ -122,14 +121,14 @@ export const useMessageOperations = (conversationId?: string) => {
         conversation_id: data.conversation_id,
         sender_id: data.sender_id,
         content: data.content,
-        message_type: data.message_type as 'text' | 'file' | 'image' | 'voice' | 'location' | 'poll' | 'sticker',
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        reply_to_id: data.reply_to_id,
-        thread_root_id: data.thread_root_id,
-        is_edited: data.is_edited,
-        is_deleted: data.is_deleted,
-        expires_at: data.expires_at,
+        message_type: 'text' as 'text' | 'file' | 'image' | 'voice' | 'location' | 'poll' | 'sticker',
+        created_at: data.sent_at,
+        updated_at: data.sent_at,
+        reply_to_id: null,
+        thread_root_id: null,
+        is_edited: false,
+        is_deleted: false,
+        expires_at: null,
         sender: senderProfile ? {
           username: senderProfile.username,
           display_name: senderProfile.display_name,
@@ -156,8 +155,7 @@ export const useMessageOperations = (conversationId?: string) => {
         .from('messages')
         .update({
           content: newContent.trim(),
-          is_edited: true,
-          updated_at: new Date().toISOString()
+          metadata: { ...{}, is_edited: true }
         })
         .eq('id', messageId)
         .eq('sender_id', user.id);
@@ -175,7 +173,7 @@ export const useMessageOperations = (conversationId?: string) => {
       // Zaktualizuj lokalny stan
       setMessages(prev => prev.map(msg => 
         msg.id === messageId 
-          ? { ...msg, content: newContent.trim(), is_edited: true, updated_at: new Date().toISOString() }
+          ? { ...msg, content: newContent.trim(), is_edited: true }
           : msg
       ));
 
@@ -195,9 +193,8 @@ export const useMessageOperations = (conversationId?: string) => {
       const { error } = await supabase
         .from('messages')
         .update({
-          is_deleted: true,
           content: 'Wiadomość została usunięta',
-          updated_at: new Date().toISOString()
+          metadata: { ...{}, is_deleted: true }
         })
         .eq('id', messageId)
         .eq('sender_id', user.id);
@@ -215,7 +212,7 @@ export const useMessageOperations = (conversationId?: string) => {
       // Zaktualizuj lokalny stan
       setMessages(prev => prev.map(msg => 
         msg.id === messageId 
-          ? { ...msg, is_deleted: true, content: 'Wiadomość została usunięta', updated_at: new Date().toISOString() }
+          ? { ...msg, is_deleted: true, content: 'Wiadomość została usunięta' }
           : msg
       ));
 

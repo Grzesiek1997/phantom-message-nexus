@@ -123,6 +123,13 @@ export const VoiceMessageBubble: React.FC<VoiceMessageProps> = ({
     }
   };
 
+  // Set volume when audio loads
+  React.useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = isMuted ? 0 : volume;
+    }
+  }, [volume, isMuted]);
+
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
@@ -205,7 +212,6 @@ export const VoiceMessageBubble: React.FC<VoiceMessageProps> = ({
         src={audioUrl}
         onTimeUpdate={() => setCurrentTime(audioRef.current?.currentTime || 0)}
         onEnded={() => onPause?.()}
-        volume={isMuted ? 0 : volume}
       />
     </motion.div>
   );
