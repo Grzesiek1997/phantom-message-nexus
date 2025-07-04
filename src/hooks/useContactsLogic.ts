@@ -59,10 +59,10 @@ export const useContactsLogic = () => {
 
       console.log('Creating conversation with accepted contact:', contactId);
       
-      const conversationId = await createConversation([contactId]);
+      const result = await createConversation([contactId]);
       
-      if (conversationId) {
-        console.log('Conversation created/found successfully:', conversationId);
+      if (result) {
+        console.log('Conversation created/found successfully:', result);
         
         toast({
           title: 'Czat utworzony',
@@ -158,4 +158,3 @@ export const useContactsLogic = () => {
     handleDeleteContact
   };
 };
-

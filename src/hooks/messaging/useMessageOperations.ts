@@ -24,7 +24,7 @@ export const useMessageOperations = (conversationId?: string) => {
         .from('messages')
         .select('*')
         .eq('conversation_id', targetConversationId)
-        .order('created_at', { ascending: true });
+        .order('sent_at', { ascending: true });
 
       if (messagesError) {
         console.error('Error fetching messages:', messagesError);
@@ -49,18 +49,20 @@ export const useMessageOperations = (conversationId?: string) => {
 
       const formattedMessages: Message[] = messagesData.map(msg => {
         const senderProfile = profiles?.find(p => p.id === msg.sender_id);
+        const messageType = (msg.metadata as any)?.type || 'text';
+        
         return {
           id: msg.id,
           conversation_id: msg.conversation_id,
           sender_id: msg.sender_id,
           content: msg.content,
-          message_type: 'text' as 'text' | 'file' | 'image' | 'voice' | 'location' | 'poll' | 'sticker',
+          message_type: messageType as 'text' | 'file' | 'image' | 'voice' | 'location' | 'poll' | 'sticker',
           created_at: msg.sent_at,
           updated_at: msg.sent_at,
-          reply_to_id: null,
+          reply_to_id: (msg.metadata as any)?.reply_to_id || null,
           thread_root_id: null,
-          is_edited: false,
-          is_deleted: false,
+          is_edited: (msg.metadata as any)?.is_edited || false,
+          is_deleted: (msg.metadata as any)?.is_deleted || false,
           expires_at: null,
           sender: senderProfile ? {
             username: senderProfile.username,
@@ -121,10 +123,10 @@ export const useMessageOperations = (conversationId?: string) => {
         conversation_id: data.conversation_id,
         sender_id: data.sender_id,
         content: data.content,
-        message_type: 'text' as 'text' | 'file' | 'image' | 'voice' | 'location' | 'poll' | 'sticker',
+        message_type: messageType as 'text' | 'file' | 'image' | 'voice' | 'location' | 'poll' | 'sticker',
         created_at: data.sent_at,
         updated_at: data.sent_at,
-        reply_to_id: null,
+        reply_to_id: replyToId || null,
         thread_root_id: null,
         is_edited: false,
         is_deleted: false,
@@ -155,7 +157,7 @@ export const useMessageOperations = (conversationId?: string) => {
         .from('messages')
         .update({
           content: newContent.trim(),
-          metadata: { ...{}, is_edited: true }
+          metadata: { is_edited: true }
         })
         .eq('id', messageId)
         .eq('sender_id', user.id);
@@ -194,7 +196,7 @@ export const useMessageOperations = (conversationId?: string) => {
         .from('messages')
         .update({
           content: 'Wiadomość została usunięta',
-          metadata: { ...{}, is_deleted: true }
+          metadata: { is_deleted: true }
         })
         .eq('id', messageId)
         .eq('sender_id', user.id);

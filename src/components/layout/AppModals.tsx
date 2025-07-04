@@ -1,5 +1,6 @@
+
 import React from "react";
-import EnhancedFriendSearch from "../EnhancedFriendSearch";
+import ContactSearch from "../ContactSearch";
 import GroupManagement from "../GroupManagement";
 import FriendshipNotifications from "../FriendshipNotifications";
 
@@ -27,9 +28,10 @@ const AppModals: React.FC<AppModalsProps> = ({
   return (
     <>
       {showContactSearch && (
-        <EnhancedFriendSearch
+        <ContactSearch
           isOpen={showContactSearch}
           onClose={onCloseContactSearch}
+          onSelectContact={onSelectContact}
         />
       )}
 
