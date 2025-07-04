@@ -4,7 +4,8 @@ import SimpleFloatingActionButton from "./SimpleFloatingActionButton";
 import SimpleAppHeader from "./layout/SimpleAppHeader";
 import AppContent from "./layout/AppContent";
 import AppModals from "./layout/AppModals";
-// Enhanced friend search removed - using simplified approach
+import LandingPage from "./LandingPage";
+import LoginForm from "./auth/LoginForm";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useUserStatus } from "@/hooks/useUserStatus";
@@ -15,12 +16,36 @@ const MainApp: React.FC = () => {
   const [showGroupManagement, setShowGroupManagement] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showFriendSearch, setShowFriendSearch] = useState(false);
+  const [showLoginForm, setShowLoginForm] = useState(false);
 
-  const { signOut } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const { unreadCount } = useNotifications();
   const { updateMyStatus } = useUserStatus();
 
-  // Note: friend request count will be handled by FriendshipNotifications component
+  // Show loading screen while checking auth
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
+        <div className="text-white text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+          <p>Ładowanie aplikacji...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show landing page if not authenticated
+  if (!user) {
+    return (
+      <>
+        <LandingPage onGetStarted={() => setShowLoginForm(true)} />
+        {showLoginForm && (
+          <LoginForm onClose={() => setShowLoginForm(false)} />
+        )}
+      </>
+    );
+  }
+
   const totalUnreadCount = unreadCount;
 
   const handleNewChat = () => {
