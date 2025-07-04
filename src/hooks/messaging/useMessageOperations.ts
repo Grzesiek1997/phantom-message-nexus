@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -24,7 +23,7 @@ export const useMessageOperations = (conversationId?: string) => {
         .from('messages')
         .select('*')
         .eq('conversation_id', targetConversationId)
-        .order('sent_at', { ascending: true });
+        .order('created_at', { ascending: true });
 
       if (messagesError) {
         console.error('Error fetching messages:', messagesError);
@@ -49,21 +48,20 @@ export const useMessageOperations = (conversationId?: string) => {
 
       const formattedMessages: Message[] = messagesData.map(msg => {
         const senderProfile = profiles?.find(p => p.id === msg.sender_id);
-        const messageType = (msg.metadata as any)?.type || 'text';
         
         return {
           id: msg.id,
           conversation_id: msg.conversation_id,
           sender_id: msg.sender_id,
           content: msg.content,
-          message_type: messageType as 'text' | 'file' | 'image' | 'voice' | 'location' | 'poll' | 'sticker',
-          created_at: msg.sent_at,
-          updated_at: msg.sent_at,
-          reply_to_id: (msg.metadata as any)?.reply_to_id || null,
-          thread_root_id: null,
-          is_edited: (msg.metadata as any)?.is_edited || false,
-          is_deleted: (msg.metadata as any)?.is_deleted || false,
-          expires_at: null,
+          message_type: msg.message_type as 'text' | 'file' | 'image' | 'voice' | 'location' | 'poll' | 'sticker',
+          created_at: msg.created_at,
+          updated_at: msg.updated_at,
+          reply_to_id: msg.reply_to_id,
+          thread_root_id: msg.thread_root_id,
+          is_edited: msg.is_edited,
+          is_deleted: msg.is_deleted,
+          expires_at: msg.expires_at,
           sender: senderProfile ? {
             username: senderProfile.username,
             display_name: senderProfile.display_name,
@@ -93,7 +91,8 @@ export const useMessageOperations = (conversationId?: string) => {
           conversation_id: targetConversationId,
           sender_id: user.id,
           content: content.trim(),
-          metadata: { type: messageType, reply_to_id: replyToId }
+          message_type: messageType,
+          reply_to_id: replyToId
         })
         .select()
         .single();
@@ -123,14 +122,14 @@ export const useMessageOperations = (conversationId?: string) => {
         conversation_id: data.conversation_id,
         sender_id: data.sender_id,
         content: data.content,
-        message_type: messageType as 'text' | 'file' | 'image' | 'voice' | 'location' | 'poll' | 'sticker',
-        created_at: data.sent_at,
-        updated_at: data.sent_at,
-        reply_to_id: replyToId || null,
-        thread_root_id: null,
-        is_edited: false,
-        is_deleted: false,
-        expires_at: null,
+        message_type: data.message_type as 'text' | 'file' | 'image' | 'voice' | 'location' | 'poll' | 'sticker',
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        reply_to_id: data.reply_to_id,
+        thread_root_id: data.thread_root_id,
+        is_edited: data.is_edited,
+        is_deleted: data.is_deleted,
+        expires_at: data.expires_at,
         sender: senderProfile ? {
           username: senderProfile.username,
           display_name: senderProfile.display_name,
@@ -157,7 +156,8 @@ export const useMessageOperations = (conversationId?: string) => {
         .from('messages')
         .update({
           content: newContent.trim(),
-          metadata: { is_edited: true }
+          is_edited: true,
+          updated_at: new Date().toISOString()
         })
         .eq('id', messageId)
         .eq('sender_id', user.id);
@@ -175,7 +175,7 @@ export const useMessageOperations = (conversationId?: string) => {
       // Zaktualizuj lokalny stan
       setMessages(prev => prev.map(msg => 
         msg.id === messageId 
-          ? { ...msg, content: newContent.trim(), is_edited: true }
+          ? { ...msg, content: newContent.trim(), is_edited: true, updated_at: new Date().toISOString() }
           : msg
       ));
 
@@ -196,7 +196,8 @@ export const useMessageOperations = (conversationId?: string) => {
         .from('messages')
         .update({
           content: 'Wiadomość została usunięta',
-          metadata: { is_deleted: true }
+          is_deleted: true,
+          updated_at: new Date().toISOString()
         })
         .eq('id', messageId)
         .eq('sender_id', user.id);
@@ -214,7 +215,7 @@ export const useMessageOperations = (conversationId?: string) => {
       // Zaktualizuj lokalny stan
       setMessages(prev => prev.map(msg => 
         msg.id === messageId 
-          ? { ...msg, is_deleted: true, content: 'Wiadomość została usunięta' }
+          ? { ...msg, is_deleted: true, content: 'Wiadomość została usunięta', updated_at: new Date().toISOString() }
           : msg
       ));
 

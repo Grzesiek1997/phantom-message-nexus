@@ -5,24 +5,10 @@ import { useUserStatus } from '@/hooks/useUserStatus';
 import { formatDistanceToNow } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { Users, MessageCircle } from 'lucide-react';
+import type { Conversation } from '@/types/chat';
 
 interface ConversationItemProps {
-  conversation: {
-    id: string;
-    name: string | null;
-    type: 'direct' | 'group';
-    participants?: Array<{
-      user_id: string;
-      profiles: {
-        display_name: string;
-      };
-    }>;
-    last_message?: {
-      content: string;
-      created_at: string;
-      sender_id?: string;
-    };
-  };
+  conversation: Conversation;
   isSelected: boolean;
   currentUserId: string;
   onClick: (conversationId: string) => void;
@@ -43,7 +29,7 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
     const otherParticipant = conversation.participants?.find(
       p => p.user_id !== currentUserId
     );
-    return otherParticipant?.profiles?.display_name || 'Nieznany użytkownik';
+    return otherParticipant?.profile?.display_name || 'Nieznany użytkownik';
   };
 
   const getOtherParticipantStatus = () => {
@@ -100,7 +86,7 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
               <p className="text-sm text-gray-400 truncate">
                 {conversation.last_message.sender_id === currentUserId 
                   ? 'Ty: ' 
-                  : `${conversation.participants?.find(p => p.user_id === conversation.last_message?.sender_id)?.profiles?.display_name || 'Ktoś'}: `
+                  : `${conversation.participants?.find(p => p.user_id === conversation.last_message?.sender_id)?.profile?.display_name || 'Ktoś'}: `
                 }
                 {truncateMessage(conversation.last_message.content)}
               </p>

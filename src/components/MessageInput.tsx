@@ -2,9 +2,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, X } from 'lucide-react';
+import { Send, X, Paperclip, Mic, MicOff } from 'lucide-react';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
-import AttachmentUpload from './AttachmentUpload';
+import FileUpload from './messaging/FileUpload';
+import VoiceMessageSystem from './messaging/VoiceMessageSystem';
 
 interface MessageInputProps {
   messageInput: string;
@@ -12,6 +13,8 @@ interface MessageInputProps {
   replyingToMessage?: { content: string };
   onMessageChange: (value: string) => void;
   onSendMessage: () => void;
+  onSendFileMessage?: (fileUrl: string, fileName: string, fileType: string) => void;
+  onSendVoiceMessage?: (audioUrl: string, duration: number) => void;
   onCancelReply?: () => void;
   conversationId?: string;
   disabled?: boolean;
@@ -23,10 +26,14 @@ const MessageInput: React.FC<MessageInputProps> = ({
   replyingToMessage,
   onMessageChange,
   onSendMessage,
+  onSendFileMessage,
+  onSendVoiceMessage,
   onCancelReply,
   conversationId,
   disabled = false
 }) => {
+  const [showFileUpload, setShowFileUpload] = useState(false);
+  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { startTyping, stopTyping } = useTypingIndicator(conversationId);
   const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -84,6 +91,22 @@ const MessageInput: React.FC<MessageInputProps> = ({
     }
   }, [messageInput]);
 
+  const handleFileUploaded = (fileUrl: string, fileName: string, fileType: string) => {
+    if (onSendFileMessage) {
+      onSendFileMessage(fileUrl, fileName, fileType);
+    }
+    setShowFileUpload(false);
+  };
+
+  const handleVoiceRecorded = (audioBlob: Blob, duration: number) => {
+    // Convert blob to URL for now - in real implementation, upload to storage
+    const audioUrl = URL.createObjectURL(audioBlob);
+    if (onSendVoiceMessage) {
+      onSendVoiceMessage(audioUrl, duration);
+    }
+    setShowVoiceRecorder(false);
+  };
+
   return (
     <div className="border-t border-gray-700 p-4">
       {replyingTo && replyingToMessage && (
@@ -108,12 +131,29 @@ const MessageInput: React.FC<MessageInputProps> = ({
       )}
       
       <div className="flex items-end space-x-2">
-        <AttachmentUpload
+        {/* File Upload Button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowFileUpload(true)}
           disabled={disabled}
-          onAttachmentUploaded={(attachment) => {
-            console.log('Attachment uploaded:', attachment);
-          }}
-        />
+          className="text-gray-400 hover:text-white"
+          title="Dołącz plik"
+        >
+          <Paperclip className="w-4 h-4" />
+        </Button>
+
+        {/* Voice Recording Button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowVoiceRecorder(true)}
+          disabled={disabled}
+          className="text-gray-400 hover:text-white"
+          title="Nagraj wiadomość głosową"
+        >
+          <Mic className="w-4 h-4" />
+        </Button>
         
         <div className="flex-1">
           <Textarea
@@ -136,6 +176,36 @@ const MessageInput: React.FC<MessageInputProps> = ({
           <Send className="w-4 h-4" />
         </Button>
       </div>
+
+      {/* File Upload Modal */}
+      {showFileUpload && conversationId && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <FileUpload
+            conversationId={conversationId}
+            onFileUploaded={handleFileUploaded}
+            onClose={() => setShowFileUpload(false)}
+          />
+        </div>
+      )}
+
+      {/* Voice Recording Modal */}
+      {showVoiceRecorder && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-900 border border-white/20 rounded-lg p-6 max-w-md w-full">
+            <VoiceMessageSystem
+              onSendVoiceMessage={handleVoiceRecorded}
+              className="w-full"
+            />
+            <Button
+              onClick={() => setShowVoiceRecorder(false)}
+              variant="outline"
+              className="w-full mt-4 border-gray-600 text-white"
+            >
+              Anuluj
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

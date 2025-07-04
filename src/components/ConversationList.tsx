@@ -4,23 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, Plus, Bot, Users, MessageCircle } from 'lucide-react';
 import ConversationItem from './ConversationItem';
+import type { Conversation } from '@/types/chat';
 
 interface ConversationListProps {
-  conversations: Array<{
-    id: string;
-    name: string | null;
-    type: 'direct' | 'group';
-    participants?: Array<{
-      user_id: string;
-      profiles: {
-        display_name: string;
-      };
-    }>;
-    last_message?: {
-      content: string;
-      created_at: string;
-    };
-  }>;
+  conversations: Conversation[];
   selectedConversationId: string | null;
   currentUserId: string;
   loading: boolean;

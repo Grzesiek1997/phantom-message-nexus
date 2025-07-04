@@ -1403,26 +1403,50 @@ export type Database = {
         Row: {
           content: string | null
           conversation_id: string | null
+          created_at: string | null
+          expires_at: string | null
           id: string
+          is_deleted: boolean | null
+          is_edited: boolean | null
+          message_type: string | null
           metadata: Json | null
+          reply_to_id: string | null
           sender_id: string | null
           sent_at: string | null
+          thread_root_id: string | null
+          updated_at: string | null
         }
         Insert: {
           content?: string | null
           conversation_id?: string | null
+          created_at?: string | null
+          expires_at?: string | null
           id?: string
+          is_deleted?: boolean | null
+          is_edited?: boolean | null
+          message_type?: string | null
           metadata?: Json | null
+          reply_to_id?: string | null
           sender_id?: string | null
           sent_at?: string | null
+          thread_root_id?: string | null
+          updated_at?: string | null
         }
         Update: {
           content?: string | null
           conversation_id?: string | null
+          created_at?: string | null
+          expires_at?: string | null
           id?: string
+          is_deleted?: boolean | null
+          is_edited?: boolean | null
+          message_type?: string | null
           metadata?: Json | null
+          reply_to_id?: string | null
           sender_id?: string | null
           sent_at?: string | null
+          thread_root_id?: string | null
+          updated_at?: string | null
         }
         Relationships: [
           {
