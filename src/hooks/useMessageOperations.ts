@@ -56,10 +56,21 @@ export const useMessageOperations = (conversationId?: string) => {
 
       const formattedMessages: Message[] = messagesData.map(msg => {
         const senderProfile = senderProfiles?.find(p => p.id === msg.sender_id);
+        const metadata = msg.metadata as any || {};
         return {
-          ...msg,
-          message_type: msg.message_type as 'text' | 'file' | 'image' | 'voice' | 'location' | 'poll' | 'sticker',
-          edit_history: Array.isArray(msg.edit_history) ? msg.edit_history : [],
+          id: msg.id,
+          conversation_id: msg.conversation_id,
+          sender_id: msg.sender_id,
+          content: msg.content,
+          message_type: (metadata.type || 'text') as 'text' | 'file' | 'image' | 'voice' | 'location' | 'poll' | 'sticker',
+          created_at: msg.sent_at,
+          updated_at: msg.sent_at,
+          reply_to_id: metadata.reply_to_id || null,
+          thread_root_id: null,
+          is_edited: metadata.is_edited || false,
+          is_deleted: metadata.is_deleted || false,
+          expires_at: null,
+          edit_history: [],
           sender: senderProfile ? {
             username: senderProfile.username,
             display_name: senderProfile.display_name || senderProfile.username
@@ -136,8 +147,18 @@ export const useMessageOperations = (conversationId?: string) => {
       // The realtime subscription will also add it, but this provides instant feedback
       if (data) {
         const newMessage: Message = {
-          ...data,
-          message_type: data.message_type as 'text' | 'file' | 'image' | 'voice' | 'location' | 'poll' | 'sticker',
+          id: data.id,
+          conversation_id: data.conversation_id,
+          sender_id: data.sender_id,
+          content: data.content,
+          message_type: 'text',
+          created_at: data.sent_at,
+          updated_at: data.sent_at,
+          reply_to_id: null,
+          thread_root_id: null,
+          is_edited: false,
+          is_deleted: false,
+          expires_at: null,
           edit_history: [],
           sender: {
             username: user.user_metadata?.username || 'You',

@@ -106,7 +106,7 @@ const CallsScreen: React.FC = () => {
       
       const conversationId = await createConversation([contactId]);
       
-      if (conversationId) {
+      if (conversationId !== undefined) {
         navigate('/', {
           state: {
             selectedConversationId: conversationId,

@@ -61,7 +61,7 @@ export const useContactsLogic = () => {
       
       const result = await createConversation([contactId]);
       
-      if (result) {
+      if (result !== undefined) {
         console.log('Conversation created/found successfully:', result);
         
         toast({
