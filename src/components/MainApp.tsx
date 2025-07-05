@@ -6,6 +6,7 @@ import AppContent from "./layout/AppContent";
 import AppModals from "./layout/AppModals";
 import LandingPage from "./LandingPage";
 import LoginForm from "./auth/LoginForm";
+import FriendSearchSystem from "./FriendSearchSystem";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useUserStatus } from "@/hooks/useUserStatus";
@@ -124,21 +125,11 @@ const MainApp: React.FC = () => {
         onCreateGroup={handleCreateGroup}
       />
 
-      {/* Enhanced Friend Search Modal - Simplified */}
-      {showFriendSearch && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-900 border border-white/20 rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-white text-lg font-semibold mb-4">Search Friends</h3>
-            <p className="text-gray-400 mb-4">Friend search functionality will be implemented here.</p>
-            <button 
-              onClick={() => setShowFriendSearch(false)}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Friend Search System */}
+      <FriendSearchSystem 
+        isOpen={showFriendSearch}
+        onClose={() => setShowFriendSearch(false)}
+      />
     </div>
   );
 };
