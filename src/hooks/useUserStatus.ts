@@ -87,11 +87,12 @@ export const useUserStatus = () => {
         (payload) => {
           console.log('Presence update:', payload);
           if (payload.new) {
+            const newData = payload.new as any;
             setUserStatuses(prev => ({
               ...prev,
-              [payload.new.user_id]: {
-                status: payload.new.status,
-                last_active_at: payload.new.last_active_at
+              [newData.user_id]: {
+                status: newData.status,
+                last_active_at: newData.last_active_at
               }
             }));
           }

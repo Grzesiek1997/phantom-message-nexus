@@ -67,7 +67,7 @@ export const useContactsList = () => {
           id: contact.id,
           user_id: contact.user_id,
           contact_user_id: contact.contact_user_id,
-          status: contact.status,
+          status: contact.status as "pending" | "accepted" | "blocked",
           created_at: contact.created_at,
           profile: contact.profile ? {
             username: contact.profile.username,
