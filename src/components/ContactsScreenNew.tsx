@@ -1,9 +1,9 @@
+
 import React from "react";
 import { useContactsLogic } from '@/hooks/useContactsLogic';
 import ContactsMainContent from './contacts/ContactsMainContent';
 import ContactsActions from './contacts/ContactsActions';
 import { Loader2, UserPlus, Search } from 'lucide-react';
-import FriendSearch from '@/components/FriendSearch';
 
 const ContactsScreenNew: React.FC = () => {
   const {
@@ -83,7 +83,6 @@ const ContactsScreenNew: React.FC = () => {
         >
           <Search className="w-5 h-5 mr-2" /> Dodaj znajomych
         </button>
-        <FriendSearch isOpen={showFriendSearchDialog} onClose={() => setShowFriendSearchDialog(false)} />
       </div>
     );
   }
@@ -110,8 +109,6 @@ const ContactsScreenNew: React.FC = () => {
         onShowFriendSearch={() => setShowFriendSearchDialog(true)}
         onCloseFriendSearch={() => setShowFriendSearchDialog(false)}
       />
-
-      <FriendSearch isOpen={showFriendSearchDialog} onClose={() => setShowFriendSearchDialog(false)} />
     </div>
   );
 };

@@ -3,11 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
-export const useContactActions = (fetchContacts: () => Promise<void>) => {
+export const useContactActions = (refreshContacts: () => void) => {
   const { user } = useAuth();
   const { toast } = useToast();
 
   const deleteContact = async (contactId: string) => {
+    if (!user) return;
+
     try {
       const { error } = await supabase.rpc('delete_contact', {
         contact_id: contactId
@@ -25,10 +27,10 @@ export const useContactActions = (fetchContacts: () => Promise<void>) => {
 
       toast({
         title: 'Kontakt usunięty',
-        description: 'Kontakt został usunięty z listy znajomych'
+        description: 'Kontakt został pomyślnie usunięty'
       });
 
-      await fetchContacts();
+      refreshContacts();
     } catch (error) {
       console.error('Error in deleteContact:', error);
     }

@@ -3,87 +3,53 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
-export interface TypingIndicator {
-  id: string;
-  user_id: string;
-  conversation_id: string;
-  is_typing: boolean;
-  updated_at: string;
-}
-
 export const useTypingIndicator = (conversationId?: string) => {
-  const [typingUsers, setTypingUsers] = useState<Record<string, TypingIndicator>>({});
-  const [isTyping, setIsTyping] = useState(false);
+  const [typingUsers, setTypingUsers] = useState<Record<string, string>>({});
   const { user } = useAuth();
 
   const startTyping = useCallback(async () => {
-    if (!user || !conversationId || isTyping) return;
+    if (!conversationId || !user) return;
 
     try {
       const { error } = await supabase
-        .from('typing_indicators' as any)
+        .from('typing_indicators')
         .upsert({
-          user_id: user.id,
           conversation_id: conversationId,
-          is_typing: true,
+          user_id: user.id,
           updated_at: new Date().toISOString()
         });
 
-      if (!error) {
-        setIsTyping(true);
+      if (error) {
+        console.error('Error starting typing indicator:', error);
       }
     } catch (error) {
-      console.error('Error starting typing:', error);
+      console.error('Error in startTyping:', error);
     }
-  }, [user, conversationId, isTyping]);
+  }, [conversationId, user]);
 
   const stopTyping = useCallback(async () => {
-    if (!user || !conversationId || !isTyping) return;
+    if (!conversationId || !user) return;
 
     try {
       const { error } = await supabase
-        .from('typing_indicators' as any)
+        .from('typing_indicators')
         .delete()
-        .eq('user_id', user.id)
-        .eq('conversation_id', conversationId);
-
-      if (!error) {
-        setIsTyping(false);
-      }
-    } catch (error) {
-      console.error('Error stopping typing:', error);
-    }
-  }, [user, conversationId, isTyping]);
-
-  const fetchTypingUsers = useCallback(async () => {
-    if (!conversationId) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('typing_indicators' as any)
-        .select('*')
         .eq('conversation_id', conversationId)
-        .eq('is_typing', true);
+        .eq('user_id', user.id);
 
-      if (data && !error) {
-        const typingMap: Record<string, TypingIndicator> = {};
-        data.forEach((indicator: any) => {
-          if (indicator.user_id !== user?.id) { // Exclude current user
-            typingMap[indicator.user_id] = indicator;
-          }
-        });
-        setTypingUsers(typingMap);
+      if (error) {
+        console.error('Error stopping typing indicator:', error);
       }
     } catch (error) {
-      console.error('Error fetching typing users:', error);
+      console.error('Error in stopTyping:', error);
     }
-  }, [conversationId, user?.id]);
+  }, [conversationId, user]);
 
-  // Real-time subscription for typing indicators
   useEffect(() => {
     if (!conversationId) return;
 
-    const channel = supabase
+    // Subscribe to typing indicators for this conversation
+    const typingChannel = supabase
       .channel(`typing-${conversationId}`)
       .on(
         'postgres_changes',
@@ -93,32 +59,41 @@ export const useTypingIndicator = (conversationId?: string) => {
           table: 'typing_indicators',
           filter: `conversation_id=eq.${conversationId}`
         },
-        () => {
-          fetchTypingUsers();
+        async (payload) => {
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            if (payload.new.user_id !== user?.id) {
+              // Get user profile for typing indicator
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('display_name, username')
+                .eq('id', payload.new.user_id)
+                .single();
+
+              setTypingUsers(prev => ({
+                ...prev,
+                [payload.new.user_id]: profile?.display_name || profile?.username || 'Ktoś'
+              }));
+            }
+          } else if (payload.eventType === 'DELETE') {
+            setTypingUsers(prev => {
+              const newTyping = { ...prev };
+              delete newTyping[payload.old.user_id];
+              return newTyping;
+            });
+          }
         }
       )
       .subscribe();
 
-    // Initial fetch
-    fetchTypingUsers();
-
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(typingChannel);
     };
-  }, [conversationId, fetchTypingUsers]);
+  }, [conversationId, user]);
 
-  // Auto-cleanup typing when component unmounts
-  useEffect(() => {
-    return () => {
-      if (isTyping) {
-        stopTyping();
-      }
-    };
-  }, [isTyping, stopTyping]);
+  const typingUserNames = Object.values(typingUsers);
 
   return {
-    typingUsers,
-    isTyping,
+    typingUsers: typingUserNames,
     startTyping,
     stopTyping
   };

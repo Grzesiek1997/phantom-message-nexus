@@ -2,15 +2,12 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
-import { formatContact, formatSentRequest } from '@/utils/contactHelpers';
 import type { Contact } from '@/hooks/useContacts';
 
 export const useContactsList = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const { user } = useAuth();
-  const { toast } = useToast();
 
   const fetchContacts = async () => {
     if (!user) return;
@@ -18,82 +15,79 @@ export const useContactsList = () => {
     try {
       setLoading(true);
       console.log('Fetching contacts for user:', user.id);
-      
+
+      // Pobierz kontakty użytkownika z profilami i statusami friend_requests
       const { data: contactsData, error: contactsError } = await supabase
         .from('contacts')
-        .select('*')
+        .select(`
+          *,
+          profile:profiles!contacts_contact_user_id_fkey(
+            id,
+            username,
+            display_name,
+            avatar_url
+          )
+        `)
         .eq('user_id', user.id);
 
       if (contactsError) {
         console.error('Error fetching contacts:', contactsError);
-        setContacts([]);
         return;
       }
 
-      if (contactsData && contactsData.length > 0) {
-        const contactUserIds = contactsData.map(c => c.contact_user_id);
-        const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, username, display_name, avatar_url')
-          .in('id', contactUserIds);
+      // Pobierz status friend_requests dla każdego kontaktu
+      const contactUserIds = contactsData?.map(c => c.contact_user_id) || [];
+      let friendRequestsData: any[] = [];
+      
+      if (contactUserIds.length > 0) {
+        const { data: frData, error: frError } = await supabase
+          .from('friend_requests')
+          .select('*')
+          .or(
+            `and(sender_id.eq.${user.id},receiver_id.in.(${contactUserIds.join(',')})),` +
+            `and(receiver_id.eq.${user.id},sender_id.in.(${contactUserIds.join(',')}))`
+          )
+          .order('created_at', { ascending: false });
 
-        if (profilesError) {
-          console.error('Error fetching profiles:', profilesError);
+        if (frError) {
+          console.error('Error fetching friend requests:', frError);
+        } else {
+          friendRequestsData = frData || [];
         }
-
-        const formattedContacts = contactsData.map(contact => {
-          const profile = profilesData?.find(p => p.id === contact.contact_user_id);
-          return formatContact(contact, profile);
-        });
-
-        setContacts(formattedContacts);
       }
 
-      // Fetch received requests and merge with contacts
-      const { data: receivedRequests } = await supabase
-        .from('friend_requests')
-        .select('*')
-        .eq('receiver_id', user.id);
+      // Sformatuj kontakty z dodatkowymi danymi
+      const formattedContacts: Contact[] = (contactsData || []).map(contact => {
+        const friendRequest = friendRequestsData.find(fr => 
+          (fr.sender_id === user.id && fr.receiver_id === contact.contact_user_id) ||
+          (fr.receiver_id === user.id && fr.sender_id === contact.contact_user_id)
+        );
 
-      setContacts(prevContacts => 
-        prevContacts.map(contact => {
-          const req = receivedRequests?.find(
-            (fr: any) => fr.sender_id === contact.contact_user_id
-          );
-          return req ? formatContact(contact, contact.profile, req) : contact;
-        })
-      );
+        return {
+          id: contact.id,
+          user_id: contact.user_id,
+          contact_user_id: contact.contact_user_id,
+          status: contact.status,
+          created_at: contact.created_at,
+          profile: contact.profile ? {
+            username: contact.profile.username,
+            display_name: contact.profile.display_name,
+            avatar_url: contact.profile.avatar_url
+          } : {
+            username: 'Nieznany użytkownik',
+            display_name: 'Nieznany użytkownik',
+            avatar_url: null
+          },
+          friend_request_status: friendRequest?.status || null,
+          can_chat: contact.status === 'accepted' && friendRequest?.status === 'accepted',
+          friend_request_id: friendRequest?.id
+        };
+      });
 
-      // Fetch sent requests
-      const { data: sentRequestsData } = await supabase
-        .from('friend_requests')
-        .select('*')
-        .eq('sender_id', user.id)
-        .in('status', ['pending', 'rejected']);
-
-      if (sentRequestsData && sentRequestsData.length > 0) {
-        const receiverIds = sentRequestsData.map(r => r.receiver_id);
-        const { data: receiverProfiles } = await supabase
-          .from('profiles')
-          .select('id, username, display_name, avatar_url')
-          .in('id', receiverIds);
-
-        const formattedRequests = sentRequestsData
-          .filter(request => !contactsData?.some(contact => contact.contact_user_id === request.receiver_id))
-          .map(request => {
-            const profile = receiverProfiles?.find(p => p.id === request.receiver_id);
-            return formatSentRequest(request, profile);
-          });
-
-        setContacts(prev => [...prev, ...formattedRequests]);
-      }
+      setContacts(formattedContacts);
+      console.log('Formatted contacts:', formattedContacts);
     } catch (error) {
       console.error('Error in fetchContacts:', error);
-      toast({
-        title: 'Błąd',
-        description: 'Nie udało się pobrać listy kontaktów',
-        variant: 'destructive'
-      });
     } finally {
       setLoading(false);
     }
@@ -102,7 +96,6 @@ export const useContactsList = () => {
   return {
     contacts,
     loading,
-    fetchContacts,
-    setContacts
+    fetchContacts
   };
 };

@@ -3,8 +3,10 @@ import React, { useState } from 'react';
 import { Search, UserPlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useContacts } from '@/hooks/useContacts';
 import { useFriendRequests } from '@/hooks/useFriendRequests';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface FriendSearchProps {
   isOpen: boolean;
@@ -17,24 +19,32 @@ const FriendSearch: React.FC<FriendSearchProps> = ({ isOpen, onClose }) => {
   const [isSearching, setIsSearching] = useState(false);
   const { searchUsers } = useContacts();
   const { sendFriendRequest, sentRequests } = useFriendRequests();
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  const handleSearch = async (query: string) => {
-    setSearchQuery(query);
-    if (query.trim().length < 2) {
+  React.useEffect(() => {
+    const handleSearch = async (query: string) => {
+      if (query.trim().length < 2) {
+        setSearchResults([]);
+        return;
+      }
+
+      setIsSearching(true);
+      try {
+        const results = await searchUsers(query);
+        setSearchResults(results);
+      } catch (error) {
+        console.error('Error searching users:', error);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    if (debouncedSearchQuery) {
+      handleSearch(debouncedSearchQuery);
+    } else {
       setSearchResults([]);
-      return;
     }
-
-    setIsSearching(true);
-    try {
-      const results = await searchUsers(query);
-      setSearchResults(results);
-    } catch (error) {
-      console.error('Error searching users:', error);
-    } finally {
-      setIsSearching(false);
-    }
-  };
+  }, [debouncedSearchQuery, searchUsers]);
 
   const handleSendRequest = async (userId: string) => {
     await sendFriendRequest(userId);
@@ -70,7 +80,7 @@ const FriendSearch: React.FC<FriendSearchProps> = ({ isOpen, onClose }) => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <Input
               value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Wpisz nazwę użytkownika..."
               className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
             />
@@ -100,11 +110,12 @@ const FriendSearch: React.FC<FriendSearchProps> = ({ isOpen, onClose }) => {
                   className="flex items-center justify-between p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
                 >
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                      <span className="text-white font-bold text-sm">
+                    <Avatar className="w-10 h-10">
+                      <AvatarImage src={user.avatar_url} />
+                      <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
                         {user.display_name?.charAt(0) || user.username?.charAt(0) || '?'}
-                      </span>
-                    </div>
+                      </AvatarFallback>
+                    </Avatar>
                     <div>
                       <div className="text-white font-medium">
                         {user.display_name || user.username}
