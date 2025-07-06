@@ -109,9 +109,14 @@ export const useFriendRequests = () => {
   };
 
   const sendFriendRequest = async (receiverId: string) => {
-    if (!user) return;
+    if (!user) {
+      console.log('❌ Brak zalogowanego użytkownika');
+      return;
+    }
 
     try {
+      console.log('📤 Wysyłanie zaproszenia:', { senderId: user.id, receiverId });
+      
       // Sprawdź czy już istnieje zaproszenie
       const { data: existingRequest } = await supabase
         .from('friend_requests')
@@ -121,6 +126,7 @@ export const useFriendRequests = () => {
         .maybeSingle();
 
       if (existingRequest) {
+        console.log('⚠️ Zaproszenie już istnieje:', existingRequest);
         toast({
           title: 'Zaproszenie już istnieje',
           description: 'Już wysłałeś zaproszenie do tej osoby',
@@ -129,6 +135,7 @@ export const useFriendRequests = () => {
         return;
       }
 
+      console.log('✅ Tworzenie nowego zaproszenia...');
       const { error } = await supabase
         .from('friend_requests')
         .insert({
@@ -139,15 +146,16 @@ export const useFriendRequests = () => {
         });
 
       if (error) {
-        console.error('Error sending friend request:', error);
+        console.error('❌ Błąd przy tworzeniu zaproszenia:', error);
         toast({
           title: 'Błąd',
-          description: 'Nie udało się wysłać zaproszenia',
+          description: 'Nie udało się wysłać zaproszenia: ' + error.message,
           variant: 'destructive'
         });
         return;
       }
 
+      console.log('🎉 Zaproszenie wysłane pomyślnie');
       toast({
         title: 'Zaproszenie wysłane',
         description: 'Zaproszenie do znajomych zostało wysłane'
@@ -155,7 +163,12 @@ export const useFriendRequests = () => {
 
       await fetchFriendRequests();
     } catch (error) {
-      console.error('Error in sendFriendRequest:', error);
+      console.error('💥 Wyjątek w sendFriendRequest:', error);
+      toast({
+        title: 'Błąd',
+        description: 'Wystąpił nieoczekiwany błąd podczas wysyłania zaproszenia',
+        variant: 'destructive'
+      });
     }
   };
 

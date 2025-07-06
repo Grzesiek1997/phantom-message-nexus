@@ -7,6 +7,7 @@ import AppModals from "./layout/AppModals";
 import LandingPage from "./LandingPage";
 import LoginForm from "./auth/LoginForm";
 import FriendSearchSystem from "./FriendSearchSystem";
+import DebugPanel from "./DebugPanel";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useUserStatus } from "@/hooks/useUserStatus";
@@ -130,6 +131,9 @@ const MainApp: React.FC = () => {
         isOpen={showFriendSearch}
         onClose={() => setShowFriendSearch(false)}
       />
+
+      {/* Debug Panel - tylko w development */}
+      <DebugPanel />
     </div>
   );
 };

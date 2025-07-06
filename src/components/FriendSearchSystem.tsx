@@ -29,12 +29,17 @@ const FriendSearchSystem: React.FC<FriendSearchSystemProps> = ({ isOpen, onClose
 
     setIsSearching(true);
     try {
-      console.log('Searching for:', query);
+      console.log('🔍 Rozpoczynam wyszukiwanie dla:', query);
       const results = await searchUsers(query);
-      console.log('Search results:', results);
+      console.log('📋 Otrzymane wyniki:', results);
       setSearchResults(results);
+      
+      if (results.length === 0) {
+        console.log('⚠️ Brak wyników dla zapytania:', query);
+      }
     } catch (error) {
-      console.error('Error searching users:', error);
+      console.error('💥 Błąd podczas wyszukiwania:', error);
+      setSearchResults([]);
     } finally {
       setIsSearching(false);
     }
@@ -50,11 +55,14 @@ const FriendSearchSystem: React.FC<FriendSearchSystemProps> = ({ isOpen, onClose
 
   const handleSendRequest = async (userId: string) => {
     try {
+      console.log('📤 Wysyłam zaproszenie do użytkownika:', userId);
       await sendFriendRequest(userId);
+      console.log('✅ Zaproszenie wysłane pomyślnie');
+      
       // Remove user from search results after sending request
       setSearchResults(prev => prev.filter(user => user.id !== userId));
     } catch (error) {
-      console.error('Error sending friend request:', error);
+      console.error('❌ Błąd podczas wysyłania zaproszenia:', error);
     }
   };
 
@@ -113,9 +121,14 @@ const FriendSearchSystem: React.FC<FriendSearchSystemProps> = ({ isOpen, onClose
             <div className="flex items-center justify-center py-8">
               <div className="text-gray-400 text-center">
                 {searchQuery.length < 2 
-                  ? 'Wpisz co najmniej 2 znaki aby wyszukać' 
-                  : 'Nie znaleziono użytkowników'
+                  ? 'Wpisz co najmniej 2 znaki aby wyszukać użytkowników' 
+                  : `Nie znaleziono użytkowników dla "${searchQuery}"`
                 }
+                {searchQuery.length >= 2 && (
+                  <div className="text-xs mt-2 opacity-75">
+                    Spróbuj innej nazwy użytkownika lub imienia
+                  </div>
+                )}
               </div>
             </div>
           ) : (

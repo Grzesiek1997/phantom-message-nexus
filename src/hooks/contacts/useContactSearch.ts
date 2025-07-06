@@ -9,43 +9,54 @@ export const useContactSearch = (contacts: Contact[]) => {
 
   const searchUsers = async (query: string): Promise<SearchUser[]> => {
     if (!query.trim()) return [];
+    if (!user) {
+      console.log('No user authenticated for search');
+      return [];
+    }
 
     try {
-      console.log('Searching for users with query:', query);
+      console.log('🔍 Wyszukiwanie użytkowników:', { query, currentUserId: user.id });
       
+      // Build search query with proper escaping
+      const searchTerm = query.trim().toLowerCase();
       const { data, error } = await supabase
         .from('profiles')
         .select('id, username, display_name, avatar_url')
-        .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
-        .neq('id', user?.id)
+        .or(`username.ilike.%${searchTerm}%,display_name.ilike.%${searchTerm}%`)
+        .neq('id', user.id)
+        .order('username')
         .limit(10);
 
       if (error) {
-        console.error('Error searching users:', error);
+        console.error('❌ Błąd wyszukiwania użytkowników:', error);
         return [];
       }
 
-      console.log('Raw search results:', data);
+      console.log('✅ Wyniki wyszukiwania z bazy:', data);
 
       if (!data || data.length === 0) {
-        console.log('No users found');
+        console.log('ℹ️ Nie znaleziono użytkowników dla zapytania:', query);
         return [];
       }
 
-      // Filter out existing contacts
+      // Filter out existing contacts and friend requests
       const existingContactIds = new Set(contacts.map(c => c.contact_user_id));
       const filteredResults = data.filter(user => !existingContactIds.has(user.id));
       
-      console.log('Filtered search results:', filteredResults);
+      console.log('🔄 Przefiltrowane wyniki (bez istniejących kontaktów):', filteredResults);
       
-      return filteredResults.map(user => ({
+      const searchResults = filteredResults.map(user => ({
         id: user.id,
         username: user.username || 'unknown',
         display_name: user.display_name || user.username || 'Unknown User',
         avatar_url: user.avatar_url
       }));
+
+      console.log('📤 Zwracane wyniki wyszukiwania:', searchResults);
+      return searchResults;
+
     } catch (error) {
-      console.error('Error in searchUsers:', error);
+      console.error('💥 Wyjątek w searchUsers:', error);
       return [];
     }
   };
