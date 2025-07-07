@@ -1,6 +1,7 @@
 
 import React from 'react';
-import RealTimeChatInterface from '../RealTimeChatInterface';
+import SafeRealTimeChatInterface from '../SafeRealTimeChatInterface';
+// import RealTimeChatInterface from '../RealTimeChatInterface';
 import CallsScreen from '../CallsScreen';
 import ContactsScreenNew from '../ContactsScreenNew';
 import SettingsScreenNew from '../SettingsScreenNew';
@@ -11,9 +12,10 @@ interface AppContentProps {
 
 const AppContent: React.FC<AppContentProps> = ({ activeTab }) => {
   const renderActiveScreen = () => {
+    console.log('🔧 AppContent rendering screen:', activeTab);
     switch (activeTab) {
       case 'chats':
-        return <RealTimeChatInterface />;
+        return <SafeRealTimeChatInterface />;
       case 'calls':
         return <CallsScreen />;
       case 'contacts':
@@ -21,7 +23,7 @@ const AppContent: React.FC<AppContentProps> = ({ activeTab }) => {
       case 'settings':
         return <SettingsScreenNew />;
       default:
-        return <RealTimeChatInterface />;
+        return <SafeRealTimeChatInterface />;
     }
   };
 

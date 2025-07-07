@@ -20,9 +20,13 @@ const MainApp: React.FC = () => {
   const [showFriendSearch, setShowFriendSearch] = useState(false);
   const [showLoginForm, setShowLoginForm] = useState(false);
 
+  console.log('🔍 MainApp starting render...');
+  
   const { user, loading, signOut } = useAuth();
   const { unreadCount } = useNotifications();
   const { updateMyStatus } = useUserStatus();
+
+  console.log('🔍 MainApp hooks loaded:', { user: user?.id, loading });
 
   // Show loading screen while checking auth
   if (loading) {
